@@ -1,0 +1,43 @@
+# Node.js
+node_modules/
+dist/
+coverage/
+npm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Runtime artifacts and sensitive data
+uploads/documents/*
+!uploads/documents/.gitkeep
+uploads/reports/*
+!uploads/reports/.gitkeep
+datasets/raw/*
+!datasets/raw/.gitkeep
+datasets/processed/*
+!datasets/processed/.gitkeep
+models/active/*
+!models/active/.gitkeep
+models/archive/*
+!models/archive/.gitkeep
+*.joblib
+*.pkl
+*.log
+chroma_data/
+
+# Tooling and operating system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

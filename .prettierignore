@@ -1,0 +1,11 @@
+node_modules/
+dist/
+coverage/
+.venv/
+venv/
+__pycache__/
+uploads/
+datasets/raw/
+datasets/processed/
+models/active/
+models/archive/
