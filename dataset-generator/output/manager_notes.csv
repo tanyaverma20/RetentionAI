@@ -1,0 +1,1071 @@
+NoteID,EmployeeID,ManagerID,Date,NoteText
+690200b6-a437-450b-8447-7bd71363ead9,0756f919-39b6-4378-a8b0-33707bc84ccf,d85264b7-130e-4f14-970d-b80f9f87f4c4,2025-03-19,"Great team player, always willing to help peers."
+b432f9d4-23db-4cf0-b394-94f2cfa68b9d,7005687a-9bf2-49a1-ada1-97c42963f3ed,41fe4ef1-e753-4584-83eb-8d980c5e1e82,2019-03-10,"Frequently arrives late to meetings, need to address punctuality."
+8b963a29-79c9-4a12-b0d2-aea4173f9095,7005687a-9bf2-49a1-ada1-97c42963f3ed,41fe4ef1-e753-4584-83eb-8d980c5e1e82,2025-06-27,"Frequently arrives late to meetings, need to address punctuality."
+22055c4e-960d-4245-8f71-eac909c17ac9,7e265d70-9188-4135-8f84-55b39076442e,0d205fb6-4ff1-4243-8a06-e774efadaa12,2025-07-05,Needs to work on communication skills with cross-functional teams.
+d864895d-c1d6-4753-b05f-f4e7f284da75,7e265d70-9188-4135-8f84-55b39076442e,0d205fb6-4ff1-4243-8a06-e774efadaa12,2026-04-17,"Highly motivated, took initiative on the last project."
+4af62ba3-f9e8-48a0-9930-5744266864c7,93893360-8fd5-40d9-a827-3d8dc0d2f698,39bb11e3-8432-4211-9125-6accd0d799c0,2023-04-23,"Great team player, always willing to help peers."
+7e91b4aa-14cf-483f-920c-43ce997febac,93893360-8fd5-40d9-a827-3d8dc0d2f698,39bb11e3-8432-4211-9125-6accd0d799c0,2024-01-12,"Highly motivated, took initiative on the last project."
+a309f755-3dca-46bc-ae29-327c932bdde5,555ee223-e3a0-411a-bd41-37eb57af5802,0d205fb6-4ff1-4243-8a06-e774efadaa12,2024-12-31,Requires too much supervision for senior-level tasks.
+e9e0a311-331d-4508-952d-385417187448,555ee223-e3a0-411a-bd41-37eb57af5802,0d205fb6-4ff1-4243-8a06-e774efadaa12,2022-12-23,Needs to work on communication skills with cross-functional teams.
+8b072754-3267-46e0-bbfb-b26801a90a1d,f9bec295-192b-427e-b468-b90a36d3ed6e,0756f919-39b6-4378-a8b0-33707bc84ccf,2022-07-04,Needs to work on communication skills with cross-functional teams.
+dbd0c439-b719-4a3c-ab90-93534b9517b9,f9bec295-192b-427e-b468-b90a36d3ed6e,0756f919-39b6-4378-a8b0-33707bc84ccf,2021-01-11,Requires too much supervision for senior-level tasks.
+33a7eff0-bec9-4daa-8658-d7bf15e642e9,c928550c-2338-463b-930a-29020041a190,39bb11e3-8432-4211-9125-6accd0d799c0,2026-02-25,Has expressed interest in moving to a management role.
+9ac143ba-dc7c-4004-b751-144e73c8f57d,254e5290-7c0b-4c32-a48f-ce956be85d4a,0756f919-39b6-4378-a8b0-33707bc84ccf,2025-07-22,Needs to work on communication skills with cross-functional teams.
+dce135eb-6c2f-4bee-8a86-585072aef78a,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,41fe4ef1-e753-4584-83eb-8d980c5e1e82,2023-12-18,"Struggling with the new tech stack, suggested additional training."
+ddd84ba0-edd5-4465-a10d-463191ef49de,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,41fe4ef1-e753-4584-83eb-8d980c5e1e82,2025-12-02,"Going through some personal issues, performance slightly dipped but expected to recover."
+f9e023fa-232c-452b-8013-827a7465e4d9,ce210808-0643-4154-b355-0f4fdb9309a7,41fe4ef1-e753-4584-83eb-8d980c5e1e82,2026-05-25,Needs to work on communication skills with cross-functional teams.
+8adc1aa8-afbe-4786-8fea-68eafae3286a,543b70df-c750-4d2d-8b42-9ad31bebe5d1,0756f919-39b6-4378-a8b0-33707bc84ccf,2026-05-23,"Frequently arrives late to meetings, need to address punctuality."
+31d08758-e14a-472b-ae11-f3b547bc4dd6,543b70df-c750-4d2d-8b42-9ad31bebe5d1,0756f919-39b6-4378-a8b0-33707bc84ccf,2024-12-25,Requires too much supervision for senior-level tasks.
+e933bba7-e662-4044-841e-bf663073ef0c,8a6cb659-c889-4932-ba72-818cd81574f2,39bb11e3-8432-4211-9125-6accd0d799c0,2026-03-09,"Frequently arrives late to meetings, need to address punctuality."
+f38e5487-2e0c-4bc4-9f5e-137eb13b6f5a,9c6389a2-f1aa-472a-a405-217b6094b685,41fe4ef1-e753-4584-83eb-8d980c5e1e82,2021-11-26,Needs to work on communication skills with cross-functional teams.
+aedc4e27-2d6a-45cb-85bc-a955a23a0689,7359f127-082a-47a1-afd6-d98dac6f8531,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-05-04,Employee is showing great leadership potential.
+ddcca9ee-3932-44c4-8eae-2202c82b2230,fc790a5e-5361-4772-af8b-ee1d742b0fe6,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-03-16,Has expressed interest in moving to a management role.
+16fa9e02-746a-4e90-b7aa-688622846846,fc790a5e-5361-4772-af8b-ee1d742b0fe6,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-04-11,Has expressed interest in moving to a management role.
+8c168878-880c-4145-bcdf-299e62522052,00c00a8f-b622-4a76-9e00-ce938c614b1d,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2023-11-21,"Frequently arrives late to meetings, need to address punctuality."
+ba8df857-bdc9-46bd-a03b-27b492b312cf,00c00a8f-b622-4a76-9e00-ce938c614b1d,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2021-02-04,"Frequently arrives late to meetings, need to address punctuality."
+ac7ba87c-e860-4479-883e-2282eac045ec,dc9895f6-cdf4-4d24-b2ae-243f43b91385,f9bec295-192b-427e-b468-b90a36d3ed6e,2022-04-18,"Going through some personal issues, performance slightly dipped but expected to recover."
+8a809f5b-7a49-4125-83c6-23bff10557d4,ed93b858-9ed1-469e-bd16-df78e690e7f2,c928550c-2338-463b-930a-29020041a190,2026-03-26,"Highly motivated, took initiative on the last project."
+0e2d8728-b521-4f2f-bd01-3177677c8f42,ed93b858-9ed1-469e-bd16-df78e690e7f2,c928550c-2338-463b-930a-29020041a190,2020-01-19,Has expressed interest in moving to a management role.
+9dde0c99-11d5-4755-bcd4-15d458a11469,81cceb49-66a1-46ba-8b01-e8605c24a206,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-02-28,Employee is showing great leadership potential.
+130ed85f-c3f3-449d-9851-bca245626d2d,81cceb49-66a1-46ba-8b01-e8605c24a206,c3301c22-2b4b-4c7f-827f-90a886d47311,2023-06-19,"Frequently arrives late to meetings, need to address punctuality."
+ad297cc2-d459-48fb-a2b2-140eb1f7b92a,2e30c9a4-5232-45c6-bd48-e95d079c2f48,75540a9f-e62c-4345-88b2-726080c8100d,2026-03-15,Has expressed interest in moving to a management role.
+e9914be0-2a22-402c-8e9b-ffd4c6c01429,2e30c9a4-5232-45c6-bd48-e95d079c2f48,75540a9f-e62c-4345-88b2-726080c8100d,2023-12-12,"Highly motivated, took initiative on the last project."
+9b19007c-84b4-435c-b993-ea8edb0977e0,0446c1e5-ad03-41bd-ab1f-dfd883f524dc,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-07-06,"Frequently arrives late to meetings, need to address punctuality."
+6ed68302-c593-41d6-a64b-a5bf21898ed7,2c96d918-aa1b-41cb-b9aa-f807ad8d789e,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2024-05-18,"Highly motivated, took initiative on the last project."
+6cd48375-084f-4709-8beb-81ec7e9b5985,456c7c4e-8d4d-4bfc-bc77-8e985bd62a93,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-03-26,Requires too much supervision for senior-level tasks.
+d199c7a0-3485-456b-9cd7-6be91585b89b,5aa6d796-b898-4b8b-8db4-92f492653467,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-06-09,"Going through some personal issues, performance slightly dipped but expected to recover."
+51440218-9d87-427f-b7ca-c9668848c9a6,6ea1b322-4bd9-4975-9d03-eb422e4af83b,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-02-19,Employee is showing great leadership potential.
+c048107b-ea87-48ec-b7c2-58ed93245a30,6ea1b322-4bd9-4975-9d03-eb422e4af83b,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-11-15,"Struggling with the new tech stack, suggested additional training."
+2e231db5-e96c-4028-95cb-f66d97ece213,ac0ead81-053b-44b1-9fa9-2f1726c8d34b,630716e5-012e-462e-997f-4bddc29d22c6,2024-09-01,"Going through some personal issues, performance slightly dipped but expected to recover."
+34487a0e-4e9c-4f99-8f5b-587aa95c5fd7,0f71c1a2-349f-48fd-87c9-2cc62e891684,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2026-07-08,Employee is showing great leadership potential.
+86a221b2-a5e5-4dc3-8989-d432e0b74266,96c48ecd-be97-49b3-932c-91f6a499e210,8a6cb659-c889-4932-ba72-818cd81574f2,2024-03-14,"Going through some personal issues, performance slightly dipped but expected to recover."
+ff7e8fdb-fca9-4c89-9d16-5097e6787ad6,4fa58af1-b9a9-4357-b44e-39101f2b7306,7e265d70-9188-4135-8f84-55b39076442e,2023-03-25,"Highly motivated, took initiative on the last project."
+beea7d88-d5f2-41ec-9376-f9ac7cb65cae,4fa58af1-b9a9-4357-b44e-39101f2b7306,7e265d70-9188-4135-8f84-55b39076442e,2021-08-19,Employee is showing great leadership potential.
+86c91ca1-d9d0-4c26-82e7-e2e81302dd90,85130bdf-9b69-4030-bc14-b7ccf9677cd8,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2024-10-29,"Frequently arrives late to meetings, need to address punctuality."
+e8535bba-f30b-480f-bbbf-23130302288b,db238baf-fa14-4c2d-95a8-395c609c2294,555ee223-e3a0-411a-bd41-37eb57af5802,2020-04-10,"Highly motivated, took initiative on the last project."
+8e8a78df-f1b0-46b1-bf8d-8e800d740b59,4962b7de-5e65-4062-9d99-07577066ed37,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-02-16,Requires too much supervision for senior-level tasks.
+62da1092-eede-4221-9a0e-536b15ec6374,b7befe44-6ce5-41ec-83b8-20a70ace89b9,c928550c-2338-463b-930a-29020041a190,2019-09-09,"Frequently arrives late to meetings, need to address punctuality."
+aae790c0-d3e4-4947-ada9-1809b34f71f0,ce18dadc-2b90-4385-9158-f8ab2956b564,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2023-06-23,Employee is showing great leadership potential.
+8c6c4f8e-98ba-4610-8fa3-933063d5ebf0,ce18dadc-2b90-4385-9158-f8ab2956b564,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-12-08,Employee is showing great leadership potential.
+11fc0b26-f07b-4074-9ba3-7475a9a533f5,43bbec93-bb56-4718-b13e-cd241e5cfcb3,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-12-13,"Consistent performer, always meets deadlines."
+f413f249-5cdc-4d66-9135-b329d5c2dabc,f5114312-5644-4042-a24c-2a5b968935c5,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-03-08,Needs to work on communication skills with cross-functional teams.
+b3cd5851-81c9-41aa-b242-d886ab5e1210,f5114312-5644-4042-a24c-2a5b968935c5,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-03-11,"Going through some personal issues, performance slightly dipped but expected to recover."
+2774a4be-9660-471e-afbf-b580be49c5ee,b6344ac3-2ae1-4a76-a11b-103658e1b0fb,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2026-04-09,Has expressed interest in moving to a management role.
+8a8142bd-f1d7-4b06-8c8f-5384fb0b0094,1daaf593-d813-4d03-9afe-a305aad6986a,630716e5-012e-462e-997f-4bddc29d22c6,2021-04-24,"Highly motivated, took initiative on the last project."
+5e79cd0b-d4d9-446b-8dda-b6a3af4cf340,1daaf593-d813-4d03-9afe-a305aad6986a,630716e5-012e-462e-997f-4bddc29d22c6,2024-01-17,"Great team player, always willing to help peers."
+fc16119e-f201-4803-a3dc-5df15f77d3bd,6425c2d4-04ed-4ba9-a69e-86bb62eb8f87,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2026-07-22,Has expressed interest in moving to a management role.
+e8dce873-7a7d-43ae-9b31-d7b177e1c546,b7251c3a-5796-4eff-a231-52b84894580e,8a6cb659-c889-4932-ba72-818cd81574f2,2025-09-19,"Great team player, always willing to help peers."
+76e3183d-d3a2-4e6f-a9a3-1c05a396305e,08854e92-a5e5-4e86-a8ad-906cd5829ace,7005687a-9bf2-49a1-ada1-97c42963f3ed,2026-07-16,"Going through some personal issues, performance slightly dipped but expected to recover."
+3a1731ef-faac-405b-88fc-39fc6a892aa8,a63b557e-647f-43a0-8b53-468086b5f416,7e265d70-9188-4135-8f84-55b39076442e,2025-08-22,Has expressed interest in moving to a management role.
+d0fa86f0-9b09-4ed6-ab6d-c35a4849f517,a63b557e-647f-43a0-8b53-468086b5f416,7e265d70-9188-4135-8f84-55b39076442e,2021-06-29,"Frequently arrives late to meetings, need to address punctuality."
+b24486f2-ed0d-40b1-b3f2-41d3ec6b33f5,df0d010f-8474-4b39-830a-148411807236,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-03-13,Requires too much supervision for senior-level tasks.
+3c5ee05b-543a-4ac2-9e6a-f94b2f52586b,df0d010f-8474-4b39-830a-148411807236,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-02-05,Requires too much supervision for senior-level tasks.
+f2fa7e6a-24c0-4922-8da0-9ef0583d6dde,c829e47f-933e-44f8-9f3d-25264029c26e,555ee223-e3a0-411a-bd41-37eb57af5802,2023-12-03,"Struggling with the new tech stack, suggested additional training."
+e658e5ba-a258-4dde-85e8-30c2b7d52141,7cd1619c-a98f-4ec5-bcde-3a397412822a,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2026-01-23,"Struggling with the new tech stack, suggested additional training."
+9f947952-867d-430a-b7c4-57cc11ba512f,e11200db-2e7c-4d81-b313-f677f9bc12cb,8565ea1d-4f56-4a49-b00a-1ff7618021be,2019-07-01,Requires too much supervision for senior-level tasks.
+70a82ae3-dba4-4f88-93ca-9c9fb67e1db8,4e89e578-b3e7-40ec-8190-2daf789ae4ad,c928550c-2338-463b-930a-29020041a190,2025-01-09,Needs to work on communication skills with cross-functional teams.
+4242e5f9-45e8-4cc9-96e4-8abbae3ad85a,4e89e578-b3e7-40ec-8190-2daf789ae4ad,c928550c-2338-463b-930a-29020041a190,2026-02-09,"Struggling with the new tech stack, suggested additional training."
+15153265-2e7a-458c-a4c3-1f24617481ae,4c0e1d10-c487-4981-b91a-71f1dbd78ea4,75540a9f-e62c-4345-88b2-726080c8100d,2020-01-03,Employee is showing great leadership potential.
+c8a682a1-907a-4713-8eca-112a788cdf17,640d08fc-ba1c-4286-bd93-ef0805dc477c,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-01-12,Needs to work on communication skills with cross-functional teams.
+0942b69e-265a-4006-81a7-befef0d04c08,640d08fc-ba1c-4286-bd93-ef0805dc477c,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-07-21,"Great team player, always willing to help peers."
+be65426b-7245-4b57-87fc-481065e8169a,2318b5e1-2d30-420b-94ab-a93ba861f50b,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-12-07,Has expressed interest in moving to a management role.
+27dc5164-f48a-45d5-83c8-a13779d02b19,d5d70af6-3d6e-4a87-9be0-852c21690127,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-04-12,Needs to work on communication skills with cross-functional teams.
+522dca78-fe07-40b2-a9bc-9c9dbaa78501,d5d70af6-3d6e-4a87-9be0-852c21690127,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2016-03-12,"Great team player, always willing to help peers."
+02301627-52bc-4dae-8c57-7d620050aa9b,784007a1-78b2-41ca-9cb2-75f3175db8d7,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-01-11,"Great team player, always willing to help peers."
+5ff0c86d-9a20-432a-8543-48d734662ce8,784007a1-78b2-41ca-9cb2-75f3175db8d7,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-05-15,"Great team player, always willing to help peers."
+327b5fc2-31af-441e-8705-824806644d63,85bbda80-b791-4b66-b3af-811cc62f0940,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-11-03,"Consistent performer, always meets deadlines."
+bc66d22e-1f62-4433-b153-ec88e94d3f6c,426200c9-c9bb-4773-84c9-b06ba643f51b,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2018-08-25,Has expressed interest in moving to a management role.
+97bcbc38-33e0-4975-be86-295f2f643163,55a47447-9d03-4c05-8d19-11a0ba611b34,630716e5-012e-462e-997f-4bddc29d22c6,2024-12-15,"Consistent performer, always meets deadlines."
+a661299d-9659-452d-b6f5-b4cd00aad9e0,55a47447-9d03-4c05-8d19-11a0ba611b34,630716e5-012e-462e-997f-4bddc29d22c6,2025-10-30,"Struggling with the new tech stack, suggested additional training."
+4457466f-def9-4f44-8b32-e79b9795a0df,1f2ae184-1511-4bd7-932b-2fcd0d1cb3b0,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2024-12-19,"Highly motivated, took initiative on the last project."
+94f15b82-ca83-4bff-acbc-109bc4529765,994d2720-c8cf-4e93-85ab-0b7516943efc,9c6389a2-f1aa-472a-a405-217b6094b685,2024-08-20,"Consistent performer, always meets deadlines."
+7bbad832-c772-4941-b57c-82d957090713,994d2720-c8cf-4e93-85ab-0b7516943efc,9c6389a2-f1aa-472a-a405-217b6094b685,2024-04-02,"Struggling with the new tech stack, suggested additional training."
+4e3ad5d3-0416-4a73-a13d-082fa2fe9389,bae6e5cc-583b-4a95-9a57-a41fd83ff1b7,7005687a-9bf2-49a1-ada1-97c42963f3ed,2019-12-12,Needs to work on communication skills with cross-functional teams.
+f294d6e4-e9ee-4522-9c9c-2a35f173f05f,bae6e5cc-583b-4a95-9a57-a41fd83ff1b7,7005687a-9bf2-49a1-ada1-97c42963f3ed,2021-06-09,Requires too much supervision for senior-level tasks.
+d9f6d977-8bbd-4ef0-affb-799848cdbf50,61d91000-d0e7-435a-90d2-519fd3d55efc,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-06-03,Employee is showing great leadership potential.
+dbca590c-5f83-46cc-b4a5-b91ae6464a35,1dc35fbf-ffe5-4b2a-81ab-3d79afcd6523,8565ea1d-4f56-4a49-b00a-1ff7618021be,2025-01-03,Needs to work on communication skills with cross-functional teams.
+f8084ce7-322f-4e1e-a753-cb23afcfbdc3,1dc35fbf-ffe5-4b2a-81ab-3d79afcd6523,8565ea1d-4f56-4a49-b00a-1ff7618021be,2023-11-25,Employee is showing great leadership potential.
+d59018cf-8d6b-4de7-8c72-187910adc9f8,e76916ff-0759-4783-bd17-ac19c3c4b8e9,95fee654-165a-4426-8f15-5aa7615c5e52,2025-09-29,"Highly motivated, took initiative on the last project."
+5e766a29-87a4-4cdf-a6a9-1cebfcba5011,e76916ff-0759-4783-bd17-ac19c3c4b8e9,95fee654-165a-4426-8f15-5aa7615c5e52,2025-08-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+3425217a-9bc6-4374-98f2-91f0de78d312,ba1791c9-5496-433e-a3f9-ab6654597d36,f9bec295-192b-427e-b468-b90a36d3ed6e,2025-09-18,"Struggling with the new tech stack, suggested additional training."
+1f8f6037-2c2c-4f8a-b4c7-12e7ca56cb64,ba1791c9-5496-433e-a3f9-ab6654597d36,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-05-27,"Going through some personal issues, performance slightly dipped but expected to recover."
+52bd48da-80e0-4034-9549-6be3234c72eb,f8847dac-df05-4392-b46f-a6d07624e493,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-11-03,"Consistent performer, always meets deadlines."
+8b719a09-e272-4e8c-af9f-2a3ee2ba8e8d,f8847dac-df05-4392-b46f-a6d07624e493,c3301c22-2b4b-4c7f-827f-90a886d47311,2026-05-22,Needs to work on communication skills with cross-functional teams.
+a25ec409-0a16-47e3-9380-97a881f859ed,ae849f25-8e59-4b7b-b02a-53434841bcd4,254e5290-7c0b-4c32-a48f-ce956be85d4a,2020-01-24,"Going through some personal issues, performance slightly dipped but expected to recover."
+17b89a77-f4b3-441a-9723-0c9170d88ea4,ae849f25-8e59-4b7b-b02a-53434841bcd4,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-11-20,Requires too much supervision for senior-level tasks.
+43815725-f301-453a-89f2-446f1b0c1dbf,4fcf49a8-35de-4205-b241-f8279c2f3faf,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-11-25,"Going through some personal issues, performance slightly dipped but expected to recover."
+19676380-0a57-4051-a9a0-576b1bfd3199,444c8dc3-243a-4f89-af20-f76e15ee9b27,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2023-08-02,Employee is showing great leadership potential.
+635957b9-5f36-4e17-8ec1-54da0a4598d9,d295f594-9f6b-484f-a528-9f78b0d051f4,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-06-17,Needs to work on communication skills with cross-functional teams.
+2b57db6a-2ec5-4744-b5bf-c2fc851a1386,d295f594-9f6b-484f-a528-9f78b0d051f4,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-06-27,"Highly motivated, took initiative on the last project."
+069f3513-c992-4970-8838-b3d076c408ca,627e968b-dab7-4119-a257-85e504785bb3,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2020-07-10,"Great team player, always willing to help peers."
+83538ac1-137f-4227-a746-27a98f7a6d80,e9962ed3-0fec-4e5c-b8b4-7a7c1b8e1563,630716e5-012e-462e-997f-4bddc29d22c6,2024-07-11,"Frequently arrives late to meetings, need to address punctuality."
+d2550cba-f53a-4f94-9cde-9eb5e2096422,e9962ed3-0fec-4e5c-b8b4-7a7c1b8e1563,630716e5-012e-462e-997f-4bddc29d22c6,2024-06-28,Needs to work on communication skills with cross-functional teams.
+d8a65720-bfbd-42e5-be05-738e9be48fca,eb4caa37-01ea-4918-9f4b-169245cdd2f6,8a6cb659-c889-4932-ba72-818cd81574f2,2020-03-01,"Going through some personal issues, performance slightly dipped but expected to recover."
+44717949-4887-4f68-bf25-83470f6c18d4,eb4caa37-01ea-4918-9f4b-169245cdd2f6,8a6cb659-c889-4932-ba72-818cd81574f2,2023-09-14,"Great team player, always willing to help peers."
+0e370643-cb43-458c-a458-6b072694ebac,16b8edea-a30a-4622-a601-e234d13689a5,9c6389a2-f1aa-472a-a405-217b6094b685,2022-08-21,"Struggling with the new tech stack, suggested additional training."
+33218e2f-3461-44aa-a78e-38617dcbf432,16b8edea-a30a-4622-a601-e234d13689a5,9c6389a2-f1aa-472a-a405-217b6094b685,2023-05-11,Has expressed interest in moving to a management role.
+b5a5992d-c6c9-4f33-97ec-ce63d74f55c2,9ed0cb0e-f79b-4827-924c-329357c94cbe,a344149f-bc18-412b-940e-29c201e37a54,2023-12-14,Employee is showing great leadership potential.
+c1a48dc0-fd3c-4af4-99c9-7693f5bffd23,9ed0cb0e-f79b-4827-924c-329357c94cbe,a344149f-bc18-412b-940e-29c201e37a54,2024-02-08,Needs to work on communication skills with cross-functional teams.
+47d989d2-18f2-46ff-b528-d1b5b766e5bf,3ff9348d-502c-4be6-bbdd-beaf1cff154f,7005687a-9bf2-49a1-ada1-97c42963f3ed,2024-08-08,"Great team player, always willing to help peers."
+771c2e19-6c4c-473d-9c35-c4284f0ce349,6109afc3-da46-4c6c-85f2-5aa42d228d0f,93893360-8fd5-40d9-a827-3d8dc0d2f698,2024-10-23,"Going through some personal issues, performance slightly dipped but expected to recover."
+979d60ee-cd41-4cb1-864b-8ac2664e9620,09fe69ac-28ad-4d15-a8b8-c4a2763384e6,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-01-22,"Frequently arrives late to meetings, need to address punctuality."
+e3a68819-6cc6-40f6-81a6-824d5a8c39db,5f4665a5-457f-4b7b-b201-ac3bc27a94ae,c928550c-2338-463b-930a-29020041a190,2025-08-11,"Frequently arrives late to meetings, need to address punctuality."
+a1761145-f14d-4054-8e99-077833cef2f5,26a2ee15-8cff-4ec3-968e-d788cf060515,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2017-07-21,Needs to work on communication skills with cross-functional teams.
+ddb699dd-361f-455e-9e67-501fd501003b,0d65cf78-b7f3-4305-b83c-6f558de40c0a,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-07-11,Has expressed interest in moving to a management role.
+c725476d-508c-4a05-9952-8acf16ada17a,0d65cf78-b7f3-4305-b83c-6f558de40c0a,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2021-12-12,"Going through some personal issues, performance slightly dipped but expected to recover."
+771fad50-349e-44cb-bae6-68090de15ad5,90b4ea17-3706-4df1-a43d-a63ce36ec447,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-11-20,"Highly motivated, took initiative on the last project."
+a0112550-10e3-47ab-ad20-ef7b84477bca,407b47a5-ae83-44b5-8d41-209bde3e62c2,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-07-08,"Frequently arrives late to meetings, need to address punctuality."
+3aabf92d-1b0b-46b4-8b10-e2b3664d0f80,407b47a5-ae83-44b5-8d41-209bde3e62c2,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-06-27,"Consistent performer, always meets deadlines."
+43e49a93-0ad2-49f6-96eb-c461b7feffbd,772b531a-c165-43f7-ac9b-8dd5f398a403,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2026-03-09,"Great team player, always willing to help peers."
+7eb7dbd6-69c9-4479-b639-75e27536caa7,bd928bef-5104-4ece-a692-aea36ae984e1,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-10-04,Employee is showing great leadership potential.
+d61a18f2-4fc7-4dfa-87a3-f21cc3e3e838,bd928bef-5104-4ece-a692-aea36ae984e1,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-01-21,"Going through some personal issues, performance slightly dipped but expected to recover."
+955c39cd-3e39-45a9-aa53-76a7bb009479,2beb2383-49a5-4e4d-a6b9-063980773f9b,3cd82c5e-529d-4500-8d52-deee030c1ea3,2022-02-23,"Consistent performer, always meets deadlines."
+619bee7f-5240-4315-9d18-888d865869c8,e94d8713-411f-41cb-8f2f-70e902302d28,ce210808-0643-4154-b355-0f4fdb9309a7,2018-02-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+606a77cb-c11a-426d-8f44-f314e78244bf,60943214-35db-455d-bf10-592be9d56ed0,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2024-08-16,Has expressed interest in moving to a management role.
+d4cd2746-637c-472c-bcd1-2804ef580843,a555780f-bdd1-4446-983b-16b64b01ddb1,93893360-8fd5-40d9-a827-3d8dc0d2f698,2024-10-02,"Frequently arrives late to meetings, need to address punctuality."
+a45f9a57-4e7a-474b-9b1c-d9512d623cf0,a555780f-bdd1-4446-983b-16b64b01ddb1,93893360-8fd5-40d9-a827-3d8dc0d2f698,2022-09-26,Has expressed interest in moving to a management role.
+c1310dd3-40bb-4636-add0-2d9cd73e231d,af9f5f36-c8a1-4796-8061-5e6ec6b27020,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2024-08-10,Needs to work on communication skills with cross-functional teams.
+f723fef7-5be7-4537-9f8b-058969f6dde9,5f896efc-8285-4e50-91a2-70f3a776cb34,f9bec295-192b-427e-b468-b90a36d3ed6e,2023-05-18,Has expressed interest in moving to a management role.
+e1bbaf12-4a28-4d30-bcd8-89b03a9cc541,5f896efc-8285-4e50-91a2-70f3a776cb34,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-06-06,"Struggling with the new tech stack, suggested additional training."
+c1ca51f5-3085-4ea5-b42c-c41ffee7d900,3f96bea4-9550-425b-9510-87ae5a7ea6de,75540a9f-e62c-4345-88b2-726080c8100d,2023-05-01,"Struggling with the new tech stack, suggested additional training."
+099cc313-c35c-41dd-adab-fda022fc7356,891da385-8611-4e15-97e3-458e495d7276,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2024-01-02,Employee is showing great leadership potential.
+c5a428e0-a2ff-4386-8f56-fb73c8482a63,b51584ab-d762-4045-bb6b-5103a077001d,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-01-01,"Going through some personal issues, performance slightly dipped but expected to recover."
+7186428a-485f-4858-8d89-022d22b2055c,d4579b01-5df4-4a37-90a7-1be070bf7e05,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-01-06,"Frequently arrives late to meetings, need to address punctuality."
+77c91cc0-157e-4439-9f65-28e130539ffb,a511d1f2-3f42-46b1-8ce8-0fc1eda03484,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2019-06-05,"Consistent performer, always meets deadlines."
+edea4d69-3522-4ddd-b42b-0941b80ea280,63ea8af5-49bb-4cc2-bd0b-f0db7263ce23,9c6389a2-f1aa-472a-a405-217b6094b685,2018-02-23,Requires too much supervision for senior-level tasks.
+54081d92-49fe-4f3d-891a-550415475085,3e2d6ef6-a477-4105-9cbc-0447b18f56b2,a344149f-bc18-412b-940e-29c201e37a54,2024-05-18,"Highly motivated, took initiative on the last project."
+2545fe6d-dd5b-468e-92d4-3f5fb4333492,30cbbd22-243e-4f2b-8b80-7eda9664bb1b,7005687a-9bf2-49a1-ada1-97c42963f3ed,2021-05-24,"Highly motivated, took initiative on the last project."
+97c86c8d-466f-40c0-8c11-4362cf139d89,35de6050-e5ca-4246-a36d-2ed83ac0b993,7e265d70-9188-4135-8f84-55b39076442e,2025-07-26,Has expressed interest in moving to a management role.
+48a41f69-9ae0-482e-9ed4-e3645c58d28f,dd5408b5-a2f9-493a-8594-e9dc4413cecb,93893360-8fd5-40d9-a827-3d8dc0d2f698,2021-03-02,Employee is showing great leadership potential.
+eb603445-2904-4d28-b5ba-b9a71b1d403e,3c793c83-b5d2-4c1e-ba41-d4343667fa67,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2021-10-29,Employee is showing great leadership potential.
+c7add8a2-672a-4894-a640-6b7d30b01938,3c793c83-b5d2-4c1e-ba41-d4343667fa67,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2023-12-17,"Highly motivated, took initiative on the last project."
+980fb63e-0d3b-4f17-9f3e-ea6e67a4e007,0ae1930c-73b7-4a96-9c27-86cc74e6674d,f9bec295-192b-427e-b468-b90a36d3ed6e,2018-09-11,"Going through some personal issues, performance slightly dipped but expected to recover."
+e4ff59ba-cc0c-4891-8ecb-7cd8491f16ef,0ae1930c-73b7-4a96-9c27-86cc74e6674d,f9bec295-192b-427e-b468-b90a36d3ed6e,2016-11-24,"Consistent performer, always meets deadlines."
+4c670909-dc13-42a7-a0cd-732010c235c3,637626c7-75c5-4b6b-85b0-87ef7145c5ba,c928550c-2338-463b-930a-29020041a190,2026-06-23,"Frequently arrives late to meetings, need to address punctuality."
+68299502-b793-4561-a616-f94b6066737f,637626c7-75c5-4b6b-85b0-87ef7145c5ba,c928550c-2338-463b-930a-29020041a190,2026-06-08,"Consistent performer, always meets deadlines."
+2edd0eb9-77bf-401d-84fa-ebe8bb59aba7,0d39f601-db45-4d94-80fc-af9657a7577b,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-08-30,Employee is showing great leadership potential.
+09ee5281-da92-4f6f-9a95-3a8d314b2159,0d39f601-db45-4d94-80fc-af9657a7577b,c3301c22-2b4b-4c7f-827f-90a886d47311,2026-04-19,Needs to work on communication skills with cross-functional teams.
+e775e1e9-d39d-4d72-a7d8-fb57819a140a,c35ede2b-81c0-4f9a-b989-74819a977673,75540a9f-e62c-4345-88b2-726080c8100d,2026-04-15,"Great team player, always willing to help peers."
+ae7f3559-43fe-4d6d-9dc5-e4ab0dce2efc,c35ede2b-81c0-4f9a-b989-74819a977673,75540a9f-e62c-4345-88b2-726080c8100d,2022-03-04,"Frequently arrives late to meetings, need to address punctuality."
+f4a4c378-9013-41ec-8e1b-a57282d3835f,61dae17f-9258-4064-9c7e-c0ad712a0c92,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-03-16,Needs to work on communication skills with cross-functional teams.
+d312d288-a731-49cb-8a03-855ccdd0737e,1929b0d2-8c21-4d3c-af92-653d47525339,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2020-05-15,"Great team player, always willing to help peers."
+4d0b2739-8911-4918-bc0a-b7ef929232ec,1929b0d2-8c21-4d3c-af92-653d47525339,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-12-05,"Highly motivated, took initiative on the last project."
+a86fbedd-52b8-401f-9e35-e158a69ad9a0,1891210e-5c22-4407-a48c-b15d94eb8d00,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-07-20,"Consistent performer, always meets deadlines."
+0958afa9-a43e-426f-b576-656ec2e09801,9b7f8d5d-d5d6-4c93-b4f8-b70c6b20b7e9,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2022-06-01,Requires too much supervision for senior-level tasks.
+06a32265-8c70-4c73-8664-f9664d82d1a1,9b7f8d5d-d5d6-4c93-b4f8-b70c6b20b7e9,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2024-07-10,Employee is showing great leadership potential.
+f474b810-d334-46af-ba5e-2807a264a61d,13f4f9d1-fdd6-4375-8e84-0394afb4507e,3cd82c5e-529d-4500-8d52-deee030c1ea3,2022-08-06,Needs to work on communication skills with cross-functional teams.
+db145db9-a868-4803-9019-079fbc962007,13f4f9d1-fdd6-4375-8e84-0394afb4507e,3cd82c5e-529d-4500-8d52-deee030c1ea3,2024-12-09,"Consistent performer, always meets deadlines."
+20487f38-5f13-4746-87e4-94b9e15d58ea,54b9faeb-4ca8-4631-9d61-6e8f5e6d513d,8a6cb659-c889-4932-ba72-818cd81574f2,2021-12-12,Has expressed interest in moving to a management role.
+8e645fbf-a403-4856-af4b-c6306e792064,54b9faeb-4ca8-4631-9d61-6e8f5e6d513d,8a6cb659-c889-4932-ba72-818cd81574f2,2022-12-13,"Consistent performer, always meets deadlines."
+ea8de01f-7d03-41d4-baaa-18d77a6d7ede,415b86a1-447e-411f-9904-2570e6e1fdd9,a344149f-bc18-412b-940e-29c201e37a54,2021-06-14,Has expressed interest in moving to a management role.
+08ae4f86-6ff3-4c5b-9ab4-885c4e596691,3547a4ae-e653-4fd6-9e4f-db2bce0fb0e3,7005687a-9bf2-49a1-ada1-97c42963f3ed,2017-02-06,"Highly motivated, took initiative on the last project."
+d3ba4afb-13a4-4e3b-8a93-948a2e986c84,590abfa1-ce8b-4a0f-81e2-d19ef0343901,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-01-20,"Going through some personal issues, performance slightly dipped but expected to recover."
+d74dbd90-2655-4654-86a2-b4f5d408dfbd,85cb7e8e-3649-4503-9bbc-1155e2c07f09,555ee223-e3a0-411a-bd41-37eb57af5802,2024-02-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+4cc35f94-399c-4dbf-b00e-9fd8e859dc69,b0960f3d-32e8-4b87-a639-670b4ee15fcc,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-02-21,Has expressed interest in moving to a management role.
+a09977d7-d1dd-4f41-9db0-bb7637060737,b0960f3d-32e8-4b87-a639-670b4ee15fcc,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-11-25,Needs to work on communication skills with cross-functional teams.
+943a8ab6-4ad5-410d-af05-c680699c44c7,f9177c39-864b-4304-9def-d3b29ece49ca,95fee654-165a-4426-8f15-5aa7615c5e52,2025-09-13,Has expressed interest in moving to a management role.
+68c4c5f7-7b78-41cc-831d-30ffdb289a5e,6cf7e23c-855f-442d-8da9-b6d9b7470361,c928550c-2338-463b-930a-29020041a190,2025-11-15,"Going through some personal issues, performance slightly dipped but expected to recover."
+ea6cfba8-d920-422d-993c-4e2347dac91d,7b594bde-977e-43f2-be60-51ca2caef4b4,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2023-09-28,"Highly motivated, took initiative on the last project."
+54a9466d-3d7d-4dc1-bb31-1e53aa68dbc3,271ae216-7d82-4453-904e-8dd318e4796f,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-07-26,"Struggling with the new tech stack, suggested additional training."
+78225de1-60ac-48b1-99de-8626510a9eae,eb18e7ee-fc21-4ef2-9c2d-bac4ee8f048c,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-09-29,"Great team player, always willing to help peers."
+d0ef6071-61bf-475a-83c6-4eb4eb9599a1,eb18e7ee-fc21-4ef2-9c2d-bac4ee8f048c,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-09-21,"Great team player, always willing to help peers."
+75055142-201a-44da-998b-0a88054a4622,f6443027-37fb-4f01-af99-f67244851ee0,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2022-05-24,"Highly motivated, took initiative on the last project."
+41b430c2-ad5d-4ec7-80d9-f826abce2c10,5c9df0de-492b-4c99-90ff-7c13ce595f0a,8a6cb659-c889-4932-ba72-818cd81574f2,2026-04-11,"Going through some personal issues, performance slightly dipped but expected to recover."
+99df0012-1b73-4773-9018-a4be57da1048,8a225533-6a9c-4736-a161-073cb26e989c,a344149f-bc18-412b-940e-29c201e37a54,2026-07-10,Requires too much supervision for senior-level tasks.
+873f799f-201b-4c1a-9c40-1a959db16fc0,8a225533-6a9c-4736-a161-073cb26e989c,a344149f-bc18-412b-940e-29c201e37a54,2026-06-16,Employee is showing great leadership potential.
+637a85c4-c9d3-4cde-9177-f34a8369ad5e,d245afd2-806c-4ee9-9cc4-f77f1678924c,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-02-19,"Highly motivated, took initiative on the last project."
+46370b76-6000-4350-8824-405bb465416a,3b918027-6ae6-44f5-8409-4a6b55db19f7,555ee223-e3a0-411a-bd41-37eb57af5802,2023-01-15,Has expressed interest in moving to a management role.
+93c5567e-4524-4579-8b89-2ece5befe3e6,3b918027-6ae6-44f5-8409-4a6b55db19f7,555ee223-e3a0-411a-bd41-37eb57af5802,2024-09-20,Needs to work on communication skills with cross-functional teams.
+6637d53a-f057-41d7-854a-8c635971c8d4,eca58caf-3448-4cf9-900e-db8379a75fd1,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2026-06-19,"Going through some personal issues, performance slightly dipped but expected to recover."
+11ca1054-e669-4465-9a33-25018acfae44,77437f99-ce95-4b42-b6c8-273228f5673c,8565ea1d-4f56-4a49-b00a-1ff7618021be,2021-10-16,Employee is showing great leadership potential.
+8655faf2-30f9-48a6-b333-00df7aa82be4,9a14dae9-5955-4cd7-9352-05cf0ce1f76c,95fee654-165a-4426-8f15-5aa7615c5e52,2026-04-27,"Struggling with the new tech stack, suggested additional training."
+75dcdef2-9f2a-4162-9cd9-d57645d5a402,9a14dae9-5955-4cd7-9352-05cf0ce1f76c,95fee654-165a-4426-8f15-5aa7615c5e52,2026-06-10,"Going through some personal issues, performance slightly dipped but expected to recover."
+2735fe1f-ea88-4808-8865-f07bd554cd14,01bebd44-1118-470e-ab89-f458de26f7e2,f9bec295-192b-427e-b468-b90a36d3ed6e,2022-12-19,"Going through some personal issues, performance slightly dipped but expected to recover."
+ac7a75d5-018b-426f-83ba-59b0c816b5c5,b44f6998-3679-4f1e-a566-9ea95ab83acf,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-02-01,"Consistent performer, always meets deadlines."
+8c0bf347-f4af-4afe-b23c-4bbf32bbebcc,8f3b2d87-6177-4ac6-8b97-d84398b5b24c,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2024-01-16,"Consistent performer, always meets deadlines."
+a4bd13d5-c2c3-4550-a76f-3678d7fff006,8f3b2d87-6177-4ac6-8b97-d84398b5b24c,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-04-01,"Going through some personal issues, performance slightly dipped but expected to recover."
+f5af5492-2ed2-4d86-a1a0-92897f372360,a1a709bf-9ff1-404f-9a20-27fc718ee7b4,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-05-27,"Highly motivated, took initiative on the last project."
+1b6e18b3-5f58-4293-b0fc-179136d9213c,a1a709bf-9ff1-404f-9a20-27fc718ee7b4,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-03-27,"Highly motivated, took initiative on the last project."
+78c05ac6-7fa7-467e-aa89-ef4fad87911f,8e258cd0-909d-4a6f-a31f-63086e0a2324,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-03-30,"Great team player, always willing to help peers."
+9dc760da-446a-4120-b635-7feb6fe8d2ad,8e258cd0-909d-4a6f-a31f-63086e0a2324,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-05-26,"Highly motivated, took initiative on the last project."
+a63d499c-6916-4877-94ee-d207658d6324,eba0678a-6cd5-467a-a78a-4ab0d8e50bc3,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2022-11-28,"Frequently arrives late to meetings, need to address punctuality."
+bead590e-cc13-4819-9280-958260b4159d,eba0678a-6cd5-467a-a78a-4ab0d8e50bc3,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2023-07-12,Needs to work on communication skills with cross-functional teams.
+41552a17-d098-4c2a-95a4-668cdb798dde,952b9457-0b6c-4f6c-9287-efce386960df,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-09-29,"Frequently arrives late to meetings, need to address punctuality."
+dc72ae50-769e-4b7b-b3f4-7302799aaa65,952b9457-0b6c-4f6c-9287-efce386960df,254e5290-7c0b-4c32-a48f-ce956be85d4a,2021-08-09,Needs to work on communication skills with cross-functional teams.
+4ff4d614-9147-4104-ab8f-3935d8de0ccf,3ee4a8b2-d98d-4bd6-a3a8-fd77f7a6ba53,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2026-01-15,Employee is showing great leadership potential.
+7b8b5a4b-1977-4c1a-9a6f-68261cffe22e,49025f02-8b29-4288-bc2b-45fd702761b7,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2026-06-08,"Frequently arrives late to meetings, need to address punctuality."
+797402f7-7c3d-4576-93ea-5d118bfc0d29,af2e1f25-de9f-4284-9242-8b49cfc30600,3cd82c5e-529d-4500-8d52-deee030c1ea3,2020-12-15,Employee is showing great leadership potential.
+577bf189-54fd-4772-b844-b6e031776d66,40b505c1-76f6-4580-866a-86a9cb4c44f2,ce210808-0643-4154-b355-0f4fdb9309a7,2026-03-23,"Great team player, always willing to help peers."
+3c58b0a0-5697-4417-9270-22e7bb7e69a7,18567d8c-45d1-4425-bba3-dedc715525de,630716e5-012e-462e-997f-4bddc29d22c6,2022-11-15,"Great team player, always willing to help peers."
+948efa54-62db-4c73-b0ec-b03874186200,5b58385b-e724-4ce0-98d2-b23d26d9fc12,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2026-02-16,Needs to work on communication skills with cross-functional teams.
+1228f122-3d70-4a4d-a888-14e0d00a4780,5b58385b-e724-4ce0-98d2-b23d26d9fc12,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2026-02-24,Employee is showing great leadership potential.
+aeb7e947-7fee-47c8-8cb0-124a75931c3f,d87e98fe-aa7b-4caf-ac65-73b1e6faa18d,8a6cb659-c889-4932-ba72-818cd81574f2,2024-03-03,"Great team player, always willing to help peers."
+924dde2f-0660-467d-bd80-d125b47c0688,d87e98fe-aa7b-4caf-ac65-73b1e6faa18d,8a6cb659-c889-4932-ba72-818cd81574f2,2026-01-05,"Struggling with the new tech stack, suggested additional training."
+ced3b551-ac4c-4932-aae9-ef12d3def6fe,f03ef8f4-23b9-42a0-901e-25cc43656199,a344149f-bc18-412b-940e-29c201e37a54,2021-06-12,"Struggling with the new tech stack, suggested additional training."
+1994bb41-865d-461b-97c9-7eea317e3159,f03ef8f4-23b9-42a0-901e-25cc43656199,a344149f-bc18-412b-940e-29c201e37a54,2023-12-28,Requires too much supervision for senior-level tasks.
+a543d62d-8248-47b5-b914-f0495d444b3f,2d3fc1f9-6d11-4754-a511-ed464204f3d3,ddf2f671-973b-4de9-afc4-04e64c763b88,2022-03-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+89b74fec-922d-45b4-bdde-6bda52a05b93,2d3fc1f9-6d11-4754-a511-ed464204f3d3,ddf2f671-973b-4de9-afc4-04e64c763b88,2020-09-01,"Consistent performer, always meets deadlines."
+8d0c07e7-b694-4c23-8a44-8ffc1f43e338,0bf9d595-3962-445b-bf0d-10c3f8304888,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2023-09-13,"Consistent performer, always meets deadlines."
+970dfd6c-6e1b-418b-ac26-5b8d76f0d3c8,0148d784-6c51-4ba7-a2bf-64f8b45296ca,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2024-04-02,Employee is showing great leadership potential.
+7be954ff-a640-4f4f-acdb-286724becfef,77593479-b6b7-4198-9003-56e7d4b7d3fe,95fee654-165a-4426-8f15-5aa7615c5e52,2025-05-03,Needs to work on communication skills with cross-functional teams.
+ab137a81-de08-403a-96b6-05d63688ee15,77593479-b6b7-4198-9003-56e7d4b7d3fe,95fee654-165a-4426-8f15-5aa7615c5e52,2026-03-28,"Frequently arrives late to meetings, need to address punctuality."
+debe1d28-4bfa-463a-9599-b93ea0d56c2c,c7199121-5c2a-4b11-965f-5fabf8946d13,c928550c-2338-463b-930a-29020041a190,2025-03-03,Employee is showing great leadership potential.
+041488de-6bc9-4d61-84b7-83fa13268d87,c5993fae-47fc-4973-8c45-23e5bdec2279,c3301c22-2b4b-4c7f-827f-90a886d47311,2026-02-19,"Struggling with the new tech stack, suggested additional training."
+606e9283-6220-4356-a6d5-33f31adbe526,c5993fae-47fc-4973-8c45-23e5bdec2279,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-12-24,"Highly motivated, took initiative on the last project."
+0640fd41-2776-4963-af7f-4e44095a3003,45159234-e6d1-4aec-962a-72e4a762e31f,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-11-13,"Highly motivated, took initiative on the last project."
+6fbb0162-bba4-484d-882e-60f3053ef1bb,45159234-e6d1-4aec-962a-72e4a762e31f,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2023-05-27,"Struggling with the new tech stack, suggested additional training."
+277eb003-41dd-4dc7-bde4-e199949787da,f2da5281-5fad-47d8-8c2f-efe51f6cf5ca,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-01-17,"Consistent performer, always meets deadlines."
+14e8f465-cdbf-4eaf-bbc6-5f30c4905ef2,c53b411f-ab6c-409c-a1b3-81ef8f16300a,254e5290-7c0b-4c32-a48f-ce956be85d4a,2026-07-14,"Frequently arrives late to meetings, need to address punctuality."
+2a9f6d53-cf3f-4261-afe9-5b29e883c307,b46ad5a2-f188-4c6e-a8a6-984e736ac4af,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-10-04,"Frequently arrives late to meetings, need to address punctuality."
+29a8f0e5-ade2-45cf-a9a7-05fe4aea17ad,b46ad5a2-f188-4c6e-a8a6-984e736ac4af,8763f813-0fd1-448e-ae96-bd0f6be5d249,2024-08-11,"Going through some personal issues, performance slightly dipped but expected to recover."
+8137a9ed-584f-431d-a40c-55c62cb55a1d,a92888bd-cb8b-4eac-9250-96267efc1074,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2026-03-31,"Consistent performer, always meets deadlines."
+5c3cc67a-6020-4407-8533-30357662e871,a92888bd-cb8b-4eac-9250-96267efc1074,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2026-03-05,Needs to work on communication skills with cross-functional teams.
+6b72cbcf-b16f-49fa-97eb-ab5cd0ff5830,87714701-33ce-4a1f-b50b-9751fdf8bd40,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2020-10-28,"Going through some personal issues, performance slightly dipped but expected to recover."
+28904814-627c-405b-8a4b-2698503122eb,87714701-33ce-4a1f-b50b-9751fdf8bd40,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2023-08-16,Requires too much supervision for senior-level tasks.
+b5226b3f-c502-452a-95a5-448b6ae05251,4341cf20-704d-4ce4-a55a-74994facd575,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2025-04-17,"Great team player, always willing to help peers."
+9c4376aa-9ec0-4ec3-8166-63e211e553bf,426017a8-588a-4376-84bd-063c333d1da8,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2025-12-15,"Struggling with the new tech stack, suggested additional training."
+6f851ee5-5dd0-4ab6-b18f-d192857f3ce8,9579d4d2-81a7-4a16-a5a5-8308e6093578,8a6cb659-c889-4932-ba72-818cd81574f2,2025-11-16,"Highly motivated, took initiative on the last project."
+d893f20b-27f9-4dc9-87c8-cb3a4eb31cfd,9579d4d2-81a7-4a16-a5a5-8308e6093578,8a6cb659-c889-4932-ba72-818cd81574f2,2024-05-18,"Highly motivated, took initiative on the last project."
+e51dd45b-4532-497f-9270-3952d76a5d01,9a4eec7e-93fc-48c6-b37f-811f065c1bd2,9c6389a2-f1aa-472a-a405-217b6094b685,2023-03-28,"Consistent performer, always meets deadlines."
+4e958d06-4d8d-4fb6-b901-66c2ecbffe06,9a4eec7e-93fc-48c6-b37f-811f065c1bd2,9c6389a2-f1aa-472a-a405-217b6094b685,2023-06-05,Requires too much supervision for senior-level tasks.
+ee2bcfea-0622-42ae-812a-a01f3b7fc127,82eb394d-597a-4913-aa41-88b994d6e6dc,a344149f-bc18-412b-940e-29c201e37a54,2025-08-26,"Great team player, always willing to help peers."
+a460e392-b761-465b-9676-0f93c342fe32,82eb394d-597a-4913-aa41-88b994d6e6dc,a344149f-bc18-412b-940e-29c201e37a54,2024-07-27,"Great team player, always willing to help peers."
+fc11056f-8859-486e-b816-c4889ef3d020,87f3ed1a-bedf-4646-bf21-4e298fcf4b1e,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-08-10,"Highly motivated, took initiative on the last project."
+099fe109-1f07-4e73-a418-56695c1daebf,87f3ed1a-bedf-4646-bf21-4e298fcf4b1e,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2026-01-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+6802114e-7a6a-4a25-9370-3c0c7ddd96d5,58bab088-49cd-4894-834b-1906efcbb635,93893360-8fd5-40d9-a827-3d8dc0d2f698,2019-01-04,"Going through some personal issues, performance slightly dipped but expected to recover."
+9d15b7a0-91ff-422c-8e84-6a6a82e09322,22b2e1ea-b73d-4484-963d-2fe633fc684e,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2020-05-22,"Frequently arrives late to meetings, need to address punctuality."
+edf46e01-908f-4608-9561-6873a8061c54,22b2e1ea-b73d-4484-963d-2fe633fc684e,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2019-08-18,Needs to work on communication skills with cross-functional teams.
+148fc5a2-64e8-4799-8d99-8e5e61d03dd7,a46efb1d-ce51-4b74-8a8f-68abcd4f9cf3,c928550c-2338-463b-930a-29020041a190,2025-07-30,"Consistent performer, always meets deadlines."
+14869031-3636-4aec-8b21-43528827fc49,a46efb1d-ce51-4b74-8a8f-68abcd4f9cf3,c928550c-2338-463b-930a-29020041a190,2025-06-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+7db75168-6c7d-4b10-90c1-a817981d3e56,3331ba84-dbcc-41ed-a54b-3e61970d091b,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-04-25,"Highly motivated, took initiative on the last project."
+60f9240c-28e4-4039-afa4-c9423a31251b,3331ba84-dbcc-41ed-a54b-3e61970d091b,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-10-28,"Struggling with the new tech stack, suggested additional training."
+1caa2d51-2fc9-4e5e-8912-39c1178b7ee3,ee8a5a47-cfeb-40a2-add7-6523b26c3581,75540a9f-e62c-4345-88b2-726080c8100d,2025-11-16,"Frequently arrives late to meetings, need to address punctuality."
+b613d940-9cc4-4035-836d-017aae5ad13c,0071ef89-d819-4571-96e2-17beed1d9bd5,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2024-06-12,"Great team player, always willing to help peers."
+13866822-5534-484d-9e13-96c73f76fecf,aa78e4dc-723d-4fb4-a497-353e301addff,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2022-01-12,Requires too much supervision for senior-level tasks.
+a0c869c1-b4bb-49fb-82b4-919a9d05a43e,41b607e3-086a-4f91-8dd5-a03e7b0b9760,254e5290-7c0b-4c32-a48f-ce956be85d4a,2020-08-31,"Highly motivated, took initiative on the last project."
+444016f3-80e2-4ece-a2ef-d59236d66ffb,41b607e3-086a-4f91-8dd5-a03e7b0b9760,254e5290-7c0b-4c32-a48f-ce956be85d4a,2017-11-22,Requires too much supervision for senior-level tasks.
+7512b4b1-0ab0-45d7-80a3-56397e82de18,434e954d-95c6-4dcb-bf99-46e4359e0d7f,ce210808-0643-4154-b355-0f4fdb9309a7,2026-01-30,Has expressed interest in moving to a management role.
+88ffbdde-47a5-4d0a-af3a-31c2ed086267,434e954d-95c6-4dcb-bf99-46e4359e0d7f,ce210808-0643-4154-b355-0f4fdb9309a7,2025-11-13,"Frequently arrives late to meetings, need to address punctuality."
+f54f07f0-f3af-462b-9924-a56862b76b9c,1b8191bb-2c80-4fcb-b510-ad67390cbcdf,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2025-10-03,Needs to work on communication skills with cross-functional teams.
+7b2044a1-ec38-45c6-a009-cd4a113192ae,ef674495-dac5-40ca-b768-a032a82bf40d,8a6cb659-c889-4932-ba72-818cd81574f2,2021-03-08,"Great team player, always willing to help peers."
+4924ab51-107b-4a28-8e07-f414c2b93daf,2e066e6b-aa88-442a-9dbd-144500215a83,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-04-21,"Frequently arrives late to meetings, need to address punctuality."
+caa36c3f-362c-4f30-b3f8-bd0a4bea4a19,9dd96f56-4626-4d14-8bb7-d9b2a3127e86,ddf2f671-973b-4de9-afc4-04e64c763b88,2023-12-31,Requires too much supervision for senior-level tasks.
+08be6331-421b-430d-899d-ab46fa5c2844,6762b8a6-1e07-4de5-adc9-f44a8e5b59bc,555ee223-e3a0-411a-bd41-37eb57af5802,2025-01-06,"Frequently arrives late to meetings, need to address punctuality."
+21c1c512-c59b-4df3-9290-4ada3d57fffe,64400506-a5c0-4475-8bff-6c6f3d777d4a,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2024-09-25,"Going through some personal issues, performance slightly dipped but expected to recover."
+0d345909-bc88-4499-aa97-e55463b83293,d637552a-0f6e-4801-afe8-e524ca81d2b1,f9bec295-192b-427e-b468-b90a36d3ed6e,2022-09-06,"Highly motivated, took initiative on the last project."
+5ab497ba-528c-426a-bfca-488eb947a2af,54336b59-52db-4720-bc2b-95bf349523e7,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-05-14,"Highly motivated, took initiative on the last project."
+9efef158-a807-44dd-ba27-26345ae5488f,6612ac8c-b655-4db5-a0c7-4e929c14fd5b,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-11-23,Requires too much supervision for senior-level tasks.
+d142e384-7884-4894-af0c-67941bd9497f,6612ac8c-b655-4db5-a0c7-4e929c14fd5b,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-12-17,"Going through some personal issues, performance slightly dipped but expected to recover."
+eba27cda-4fba-4a7f-880b-536e99f8b574,84b5fd68-9e8c-45a6-9eb1-f5c502ed0a13,8763f813-0fd1-448e-ae96-bd0f6be5d249,2022-04-09,Requires too much supervision for senior-level tasks.
+fa59d932-fe6b-4e73-b2ee-150a8564e1e1,5ad4857a-5d72-4d39-867d-a5d44ad8e369,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-05-02,Needs to work on communication skills with cross-functional teams.
+57406002-8c57-4004-95b3-c921eaf239d5,5ad4857a-5d72-4d39-867d-a5d44ad8e369,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-09-07,"Highly motivated, took initiative on the last project."
+99763138-6bfa-4a4f-a9e3-e7b1dc40c7c2,6cfb0320-3671-4bf7-9fe9-1897df5ee50c,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2025-05-19,"Frequently arrives late to meetings, need to address punctuality."
+c1bba706-4d60-4551-a63d-87f95c472d39,6cfb0320-3671-4bf7-9fe9-1897df5ee50c,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2022-04-15,Needs to work on communication skills with cross-functional teams.
+2586258d-0d9c-41dd-b2f2-7be869120bf8,11d1ad61-d4b9-4814-8145-d852e92a62f2,a344149f-bc18-412b-940e-29c201e37a54,2025-09-25,"Great team player, always willing to help peers."
+1293f4f1-13bd-4d6c-88c1-3890fee312de,11d1ad61-d4b9-4814-8145-d852e92a62f2,a344149f-bc18-412b-940e-29c201e37a54,2025-02-24,"Consistent performer, always meets deadlines."
+54a43867-4461-445d-9b8c-3e7703adb526,31ece175-b6fa-4d06-9388-8273f23b481c,7e265d70-9188-4135-8f84-55b39076442e,2025-12-27,"Highly motivated, took initiative on the last project."
+96068411-b18f-4c4d-90e0-132aa4f7647b,c60406b2-0de1-4564-9443-7ecd07e33d04,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-01-01,"Frequently arrives late to meetings, need to address punctuality."
+c27b1f99-b235-4fa4-af5b-83c21b054881,3e1dd2c2-a2ce-46e7-a7e3-5fbdeb1c3110,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-07-16,"Great team player, always willing to help peers."
+596d686a-b3d4-420f-8713-3c20d0e6a0d5,4d593cad-711c-4d6a-95cb-bc601930f37a,95fee654-165a-4426-8f15-5aa7615c5e52,2025-12-10,"Frequently arrives late to meetings, need to address punctuality."
+c617aabc-b3de-4787-a3f6-b34909817231,4d593cad-711c-4d6a-95cb-bc601930f37a,95fee654-165a-4426-8f15-5aa7615c5e52,2026-02-21,Employee is showing great leadership potential.
+38b939ae-0fbd-48b7-92e6-76c9012f8d35,91031108-a379-4327-9058-da0a3634b783,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-02-07,"Great team player, always willing to help peers."
+98b03259-07ff-4328-978f-6cac881599b3,91031108-a379-4327-9058-da0a3634b783,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2023-07-04,"Great team player, always willing to help peers."
+fa60cd84-6652-4fc6-b1ea-2abb171e9d26,a84ca342-b410-429f-a875-f43a2b5d66d7,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2024-08-03,"Struggling with the new tech stack, suggested additional training."
+c08cb2af-b29a-4424-856f-71e5fcd60b44,ba26fc77-07aa-46cf-992b-be7a8c3ec8cb,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2023-12-31,"Great team player, always willing to help peers."
+3c1a740f-f50c-4f89-9315-26bf767ed65b,ba26fc77-07aa-46cf-992b-be7a8c3ec8cb,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2020-04-02,"Frequently arrives late to meetings, need to address punctuality."
+f3f90cd2-05fa-425a-802f-14c86d8fc8d0,6d00c746-90ac-4831-8b0f-4cf696a631d1,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-07-27,"Frequently arrives late to meetings, need to address punctuality."
+cfe45465-32de-40e5-8c15-e2bd08a2aad5,4dfd46e1-2dbb-4917-9471-23b9f4b0817d,8763f813-0fd1-448e-ae96-bd0f6be5d249,2026-04-05,Requires too much supervision for senior-level tasks.
+4d3c57a5-aef0-41c5-887c-1be364b7a304,4dfd46e1-2dbb-4917-9471-23b9f4b0817d,8763f813-0fd1-448e-ae96-bd0f6be5d249,2026-02-05,"Great team player, always willing to help peers."
+7a4c6876-aef1-4aec-a0c2-4cd68ad78537,56b6b381-f04e-458f-b62d-26cc85af43a8,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2022-08-24,"Struggling with the new tech stack, suggested additional training."
+6c702180-65e5-466e-b34d-086d086a017d,56b6b381-f04e-458f-b62d-26cc85af43a8,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2020-08-10,Needs to work on communication skills with cross-functional teams.
+b5b2270f-b7c7-4354-ad94-1c38728945bb,5aa9883b-27a7-466e-a9d9-15e790fafcee,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2019-06-26,"Great team player, always willing to help peers."
+c8410b72-ace1-4715-9a5d-709b7995f6a5,286aa56c-2d2a-4360-ab6a-7af75db36c78,ce210808-0643-4154-b355-0f4fdb9309a7,2024-08-15,"Frequently arrives late to meetings, need to address punctuality."
+ad6a5daa-48ec-4631-997f-966e794e99c1,286aa56c-2d2a-4360-ab6a-7af75db36c78,ce210808-0643-4154-b355-0f4fdb9309a7,2022-11-27,Requires too much supervision for senior-level tasks.
+da65296b-154e-4f5e-a43a-cb2470440ee1,20027bc6-c876-4238-8314-eeeee912fe4d,630716e5-012e-462e-997f-4bddc29d22c6,2022-07-13,"Highly motivated, took initiative on the last project."
+37407676-db4b-4d9c-95a9-9a8156dbca1c,fd2eb560-ff18-45d7-8674-3c52943ba503,8a6cb659-c889-4932-ba72-818cd81574f2,2018-01-14,Employee is showing great leadership potential.
+a0dbfbc8-98b9-44cf-9975-bdd52534d3f0,fd2eb560-ff18-45d7-8674-3c52943ba503,8a6cb659-c889-4932-ba72-818cd81574f2,2022-11-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+6aad4317-34b8-4754-a7a4-dcd9fa812b42,011168f7-88fe-40d8-9db6-c860c2bac25f,7e265d70-9188-4135-8f84-55b39076442e,2026-03-13,"Consistent performer, always meets deadlines."
+5eba852a-c1be-4ce9-b04e-5fd8ec9949f2,dc206570-0614-4142-9502-c447b1e2b856,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-03-31,"Highly motivated, took initiative on the last project."
+b8669060-bb79-4a2c-981d-d6056834f013,d5ea108e-2290-465f-8fc4-82b456ed7b2d,8565ea1d-4f56-4a49-b00a-1ff7618021be,2025-06-12,Requires too much supervision for senior-level tasks.
+16ce1f72-575e-4049-86a5-3d94c54c4832,d5ea108e-2290-465f-8fc4-82b456ed7b2d,8565ea1d-4f56-4a49-b00a-1ff7618021be,2026-03-07,"Struggling with the new tech stack, suggested additional training."
+92396a64-997f-42c8-a69b-f98379355191,53bcb883-806c-495a-8f3b-40f40d27b37e,c928550c-2338-463b-930a-29020041a190,2025-09-17,Employee is showing great leadership potential.
+b7993db6-518e-4dc4-8e86-3c4b94b329e8,53bcb883-806c-495a-8f3b-40f40d27b37e,c928550c-2338-463b-930a-29020041a190,2024-03-01,Requires too much supervision for senior-level tasks.
+145531fb-116a-437d-879c-8234cfe7ceb7,1dee5559-3cd8-4929-99db-eae0e04d3099,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-07-12,"Frequently arrives late to meetings, need to address punctuality."
+1307f628-56e1-4c9c-8caf-950eb6f34eb9,1dee5559-3cd8-4929-99db-eae0e04d3099,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2023-09-26,Has expressed interest in moving to a management role.
+2e897e68-5a7a-4df2-acb2-6d8850a353ba,32883f59-9a74-402b-83fb-7835b62dc743,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-03-05,Has expressed interest in moving to a management role.
+11b70f4f-5184-4bc0-80cf-6e3114acdb6c,32883f59-9a74-402b-83fb-7835b62dc743,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-01-27,"Great team player, always willing to help peers."
+49d77750-be3f-4d52-b363-7c1fb7eb4e93,d09b4bdf-6e61-4a22-8a31-7b47d83bdc29,8763f813-0fd1-448e-ae96-bd0f6be5d249,2022-10-07,"Great team player, always willing to help peers."
+8aca5495-0241-480d-a5c7-2bfe44641d66,d09b4bdf-6e61-4a22-8a31-7b47d83bdc29,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-08-30,"Highly motivated, took initiative on the last project."
+f64ed709-ed6b-4f15-bb3a-cc2971261f9a,916d1222-063c-48ba-af92-9f76d7ceb2f3,3cd82c5e-529d-4500-8d52-deee030c1ea3,2021-09-03,Employee is showing great leadership potential.
+d452e2c5-bf23-410a-a9f0-9304b81b93f7,916d1222-063c-48ba-af92-9f76d7ceb2f3,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-01-09,Needs to work on communication skills with cross-functional teams.
+3d5f9f71-b740-4050-a0d5-4eb51c3dea2f,829dbebd-ea99-481c-b349-ae234eb411bc,ce210808-0643-4154-b355-0f4fdb9309a7,2026-07-04,"Frequently arrives late to meetings, need to address punctuality."
+ad1e6e78-9fec-409e-8730-41e264d3fbed,c811708b-ca55-4008-97a2-f746ae3b2c10,9c6389a2-f1aa-472a-a405-217b6094b685,2026-02-16,Employee is showing great leadership potential.
+72b16354-b70d-4037-926d-366019a8ebe6,c755a280-c7ca-4208-a1b6-1f0107f1dd36,7e265d70-9188-4135-8f84-55b39076442e,2017-10-11,"Consistent performer, always meets deadlines."
+161e507e-151d-4911-89b2-cd820b5ec853,53ef8ca1-1644-4d68-8dc1-9d5d73df8bf9,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-08-16,"Great team player, always willing to help peers."
+e4a645b6-20f7-47b6-a1c3-5a8c17cf8742,53ef8ca1-1644-4d68-8dc1-9d5d73df8bf9,93893360-8fd5-40d9-a827-3d8dc0d2f698,2019-07-18,"Frequently arrives late to meetings, need to address punctuality."
+a6f4392e-6d93-44f3-86d5-f92ed1288dea,056e5db3-6f38-44ba-96f7-3720357f9de2,ddf2f671-973b-4de9-afc4-04e64c763b88,2018-04-20,"Great team player, always willing to help peers."
+d85d2013-c6ec-485a-83d6-edd44d71aee5,b004433f-55ff-42ee-bad6-d27ec7064fcb,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-10-11,"Frequently arrives late to meetings, need to address punctuality."
+e21ad29e-c33c-4c3c-a66e-2b1ec600382d,ae57c921-d9de-49f8-b1f9-96f7ffc7c49c,f9bec295-192b-427e-b468-b90a36d3ed6e,2023-12-05,"Highly motivated, took initiative on the last project."
+e72d0206-72d0-417d-aa73-ab6f44f28da5,be66fda1-20e3-4c70-ad47-78b7e4193a1a,c928550c-2338-463b-930a-29020041a190,2026-07-26,"Great team player, always willing to help peers."
+585ec162-67c4-491d-a5b9-d33c89e6a041,be66fda1-20e3-4c70-ad47-78b7e4193a1a,c928550c-2338-463b-930a-29020041a190,2025-01-24,"Consistent performer, always meets deadlines."
+0611f521-3cbb-4664-a6df-5e4677ecfd24,a8c31cfb-7def-43ba-a37b-c330d42514fd,c3301c22-2b4b-4c7f-827f-90a886d47311,2023-12-16,"Highly motivated, took initiative on the last project."
+8e7f5c71-a53f-4e72-9701-cf8dad231e86,a8c31cfb-7def-43ba-a37b-c330d42514fd,c3301c22-2b4b-4c7f-827f-90a886d47311,2020-09-23,Needs to work on communication skills with cross-functional teams.
+98974ef9-6d6c-4209-b1c1-d7f169266a9e,a7ba7e59-ad90-4ac5-8c0b-2df086f9ce7e,75540a9f-e62c-4345-88b2-726080c8100d,2023-06-07,"Consistent performer, always meets deadlines."
+de33dcdb-20fc-49dc-ba2d-35ffca239017,a7ba7e59-ad90-4ac5-8c0b-2df086f9ce7e,75540a9f-e62c-4345-88b2-726080c8100d,2023-11-28,Employee is showing great leadership potential.
+74fcb5b0-6833-49d8-8d6a-0998c9cee1b0,f5b363c2-afd7-497b-a151-6c3d9278da01,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-05-30,Employee is showing great leadership potential.
+5929c25c-da78-429d-8b32-82891f02aa49,78bece57-9e3b-4e61-8cc6-3d088c9dd217,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-06-09,"Struggling with the new tech stack, suggested additional training."
+fd48ad34-0dc6-4551-a909-3f59c1311e4b,88d4b059-e245-4002-adbb-cbf5da7f34e5,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2021-08-15,Employee is showing great leadership potential.
+df71fb68-c362-4d8d-89c1-2a8fa532065f,88d4b059-e245-4002-adbb-cbf5da7f34e5,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2020-11-02,"Struggling with the new tech stack, suggested additional training."
+84ad9299-684a-4eed-9d01-899e4a3210b8,ac262dd4-3e8c-40af-bfb8-d1cf57dd944a,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2016-06-28,"Going through some personal issues, performance slightly dipped but expected to recover."
+34eda9c4-07fc-4473-b5bf-e159b26e95f0,b9c9cfbc-25f2-4579-afe5-fde8c7b33016,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-02-08,"Frequently arrives late to meetings, need to address punctuality."
+c4c5069f-d752-4558-b4c8-fed635a2d7e3,58738fd4-61d1-486a-b4f5-77e98edafd96,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2023-10-09,"Highly motivated, took initiative on the last project."
+a05542f7-a7ff-45eb-9d0f-2ca9d0404f95,58738fd4-61d1-486a-b4f5-77e98edafd96,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2023-11-09,Requires too much supervision for senior-level tasks.
+d6cea39e-1e50-43c7-8dcd-190b251c85ea,acc35cdb-6d42-4140-a3fc-8c9299cef06e,7e265d70-9188-4135-8f84-55b39076442e,2021-05-13,"Struggling with the new tech stack, suggested additional training."
+a5513cc0-63f6-46d0-bdf1-0c4eafbdd03c,acc35cdb-6d42-4140-a3fc-8c9299cef06e,7e265d70-9188-4135-8f84-55b39076442e,2019-06-19,Needs to work on communication skills with cross-functional teams.
+3086c525-782b-4004-ba93-3160f932eb6d,275cfec0-3ac1-46f5-8fb3-7e8926a9162c,ddf2f671-973b-4de9-afc4-04e64c763b88,2026-05-04,"Highly motivated, took initiative on the last project."
+d1c89fff-06a0-4fe6-bbce-7689ec91db1b,275cfec0-3ac1-46f5-8fb3-7e8926a9162c,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-12-24,Employee is showing great leadership potential.
+3c5fe213-580a-4ac8-9846-85b38255282c,7e1d8e45-bdd4-4165-bdff-135f6d4bbbf5,555ee223-e3a0-411a-bd41-37eb57af5802,2020-04-22,"Struggling with the new tech stack, suggested additional training."
+4c863573-12a3-4c08-a3cf-08cf34bcda8d,83cd71af-5486-4dea-8fbd-21279e0b1337,8565ea1d-4f56-4a49-b00a-1ff7618021be,2025-04-11,Employee is showing great leadership potential.
+7042eb58-8906-4fa1-87bc-82798031da6c,83cd71af-5486-4dea-8fbd-21279e0b1337,8565ea1d-4f56-4a49-b00a-1ff7618021be,2025-04-24,"Going through some personal issues, performance slightly dipped but expected to recover."
+f5dfe775-a420-481b-a6c6-e94b95bd498d,29014431-6fae-49c0-ab0a-e429b2075f07,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-04-04,Employee is showing great leadership potential.
+12cccb8d-42af-42a4-a4a5-99223b11648d,09aa3abb-a394-4796-b3e6-ee41b6705ba1,c928550c-2338-463b-930a-29020041a190,2023-11-04,Requires too much supervision for senior-level tasks.
+2ab41323-3aa2-4866-8148-ddfd95d76319,52d4d9d4-288f-4ab2-a4cf-1f1e671b41ed,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2023-04-30,"Frequently arrives late to meetings, need to address punctuality."
+92e04e92-73f2-40fe-8f95-35ab56235c05,bfc6287a-3543-4c1a-9d0a-4561ccfa3c9a,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-03-24,Requires too much supervision for senior-level tasks.
+d0d73008-bb69-4947-9878-5dbcfde8757b,146ca6bd-7c39-4fb6-b9c3-0d13f6157ab8,8763f813-0fd1-448e-ae96-bd0f6be5d249,2020-04-04,"Highly motivated, took initiative on the last project."
+7f66bc95-1029-403f-a207-1d10dd39b38a,8ff28551-a22d-4654-b397-b1fefab19613,ce210808-0643-4154-b355-0f4fdb9309a7,2021-02-26,"Going through some personal issues, performance slightly dipped but expected to recover."
+07e2b2ab-b091-4c9f-8ca9-134ab264326b,536b713f-830d-4ea2-914e-b7fc4b2872ed,9c6389a2-f1aa-472a-a405-217b6094b685,2023-10-21,Has expressed interest in moving to a management role.
+0ed1c3a6-a21e-4acb-8f39-c902fe1fb6d4,cd494ebb-2ae7-445c-b8d6-3bc4b4edf2bd,a344149f-bc18-412b-940e-29c201e37a54,2025-05-04,"Struggling with the new tech stack, suggested additional training."
+533728c6-85df-4ed6-9cd2-7a19aed3de61,a7446ab4-7102-423f-9fba-04a947ef8f77,7005687a-9bf2-49a1-ada1-97c42963f3ed,2025-10-18,"Going through some personal issues, performance slightly dipped but expected to recover."
+11bfcf38-f8ee-4a72-aff1-851610d6e496,d515e15c-23f9-4830-a716-37945599ff64,7e265d70-9188-4135-8f84-55b39076442e,2023-09-29,Requires too much supervision for senior-level tasks.
+611661de-9cd2-476f-acab-55c88c02e20c,285609e8-8174-44a3-9399-c8f481a96f48,93893360-8fd5-40d9-a827-3d8dc0d2f698,2026-01-12,"Going through some personal issues, performance slightly dipped but expected to recover."
+89b76626-9be3-4044-81db-eb65e36b3a68,285609e8-8174-44a3-9399-c8f481a96f48,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-03-17,"Consistent performer, always meets deadlines."
+1ee7846f-5886-4a4f-803e-9976afe11790,b2f3980e-5c87-495e-84ac-6b945462e7aa,ddf2f671-973b-4de9-afc4-04e64c763b88,2017-03-16,"Great team player, always willing to help peers."
+d03041b1-5572-4c58-8bb9-c8db418669ab,8605af7a-e2ab-4b55-ad5b-d181b54a510e,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2024-03-05,"Frequently arrives late to meetings, need to address punctuality."
+9a201a44-d215-419c-945b-9406c5da07ae,40eef62f-e8bf-4228-bbbd-37142c1c062e,95fee654-165a-4426-8f15-5aa7615c5e52,2026-05-28,Needs to work on communication skills with cross-functional teams.
+122802f0-9b12-45ba-aa8d-a1d052cb70ef,fd417534-f6ef-4ef9-b022-9e680f544c49,f9bec295-192b-427e-b468-b90a36d3ed6e,2025-10-27,Requires too much supervision for senior-level tasks.
+69a5cdf1-81e4-4a48-9387-0be6eca30931,fd417534-f6ef-4ef9-b022-9e680f544c49,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-01-27,"Consistent performer, always meets deadlines."
+3bb22c5d-b1c8-43ad-800c-bfdbef511651,5e6adabc-c67c-4c10-af34-451987e77d02,c928550c-2338-463b-930a-29020041a190,2025-07-25,"Frequently arrives late to meetings, need to address punctuality."
+27c9306e-762c-4262-a0b9-db579e2283ae,81760ea4-c439-48e9-8c91-7f0334f64bc2,c3301c22-2b4b-4c7f-827f-90a886d47311,2026-01-01,Requires too much supervision for senior-level tasks.
+ee4ad649-8558-4b14-b612-5d6b0ebb57d0,81760ea4-c439-48e9-8c91-7f0334f64bc2,c3301c22-2b4b-4c7f-827f-90a886d47311,2026-05-03,Needs to work on communication skills with cross-functional teams.
+b75e0811-ddb6-4a1c-83ce-9735c6c7e118,0f0635c1-4892-4d16-b2a7-ebb091613e24,75540a9f-e62c-4345-88b2-726080c8100d,2024-03-18,"Great team player, always willing to help peers."
+7e429d41-fb5e-4188-95c0-e1768130a8f2,0f0635c1-4892-4d16-b2a7-ebb091613e24,75540a9f-e62c-4345-88b2-726080c8100d,2025-01-14,Employee is showing great leadership potential.
+4dd32dd7-5658-4127-aee7-7e54fa147425,ef9c038e-0d72-44c2-bcdb-0f2656894b01,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2021-07-19,"Great team player, always willing to help peers."
+fedd97d4-0112-483e-b0dd-96a59c0dad26,624c8f6b-bf5b-46e0-9813-1d131ae22257,254e5290-7c0b-4c32-a48f-ce956be85d4a,2026-06-17,"Great team player, always willing to help peers."
+d6d4c920-203f-49e8-8c3b-f605fa07422b,adeba690-c7dc-4045-adeb-edc1b0e077c8,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2021-04-14,"Going through some personal issues, performance slightly dipped but expected to recover."
+05f3d926-91d2-42bd-b27f-463b6029f248,adeba690-c7dc-4045-adeb-edc1b0e077c8,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2023-10-21,"Going through some personal issues, performance slightly dipped but expected to recover."
+d3ce7edf-d5c8-4ee6-9297-9d932e1004e3,b62f8ff9-acd8-4dc7-9cd1-a8810769f4da,3cd82c5e-529d-4500-8d52-deee030c1ea3,2017-12-15,"Great team player, always willing to help peers."
+7368b1a2-47e0-4ae7-972a-91c3e3ad347a,7969975c-c1d0-4009-81b3-1e2018929b2a,ce210808-0643-4154-b355-0f4fdb9309a7,2023-03-09,"Struggling with the new tech stack, suggested additional training."
+ba7c1635-542f-4264-af2e-61c564adccb8,37fe32f1-7d1b-4103-844b-7d57cf1a2eeb,630716e5-012e-462e-997f-4bddc29d22c6,2023-12-27,"Highly motivated, took initiative on the last project."
+53e5f8d4-c025-4585-ad24-94f11e38b70f,e09062e5-8328-4920-a097-4c3f39ee4f82,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2022-08-05,"Going through some personal issues, performance slightly dipped but expected to recover."
+50ece811-ae6f-4826-8e8d-a60714c25527,e09062e5-8328-4920-a097-4c3f39ee4f82,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2025-10-16,"Great team player, always willing to help peers."
+d2fbc8c0-7d04-45cf-9ad2-1cef74496c0c,5f31c788-787f-4ecb-8553-addbf650bc83,8a6cb659-c889-4932-ba72-818cd81574f2,2025-04-16,"Consistent performer, always meets deadlines."
+2eeeb6d2-95e7-411d-b0ce-6e27cb2bc5a1,0127052a-f096-4894-a079-54d215f9672d,9c6389a2-f1aa-472a-a405-217b6094b685,2019-04-09,Needs to work on communication skills with cross-functional teams.
+253c1ca0-5e47-4056-ace9-01ff084273a3,0127052a-f096-4894-a079-54d215f9672d,9c6389a2-f1aa-472a-a405-217b6094b685,2018-11-16,Has expressed interest in moving to a management role.
+25455bb6-0d34-4f32-a258-ebe0218561b5,069ebd8f-3be5-403d-9ed1-79857e077af0,a344149f-bc18-412b-940e-29c201e37a54,2024-09-01,Employee is showing great leadership potential.
+1731facd-1b49-4212-bbf6-1712ff533691,96e7e382-845a-409f-bff7-5d69bd2a2324,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-01-31,"Frequently arrives late to meetings, need to address punctuality."
+42a4fbde-4dbb-487f-b9c4-c2dd95dc2348,96e7e382-845a-409f-bff7-5d69bd2a2324,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2024-12-16,Requires too much supervision for senior-level tasks.
+b21084f1-5826-49b7-add8-81363b6f9538,868026f7-3834-47ee-b79b-c348f576bf3c,93893360-8fd5-40d9-a827-3d8dc0d2f698,2024-11-22,"Going through some personal issues, performance slightly dipped but expected to recover."
+43ffb8d4-95e0-45d2-a00f-523920a5eb56,868026f7-3834-47ee-b79b-c348f576bf3c,93893360-8fd5-40d9-a827-3d8dc0d2f698,2021-10-12,"Highly motivated, took initiative on the last project."
+9ed93cce-ce38-4737-a474-992f20ac6c4c,5418c9ed-bd49-4560-8cdd-013490d6ed61,ddf2f671-973b-4de9-afc4-04e64c763b88,2020-11-18,"Going through some personal issues, performance slightly dipped but expected to recover."
+a1501a42-1577-492f-b80a-382327a27b13,c15b9258-b2b0-4e68-8ef8-8b7bbc49d127,555ee223-e3a0-411a-bd41-37eb57af5802,2026-05-21,"Highly motivated, took initiative on the last project."
+a689c299-801f-40ad-b8db-240d5abf5c96,89df571a-4771-4bb0-8178-0f09cb2c1bb8,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-05-29,Needs to work on communication skills with cross-functional teams.
+16908020-ca92-4de8-9dd3-af5bccc00ddd,6c87975b-7e5b-4ca6-a513-66a23630182b,f9bec295-192b-427e-b468-b90a36d3ed6e,2018-01-30,Employee is showing great leadership potential.
+2d388342-0140-43c8-92b6-c1fec780a2f7,6c87975b-7e5b-4ca6-a513-66a23630182b,f9bec295-192b-427e-b468-b90a36d3ed6e,2021-12-04,"Consistent performer, always meets deadlines."
+ed73c695-4940-4027-8e31-87bf066f044b,47af4a90-e529-4e30-95c5-63e2d9dd7f3b,c928550c-2338-463b-930a-29020041a190,2026-01-24,Employee is showing great leadership potential.
+1ff6360a-fe7d-438b-8c8c-6631dff8003f,30d075c8-4fbd-4ba1-8417-840a3ef88269,75540a9f-e62c-4345-88b2-726080c8100d,2026-06-14,Has expressed interest in moving to a management role.
+16dc6b66-ba62-4495-9512-b8482292907c,30d075c8-4fbd-4ba1-8417-840a3ef88269,75540a9f-e62c-4345-88b2-726080c8100d,2026-07-17,"Going through some personal issues, performance slightly dipped but expected to recover."
+0477e9a0-2d26-426b-b1df-08a027ef79aa,aabe383e-8452-4eac-940f-49b281e27b3b,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-01-04,Needs to work on communication skills with cross-functional teams.
+2dde7f04-82ef-4b53-8ade-60aac21fc09a,aabe383e-8452-4eac-940f-49b281e27b3b,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-07-12,"Highly motivated, took initiative on the last project."
+df188afb-e790-4813-8eb2-3495521e6f83,7f0d57cd-9054-49da-9b9c-a873aa435bc9,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-06-20,Needs to work on communication skills with cross-functional teams.
+62165c41-2e75-4999-ad55-e28ecf20174a,7f0d57cd-9054-49da-9b9c-a873aa435bc9,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2023-11-02,Requires too much supervision for senior-level tasks.
+cdfc0c34-53fb-4caf-8b14-cd5ac3a799f1,1f6b1a9e-67d2-4b45-9497-2a06540ca811,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-09-06,"Highly motivated, took initiative on the last project."
+12ac106a-b2e7-4460-a1a5-ce4aef01cde8,1f6b1a9e-67d2-4b45-9497-2a06540ca811,254e5290-7c0b-4c32-a48f-ce956be85d4a,2023-11-13,"Consistent performer, always meets deadlines."
+55da17f5-b467-4911-a8db-cb1c80afab15,343a844d-4465-4444-a46c-af0d2fe97c97,8763f813-0fd1-448e-ae96-bd0f6be5d249,2024-02-03,Has expressed interest in moving to a management role.
+27cc9eb6-0924-468d-9758-725306e1d516,cea2eebc-2eda-4606-bd0b-0c03b4646b60,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2022-12-06,Has expressed interest in moving to a management role.
+0a2eb5e6-285f-4b03-ba44-a66fcebd4e6f,5a62fe7d-fe8f-4c9c-a01d-77f55b4982d2,630716e5-012e-462e-997f-4bddc29d22c6,2021-09-19,Needs to work on communication skills with cross-functional teams.
+57fcc9dc-ae33-4fae-a5d8-e597c6ee2845,2dd42de6-52f6-494f-b3b1-f22dbd7abbdb,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2020-12-27,Has expressed interest in moving to a management role.
+5593e3c9-d1d7-4099-8c04-dccea47b15a1,2dd42de6-52f6-494f-b3b1-f22dbd7abbdb,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2017-06-12,"Going through some personal issues, performance slightly dipped but expected to recover."
+6ff8b7f3-5803-4281-9b0a-a898acb21fa4,cb350cea-0614-46d2-9fd5-cce839cb892a,8a6cb659-c889-4932-ba72-818cd81574f2,2020-04-11,"Highly motivated, took initiative on the last project."
+c589d7cb-c131-4640-93b9-da03e9147de5,cb350cea-0614-46d2-9fd5-cce839cb892a,8a6cb659-c889-4932-ba72-818cd81574f2,2023-09-19,Employee is showing great leadership potential.
+3eb499c2-5157-4e05-9b3e-2757b6a3dee6,07ca2091-62e1-4477-bfc0-5987e69a9e19,7e265d70-9188-4135-8f84-55b39076442e,2026-02-15,Employee is showing great leadership potential.
+bf367071-703e-4841-a3d9-a3640ea5b676,cfb6203e-4529-4a7b-8656-3bb53768ab4e,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2017-07-19,"Highly motivated, took initiative on the last project."
+5dd0415f-8bf5-472c-8982-90b79f19a682,b3663891-6ab9-42ec-96f9-d755e9c7dd4c,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-06-07,Requires too much supervision for senior-level tasks.
+13e043e6-cc1c-43c4-92b2-9305a2914a85,b3663891-6ab9-42ec-96f9-d755e9c7dd4c,93893360-8fd5-40d9-a827-3d8dc0d2f698,2020-06-07,"Frequently arrives late to meetings, need to address punctuality."
+ae584c7e-47dd-4c87-afa5-64a14fb136be,4186c1e7-e3ab-4cd8-a778-d4202da1548e,ddf2f671-973b-4de9-afc4-04e64c763b88,2025-12-04,Needs to work on communication skills with cross-functional teams.
+e2bef592-34b6-409b-82ed-d29fb005f9e0,4186c1e7-e3ab-4cd8-a778-d4202da1548e,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-12-30,"Frequently arrives late to meetings, need to address punctuality."
+50b3b98e-1b68-4207-93a3-55f23e7d107f,825b247d-4364-4737-9b18-74bdf3c03c03,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2026-02-28,"Struggling with the new tech stack, suggested additional training."
+05f3d676-1520-42ad-8d6e-8cc2a5c7abc3,825b247d-4364-4737-9b18-74bdf3c03c03,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-10-27,"Frequently arrives late to meetings, need to address punctuality."
+4def6f6f-20a2-4a39-84b8-cf0e345f22c3,e15a58f5-b608-4bc8-93f8-d9e848934639,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2024-12-17,"Struggling with the new tech stack, suggested additional training."
+0a7fcf99-71f7-4b19-8efb-a2b86e164ec7,e15a58f5-b608-4bc8-93f8-d9e848934639,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2024-02-28,Employee is showing great leadership potential.
+3df593be-7eef-4bf4-9116-5d26e0c5d41a,daf2b43a-e08b-41ff-b3f5-f7d5cb5e11b7,f9bec295-192b-427e-b468-b90a36d3ed6e,2022-06-09,"Great team player, always willing to help peers."
+b946aea1-9b0e-4047-8f5b-def442c202cb,daf2b43a-e08b-41ff-b3f5-f7d5cb5e11b7,f9bec295-192b-427e-b468-b90a36d3ed6e,2017-02-23,"Going through some personal issues, performance slightly dipped but expected to recover."
+0c7de320-598c-47be-b713-a3ce73216214,3468031c-5ae6-4384-9660-19ac14697b4f,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2022-12-21,Needs to work on communication skills with cross-functional teams.
+ac9b0f4d-9c48-4b49-8389-7c88de21fe67,c38e1a3e-0f34-487b-9809-8aeacce6d48e,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2024-10-13,"Highly motivated, took initiative on the last project."
+d557eac8-bb09-411e-8101-8579bc362843,ec3b260f-abb4-49e2-adb6-689effd80023,254e5290-7c0b-4c32-a48f-ce956be85d4a,2023-04-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+6dbe2bab-9fb4-4a8b-aacc-bc75b69458fb,ec3b260f-abb4-49e2-adb6-689effd80023,254e5290-7c0b-4c32-a48f-ce956be85d4a,2022-02-22,"Highly motivated, took initiative on the last project."
+0c4f5e38-4fec-49e5-8f45-f67270b2317b,2d091cf2-0ad5-4444-98a8-4ed7bdbed977,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-11-22,"Consistent performer, always meets deadlines."
+e5395e19-2bb2-411a-902c-700f7cd66f10,97aa3c2a-41e6-4df7-8d1b-4b55270f141a,3cd82c5e-529d-4500-8d52-deee030c1ea3,2020-06-07,"Highly motivated, took initiative on the last project."
+22e35778-576b-4eca-993d-d2269a882c9c,55a83463-a9ca-4df2-ba6c-109647adbc4e,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2025-10-17,"Consistent performer, always meets deadlines."
+eee5e326-a289-4e94-92f5-6ab87dfeb7af,a9f566c2-a9a4-4b0e-afb2-4c4125f4ba08,9c6389a2-f1aa-472a-a405-217b6094b685,2023-06-28,Requires too much supervision for senior-level tasks.
+5398250c-7581-4eef-b00b-547aa7e6534e,a9f566c2-a9a4-4b0e-afb2-4c4125f4ba08,9c6389a2-f1aa-472a-a405-217b6094b685,2021-07-09,"Going through some personal issues, performance slightly dipped but expected to recover."
+0ab889d8-2bc5-48c5-9d6d-34aae052c3a6,046e35af-6ab1-4222-b895-20ed1a9a0929,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2023-01-26,"Consistent performer, always meets deadlines."
+08df57d3-a005-4863-bbe7-ead70da43c56,046e35af-6ab1-4222-b895-20ed1a9a0929,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2024-01-26,Employee is showing great leadership potential.
+81dd1867-b60c-46a6-97e7-f7e64920cbca,9131cb47-86da-419b-91f1-52d7a19ba080,93893360-8fd5-40d9-a827-3d8dc0d2f698,2023-03-11,Requires too much supervision for senior-level tasks.
+c1761cf4-ca84-4013-ba4d-f6d038d9848d,9131cb47-86da-419b-91f1-52d7a19ba080,93893360-8fd5-40d9-a827-3d8dc0d2f698,2024-08-31,Employee is showing great leadership potential.
+41628c4e-8760-4281-b5ab-49646e4fd411,447b7c9e-220d-431f-a81e-1c6354ee6230,555ee223-e3a0-411a-bd41-37eb57af5802,2026-07-07,"Frequently arrives late to meetings, need to address punctuality."
+0f56e543-db4e-4e69-b94b-b219af9d7c22,447b7c9e-220d-431f-a81e-1c6354ee6230,555ee223-e3a0-411a-bd41-37eb57af5802,2026-01-07,"Highly motivated, took initiative on the last project."
+a477e109-6a8d-4e87-8f1f-ab1857069c52,ebab6662-070a-419b-80c3-f194ddd1606d,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2025-09-23,Employee is showing great leadership potential.
+9c8271e8-56dc-495d-946b-5dd561d12135,308320d8-7791-415d-b87b-187752b7fa44,8565ea1d-4f56-4a49-b00a-1ff7618021be,2026-07-24,"Great team player, always willing to help peers."
+f9c124e8-62f9-40a2-b6da-8cd5b1e335c1,308320d8-7791-415d-b87b-187752b7fa44,8565ea1d-4f56-4a49-b00a-1ff7618021be,2026-07-15,"Frequently arrives late to meetings, need to address punctuality."
+9b69feef-a610-47a8-99b8-ec32fadb3406,7fcedad5-94b0-40a8-8de2-b161e5f4d014,95fee654-165a-4426-8f15-5aa7615c5e52,2025-01-15,"Consistent performer, always meets deadlines."
+d76b6ee0-1239-4a5e-8a2a-3b04f13b7ec7,74d41aa4-3b21-401c-a924-87fedaacb0a9,75540a9f-e62c-4345-88b2-726080c8100d,2022-09-15,"Going through some personal issues, performance slightly dipped but expected to recover."
+819ecd80-3124-45f6-b2e6-b46672c05a0a,58ce0f3c-6201-4a45-b875-e5eff56a6ade,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-07-21,"Highly motivated, took initiative on the last project."
+85d75ab7-46fa-4d56-baca-088bbdc0c6b9,0f979152-581c-4fd6-be6d-42353b9c85f6,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-06-15,"Frequently arrives late to meetings, need to address punctuality."
+f306de4c-0a5b-45a0-86b7-76674c669eac,0f979152-581c-4fd6-be6d-42353b9c85f6,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2024-07-20,Has expressed interest in moving to a management role.
+32761069-263e-4e7a-957b-4b3f77e8e759,a24f9987-1898-49ad-af10-29a8f40a92be,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2024-03-31,Employee is showing great leadership potential.
+579f8550-9fe4-463d-96fa-c97fbc89ebf4,a24f9987-1898-49ad-af10-29a8f40a92be,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2022-01-01,Needs to work on communication skills with cross-functional teams.
+e93c52f9-45df-4dfa-b110-1f0c26427504,1cf45958-68fd-4f04-8f79-b0756ad19915,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-05-06,"Highly motivated, took initiative on the last project."
+d6da0040-e72d-4abf-a4f4-ccf5f50c338a,c14d22eb-8000-4ea6-8b9a-f6b553849931,ce210808-0643-4154-b355-0f4fdb9309a7,2026-04-25,Needs to work on communication skills with cross-functional teams.
+8d37a512-cb5e-4636-a3d1-a7b3037ef8a7,f414b8c5-935d-4617-9c96-beaf04dad2ac,630716e5-012e-462e-997f-4bddc29d22c6,2025-12-06,Requires too much supervision for senior-level tasks.
+3f3d09aa-76d3-4021-ae0e-d15bf7ffe18d,f414b8c5-935d-4617-9c96-beaf04dad2ac,630716e5-012e-462e-997f-4bddc29d22c6,2023-12-19,Has expressed interest in moving to a management role.
+476f8b1a-1dc8-4d8c-9403-b6636e0d5058,0109d323-4161-4e28-bf83-7c563194813e,8a6cb659-c889-4932-ba72-818cd81574f2,2024-08-09,"Struggling with the new tech stack, suggested additional training."
+f57a603e-3795-4da4-a93c-0cf7a91d3629,0109d323-4161-4e28-bf83-7c563194813e,8a6cb659-c889-4932-ba72-818cd81574f2,2026-06-16,"Great team player, always willing to help peers."
+385b2ccc-3cd0-4ce7-aa8d-51f23715ea74,6ee03486-2af8-4fbf-98ab-16affaa26892,7005687a-9bf2-49a1-ada1-97c42963f3ed,2023-01-07,"Consistent performer, always meets deadlines."
+98a4e79d-6fed-46f1-8c8a-d2322fb50f50,f35713e7-6b72-4672-afa6-7e7266e0b9f2,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2023-05-23,"Struggling with the new tech stack, suggested additional training."
+b31dce70-6c66-4238-bef1-d3e0a897ee16,55162126-9506-490e-94cb-3287f4a3d450,93893360-8fd5-40d9-a827-3d8dc0d2f698,2026-05-10,"Going through some personal issues, performance slightly dipped but expected to recover."
+df62c96d-0f51-49ff-806a-6669c0fe85e3,87c433b2-be5d-4884-ba5b-ca1d22f62d29,ddf2f671-973b-4de9-afc4-04e64c763b88,2025-09-10,"Consistent performer, always meets deadlines."
+14bbe909-4447-4808-9254-dd4cd8446817,16be0ce7-92a6-44c9-abf8-69e090239e1c,555ee223-e3a0-411a-bd41-37eb57af5802,2021-01-26,"Great team player, always willing to help peers."
+4e5db79d-c75e-495c-bd9c-60a4e4987132,16be0ce7-92a6-44c9-abf8-69e090239e1c,555ee223-e3a0-411a-bd41-37eb57af5802,2017-05-29,"Highly motivated, took initiative on the last project."
+074f25cb-f00d-4b56-a242-7173793c88ef,c00d5da4-bc6b-47cd-b7d9-69cccf1dc78b,95fee654-165a-4426-8f15-5aa7615c5e52,2025-08-24,"Consistent performer, always meets deadlines."
+aa7225c4-37a5-4a43-b682-27e66c8bcd7e,97abfefc-be61-4a18-8f02-9808dadf85a1,f9bec295-192b-427e-b468-b90a36d3ed6e,2020-06-23,Employee is showing great leadership potential.
+2f44d591-a3e6-44b0-b474-d4b730c896a9,3ea381de-26bc-44e5-a2bc-980fa5d8d0e9,c928550c-2338-463b-930a-29020041a190,2016-11-13,Has expressed interest in moving to a management role.
+0f96dd0e-066d-41c4-9899-2bbd97eed36e,037d99b9-d6ed-48d8-84f3-d574cb4181cd,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-10-27,"Struggling with the new tech stack, suggested additional training."
+3cd319b0-109e-4246-9a50-336cb55636b4,07175cad-6ef8-4e22-9520-8384bd845e43,254e5290-7c0b-4c32-a48f-ce956be85d4a,2017-09-29,Needs to work on communication skills with cross-functional teams.
+3ca8bb71-c5b4-4d5b-83d8-17dd64609bea,d74dda28-3516-4966-a0f4-14cf6144b912,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2024-11-09,"Highly motivated, took initiative on the last project."
+91411f22-ffc3-41c1-bb00-fb9a7805294f,d74dda28-3516-4966-a0f4-14cf6144b912,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2023-02-20,Employee is showing great leadership potential.
+0606b5e3-431e-4d8d-bd94-4b9162d7ad7e,5497aa38-7bb2-4741-a8e0-60b866a80f0b,ce210808-0643-4154-b355-0f4fdb9309a7,2020-10-04,"Consistent performer, always meets deadlines."
+8351cbad-7a37-424e-a6b7-9c4775aeafbd,253a8c43-5955-4509-9be4-ce79c6fb9fb8,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2022-01-13,"Frequently arrives late to meetings, need to address punctuality."
+864000b9-7a60-4804-9c79-a69412d2158f,253a8c43-5955-4509-9be4-ce79c6fb9fb8,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2022-01-22,"Great team player, always willing to help peers."
+630515dd-610e-44d3-8d94-fa5de4164d58,3f91b2b7-025c-4157-8493-e8226acdb09f,9c6389a2-f1aa-472a-a405-217b6094b685,2025-09-28,Needs to work on communication skills with cross-functional teams.
+c27e269e-7c0c-4020-905f-13350b750d9e,a9e19fee-2c87-4521-b4f0-ccee72963123,93893360-8fd5-40d9-a827-3d8dc0d2f698,2024-10-08,"Great team player, always willing to help peers."
+39f5729c-a5e8-40aa-bf41-f662400ea8ba,a9e19fee-2c87-4521-b4f0-ccee72963123,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-09-16,"Great team player, always willing to help peers."
+ee65d68a-ebb9-4c0e-94d9-f6d45be8c807,4177ef66-633c-47fa-bab3-e82fd01e57c1,555ee223-e3a0-411a-bd41-37eb57af5802,2026-05-27,Needs to work on communication skills with cross-functional teams.
+69d8f585-1f92-4d91-8d29-af850efdce18,20a1548d-dd08-4a7c-90a7-089d991d8c37,8565ea1d-4f56-4a49-b00a-1ff7618021be,2023-02-01,"Going through some personal issues, performance slightly dipped but expected to recover."
+0142e987-70bf-441d-8899-584187600ac1,20a1548d-dd08-4a7c-90a7-089d991d8c37,8565ea1d-4f56-4a49-b00a-1ff7618021be,2017-03-29,"Going through some personal issues, performance slightly dipped but expected to recover."
+c1eabec6-d191-4118-ab40-268043bd95d9,b8778e8e-6df6-48b8-81b7-d8bfeed50620,75540a9f-e62c-4345-88b2-726080c8100d,2025-12-06,Needs to work on communication skills with cross-functional teams.
+28f9df88-abd9-451a-b1ec-b14e7f0a72d9,b8778e8e-6df6-48b8-81b7-d8bfeed50620,75540a9f-e62c-4345-88b2-726080c8100d,2023-08-03,"Going through some personal issues, performance slightly dipped but expected to recover."
+bb909155-a25d-4b19-87f2-fe7b08157f6f,110861bf-b09d-4198-9f1a-24daae3f31c1,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-09-28,"Going through some personal issues, performance slightly dipped but expected to recover."
+dcbbfcf1-7986-4e72-9da0-6f47c162f988,698422ab-59b8-4b33-b9cf-af9dfe7bf128,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2022-09-30,"Struggling with the new tech stack, suggested additional training."
+a6ea69a9-04fc-4ead-ac84-56ca03b509d5,0e3d50b0-9f6d-4027-944f-eb939f49d418,3cd82c5e-529d-4500-8d52-deee030c1ea3,2021-03-26,"Consistent performer, always meets deadlines."
+bc236c39-3371-4632-abed-1d0f9000401c,0e3d50b0-9f6d-4027-944f-eb939f49d418,3cd82c5e-529d-4500-8d52-deee030c1ea3,2022-04-20,"Frequently arrives late to meetings, need to address punctuality."
+73f4b4da-338f-4cee-b814-96954ee6774a,7e1754bc-e414-4c0d-b369-2e192a560019,630716e5-012e-462e-997f-4bddc29d22c6,2026-02-06,"Great team player, always willing to help peers."
+23e892ae-520b-49e9-89e4-0f2ca48d5a36,4d23052d-c019-4a6c-ba23-db32ec0e3943,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2020-04-17,Requires too much supervision for senior-level tasks.
+f8c4f85a-5dbb-4bea-871e-1f6aa60f33f4,0cbeae72-6e5c-4985-98e3-1aa23488844c,8a6cb659-c889-4932-ba72-818cd81574f2,2025-12-02,Employee is showing great leadership potential.
+beeb9337-7346-45a5-91be-df916db37dbc,b3a5dfd4-0f02-4acc-9c24-0d304cde358a,7005687a-9bf2-49a1-ada1-97c42963f3ed,2018-09-02,"Consistent performer, always meets deadlines."
+80faccb2-292f-482f-823d-51e55d1e5936,b3a5dfd4-0f02-4acc-9c24-0d304cde358a,7005687a-9bf2-49a1-ada1-97c42963f3ed,2025-08-04,"Going through some personal issues, performance slightly dipped but expected to recover."
+aaf65485-48da-435f-b6f1-f4c4db9a55ba,862ac4e8-dbb1-49a4-8710-4dbd4bd44a03,7e265d70-9188-4135-8f84-55b39076442e,2025-08-24,"Frequently arrives late to meetings, need to address punctuality."
+bdddab73-8065-4b99-812e-4401b96e3db6,862ac4e8-dbb1-49a4-8710-4dbd4bd44a03,7e265d70-9188-4135-8f84-55b39076442e,2024-08-27,Has expressed interest in moving to a management role.
+d60b82b9-c42c-48e1-80c7-29803b18b1e5,bcb5d6e5-8ce5-4cba-a76d-2daa09746619,93893360-8fd5-40d9-a827-3d8dc0d2f698,2021-12-24,Needs to work on communication skills with cross-functional teams.
+75b35664-a65b-4ca6-bb1d-33af29585d98,43178cb0-940a-4410-acf8-94df38642e42,ddf2f671-973b-4de9-afc4-04e64c763b88,2022-12-10,"Consistent performer, always meets deadlines."
+93a2af3d-070d-4a9f-a004-3a6e5f768a58,43178cb0-940a-4410-acf8-94df38642e42,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-01-12,"Going through some personal issues, performance slightly dipped but expected to recover."
+096e1a65-ff69-407b-beae-660c10aca816,354c0cd2-675d-465b-9f52-ff6c9d0d6bbd,555ee223-e3a0-411a-bd41-37eb57af5802,2018-12-01,Has expressed interest in moving to a management role.
+f60a0391-ab2d-4042-9e90-f8207f14022f,354c0cd2-675d-465b-9f52-ff6c9d0d6bbd,555ee223-e3a0-411a-bd41-37eb57af5802,2022-09-15,Requires too much supervision for senior-level tasks.
+7f024435-f51c-4843-ac2e-508ef3df4f9b,9bcd4f89-f228-49ed-8ca6-df0a12ecf206,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-06-25,"Great team player, always willing to help peers."
+a3827031-f1b6-4c12-ba92-6f37f4a3afdf,8c819dbf-da8e-493c-87d0-370d69ebab04,95fee654-165a-4426-8f15-5aa7615c5e52,2025-12-21,"Consistent performer, always meets deadlines."
+826b43e4-b117-4640-bfe4-0a8bc2c645c3,4af8911a-e7a1-476a-b31d-cfd11f4264a4,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-07-22,Needs to work on communication skills with cross-functional teams.
+25e36ebe-23cb-42ef-afb2-2db30643ccee,4af8911a-e7a1-476a-b31d-cfd11f4264a4,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2022-08-10,Employee is showing great leadership potential.
+b0963b5e-72d4-4cf9-b26e-c182bec1a9e8,2b5a4332-2d72-47db-862a-ac862e49884a,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-05-25,"Highly motivated, took initiative on the last project."
+539d5c35-f61d-4cb4-9390-abd2fa5329e2,2b5a4332-2d72-47db-862a-ac862e49884a,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-03-15,"Going through some personal issues, performance slightly dipped but expected to recover."
+d546aa7c-de32-4466-82e0-d2c9f3fac465,a349958f-9995-4ebd-8a9a-ffcddeba301e,254e5290-7c0b-4c32-a48f-ce956be85d4a,2026-06-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+7772999d-b713-48c9-853e-03c38c29ca53,87e1ccb0-ba54-4e25-ad4d-311b146c3a3a,8763f813-0fd1-448e-ae96-bd0f6be5d249,2017-11-04,Employee is showing great leadership potential.
+28303aad-9d2d-4385-aa66-2aaf82c35180,4a50b556-ad7a-4e4b-babc-44df194b99df,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2024-09-21,Employee is showing great leadership potential.
+b4ca9fcf-34cb-45d6-90f6-27db28ef31b0,3daa4c72-3d41-4276-a5a7-21c6eda6cffe,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-04-15,Has expressed interest in moving to a management role.
+bb155753-9c07-488c-a1b0-c227c470e401,3daa4c72-3d41-4276-a5a7-21c6eda6cffe,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2021-10-17,Needs to work on communication skills with cross-functional teams.
+c1fc10e7-1048-4c23-9d35-6ec80d9d0b8e,d030a013-cc6a-476a-8d24-e757a1a7dc67,3cd82c5e-529d-4500-8d52-deee030c1ea3,2024-11-16,"Highly motivated, took initiative on the last project."
+a8584132-b8e6-483f-80bf-30b4779fe18c,3b3e8c20-735f-4539-a33e-4ebf50191aaa,8a6cb659-c889-4932-ba72-818cd81574f2,2025-05-14,"Frequently arrives late to meetings, need to address punctuality."
+4e761750-8fd3-487a-b4ad-1110de67dfec,3b3e8c20-735f-4539-a33e-4ebf50191aaa,8a6cb659-c889-4932-ba72-818cd81574f2,2026-03-09,"Great team player, always willing to help peers."
+6e89f573-0d76-4625-8e82-eb798599ff7b,5ab92a63-9337-4866-ab82-8506f79299fd,9c6389a2-f1aa-472a-a405-217b6094b685,2017-12-12,Employee is showing great leadership potential.
+ab457284-506a-4621-bcdd-91f14761c8d4,5db818af-461a-49e1-9ad2-53844f8c5020,a344149f-bc18-412b-940e-29c201e37a54,2026-06-03,"Struggling with the new tech stack, suggested additional training."
+ca80b61b-3a26-4d35-a70c-8ffbd0f462a1,38ccb3e3-de72-4954-8d3f-281fd95790c9,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-06-22,"Great team player, always willing to help peers."
+21ac13f5-1211-4b50-8a74-31a0f731ff32,8866cbb3-d703-4d0f-bd06-80490a70b4e3,93893360-8fd5-40d9-a827-3d8dc0d2f698,2024-08-01,Has expressed interest in moving to a management role.
+4d9d13d7-b6a8-422c-8fad-fa076fea37a5,8866cbb3-d703-4d0f-bd06-80490a70b4e3,93893360-8fd5-40d9-a827-3d8dc0d2f698,2023-12-02,"Consistent performer, always meets deadlines."
+1505f36d-aeca-4aa1-a245-bf9a8f87f075,947198b7-2986-4829-8eab-15262ce6c062,ddf2f671-973b-4de9-afc4-04e64c763b88,2020-03-14,Needs to work on communication skills with cross-functional teams.
+ce604ca9-a752-4a46-a2bf-be75528786bf,5909711d-7a37-43ac-a5d7-33cfc365c1ae,555ee223-e3a0-411a-bd41-37eb57af5802,2022-12-10,Needs to work on communication skills with cross-functional teams.
+8ccfd661-1ec0-4763-ad32-5e5824dafd3e,5909711d-7a37-43ac-a5d7-33cfc365c1ae,555ee223-e3a0-411a-bd41-37eb57af5802,2021-07-11,"Going through some personal issues, performance slightly dipped but expected to recover."
+6e562ed1-29fe-417f-8b10-5b66b28cef14,6c016a8a-80fe-4e9e-9846-ff0d10722b43,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2025-12-23,Has expressed interest in moving to a management role.
+777d8ddf-581f-4448-a789-40966c39b2a6,6c016a8a-80fe-4e9e-9846-ff0d10722b43,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2022-09-18,"Frequently arrives late to meetings, need to address punctuality."
+38e6e528-f1e7-44b2-9356-06e288792aa6,25d7caf9-9bec-4061-895c-741789c2a487,c928550c-2338-463b-930a-29020041a190,2023-01-12,Has expressed interest in moving to a management role.
+434a0bea-e635-4ed6-b0ea-7159b0154549,796e0429-995b-450c-adab-1b28cafc3025,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-05-18,"Frequently arrives late to meetings, need to address punctuality."
+080535fb-cdb2-42ff-9428-d61821e80f99,796e0429-995b-450c-adab-1b28cafc3025,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-06-11,Requires too much supervision for senior-level tasks.
+9bad6349-8a43-41c9-baac-8d4c6043268e,dca44805-44b0-4a77-aaf7-0737e193bc50,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2024-07-21,Needs to work on communication skills with cross-functional teams.
+6b5d1833-a73d-42b1-ae8d-9a28ff6ebe9d,dca44805-44b0-4a77-aaf7-0737e193bc50,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-07-25,"Struggling with the new tech stack, suggested additional training."
+3e1d5dce-3fe9-4e2a-9892-70304002058f,9986cd52-64b0-45eb-9fc3-61918b9944cf,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2019-05-08,Employee is showing great leadership potential.
+b9b939bb-c05a-40ef-a047-1e7aed56bee4,9986cd52-64b0-45eb-9fc3-61918b9944cf,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2017-08-10,"Highly motivated, took initiative on the last project."
+466b2221-d84e-4cb4-8fc5-5ce733eb6fc7,d5bbae0b-f39f-4e92-8297-a44e20bbf5a2,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2026-07-12,"Consistent performer, always meets deadlines."
+fe467aa5-1f0a-4045-b384-979e19a23bff,d5bbae0b-f39f-4e92-8297-a44e20bbf5a2,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2024-01-12,"Frequently arrives late to meetings, need to address punctuality."
+f54fed47-3a7b-4e0f-b7c1-632a17589261,7f2cc4eb-dbed-4a9c-806c-13c0f57a8ad2,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-08-13,Needs to work on communication skills with cross-functional teams.
+1f2574af-e5bf-4f98-8a2a-25a517bd3a97,7f2cc4eb-dbed-4a9c-806c-13c0f57a8ad2,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2023-10-05,"Going through some personal issues, performance slightly dipped but expected to recover."
+86abedf9-6bc2-43af-b597-f2cadda18ade,801b2cfb-4bcd-491f-a149-9bacae60561c,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2025-06-20,"Great team player, always willing to help peers."
+490cea58-0aac-444f-98f6-6858d626c773,0485a9cc-c4c4-4738-bb60-b6639ad97c66,8a6cb659-c889-4932-ba72-818cd81574f2,2018-09-01,"Going through some personal issues, performance slightly dipped but expected to recover."
+632a6232-6532-4a6c-bfd7-02aea1af264a,0485a9cc-c4c4-4738-bb60-b6639ad97c66,8a6cb659-c889-4932-ba72-818cd81574f2,2021-11-05,"Great team player, always willing to help peers."
+72315e1e-eefe-4a36-aa73-1de5af34ada4,4f5a3934-b6fd-47eb-ab9a-f3abbf415dc5,9c6389a2-f1aa-472a-a405-217b6094b685,2020-10-14,Has expressed interest in moving to a management role.
+aa066706-16b9-4f46-a4f4-7890bd61ef81,14d62a82-1f69-4bd0-972d-5171ee409ca9,a344149f-bc18-412b-940e-29c201e37a54,2020-09-21,"Highly motivated, took initiative on the last project."
+fe49c109-fa69-4bb6-bc48-4d5ab020b362,14d62a82-1f69-4bd0-972d-5171ee409ca9,a344149f-bc18-412b-940e-29c201e37a54,2018-12-05,Needs to work on communication skills with cross-functional teams.
+d07a6cc7-546b-4aec-853f-6d996b01d182,5f571e5c-3906-4785-9056-cff3151f260d,7005687a-9bf2-49a1-ada1-97c42963f3ed,2023-12-07,"Highly motivated, took initiative on the last project."
+21d65041-e619-44ba-912b-5bc5f5b01a7a,03797b76-30cb-4436-adb7-3ffe929f9f7c,7e265d70-9188-4135-8f84-55b39076442e,2023-12-24,"Going through some personal issues, performance slightly dipped but expected to recover."
+9dd760b0-e129-4930-bec9-7b1ad7ac8a56,03797b76-30cb-4436-adb7-3ffe929f9f7c,7e265d70-9188-4135-8f84-55b39076442e,2025-11-28,Needs to work on communication skills with cross-functional teams.
+c5c7d5c3-6666-4871-9df8-daa4a2a01f10,a1318682-7d4c-439b-ac05-3df33d1f6ec5,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2022-08-18,Needs to work on communication skills with cross-functional teams.
+13520247-2e07-4ec8-8f1e-775268b8b3c3,13a67177-e073-46d4-8e76-dfb4db0dad81,555ee223-e3a0-411a-bd41-37eb57af5802,2025-09-14,"Consistent performer, always meets deadlines."
+0d3541e2-1c82-4938-95bc-33c0598ae57e,be509138-3163-4944-9803-301834141007,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-09-29,"Consistent performer, always meets deadlines."
+7ddbb144-0407-4469-aa0d-cd7085622ea1,be509138-3163-4944-9803-301834141007,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-05-31,"Frequently arrives late to meetings, need to address punctuality."
+a7a0bbef-a771-4b0f-a82d-90112d2d1fb3,06fb6a9e-35be-4e0b-89eb-4f9c6cfccc24,75540a9f-e62c-4345-88b2-726080c8100d,2025-05-13,Has expressed interest in moving to a management role.
+5c46f5ef-005e-4b6c-aad4-d221b089c374,06fb6a9e-35be-4e0b-89eb-4f9c6cfccc24,75540a9f-e62c-4345-88b2-726080c8100d,2023-07-04,"Great team player, always willing to help peers."
+be593cc9-a906-4231-b4a7-078528a002c5,1ba05307-5caf-443a-a581-a70f88a6364d,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2021-12-17,"Great team player, always willing to help peers."
+d819e217-95d5-417d-844b-e4de8f010102,c3693754-7f9b-42fd-af40-5d54945ac8e5,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2024-06-02,"Great team player, always willing to help peers."
+b96769bc-8021-4494-b8ef-606aca13d7a5,c36b8fbe-0e9a-4a2a-a7ff-636b2fd86998,ce210808-0643-4154-b355-0f4fdb9309a7,2026-04-22,"Struggling with the new tech stack, suggested additional training."
+577a2137-8646-43df-a50f-a358af795d8a,c36b8fbe-0e9a-4a2a-a7ff-636b2fd86998,ce210808-0643-4154-b355-0f4fdb9309a7,2019-12-09,"Highly motivated, took initiative on the last project."
+81b9e6bb-aa67-4ea5-9d5a-ed20ba3cb65d,74f31779-8175-4423-8101-2e8651d02888,93893360-8fd5-40d9-a827-3d8dc0d2f698,2023-07-12,"Great team player, always willing to help peers."
+48040090-3925-4c0f-bda9-d8afd2a7f143,59b43397-40f4-46ef-9a3c-961054e8edd4,ddf2f671-973b-4de9-afc4-04e64c763b88,2021-01-22,Needs to work on communication skills with cross-functional teams.
+f42be949-0999-499a-91c9-4b181d781178,61c4f515-512c-4fd6-965b-28851ae0d004,555ee223-e3a0-411a-bd41-37eb57af5802,2026-05-07,"Struggling with the new tech stack, suggested additional training."
+3abbcb78-aff4-4de9-80ad-2a5c46796814,61c4f515-512c-4fd6-965b-28851ae0d004,555ee223-e3a0-411a-bd41-37eb57af5802,2026-03-08,Needs to work on communication skills with cross-functional teams.
+fa003682-c1dc-4530-a89d-f63b7fb3e311,9e082655-f598-40cb-919f-9cede88abce3,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2026-02-01,Needs to work on communication skills with cross-functional teams.
+b1fe0ad8-69a7-4762-890b-165c5a7140b6,ccc8b20c-a0e2-476b-a9aa-cbda0b19cb3b,f9bec295-192b-427e-b468-b90a36d3ed6e,2021-11-08,"Great team player, always willing to help peers."
+81d7839b-523c-45ae-9f43-27de2520f8b0,ca4c8fff-17ec-4f37-8d03-243e495f2425,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-11-16,"Highly motivated, took initiative on the last project."
+5a705617-e242-430d-ba41-9ac6059c12fc,b9be0cd0-b8a0-4d16-9b72-8d0d41af1833,75540a9f-e62c-4345-88b2-726080c8100d,2026-05-14,Has expressed interest in moving to a management role.
+897926e8-21d9-4a53-93e7-62e983f09278,b9be0cd0-b8a0-4d16-9b72-8d0d41af1833,75540a9f-e62c-4345-88b2-726080c8100d,2026-07-12,Has expressed interest in moving to a management role.
+06dcc045-0c97-46c0-9b2d-32c9655cd8e4,bad8616d-3035-43cf-95e4-301586a2e938,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-12-19,"Highly motivated, took initiative on the last project."
+aa4f589f-3ae5-40d4-8218-c9ee1cb19bac,124c9d34-d7d3-4da4-8a46-f70e95c69c1a,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2022-10-04,"Highly motivated, took initiative on the last project."
+69694774-41d4-4c0c-bdf9-e7342065b5c9,b1d8093d-be3b-41c3-9d88-4c4ef3ae951b,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-05-11,Requires too much supervision for senior-level tasks.
+fd229267-0c2b-4572-885f-7ce9650b50b4,b1d8093d-be3b-41c3-9d88-4c4ef3ae951b,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2023-08-03,Employee is showing great leadership potential.
+c4dbe6b7-8373-4d24-9529-db8c77099bdc,1679bbb4-ae3e-43d0-8f11-b417511ef735,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2022-03-13,"Frequently arrives late to meetings, need to address punctuality."
+daa4c874-73a6-4a45-8d01-dba8d93f9882,1679bbb4-ae3e-43d0-8f11-b417511ef735,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-12-13,Employee is showing great leadership potential.
+e571363a-a5ca-42a9-919d-cc5a89a53a5a,5e97cd2d-7c1b-4c60-973f-3ac6861199dc,630716e5-012e-462e-997f-4bddc29d22c6,2025-12-02,"Going through some personal issues, performance slightly dipped but expected to recover."
+c7a744bf-efa3-41c5-bd13-4ac37fb8692f,0543cfec-58b5-4d8a-8ac0-667dcb3f6374,9c6389a2-f1aa-472a-a405-217b6094b685,2019-02-23,"Struggling with the new tech stack, suggested additional training."
+991f8bb4-9330-4fd0-9201-8c75fadfa722,0543cfec-58b5-4d8a-8ac0-667dcb3f6374,9c6389a2-f1aa-472a-a405-217b6094b685,2022-12-20,"Consistent performer, always meets deadlines."
+157f4537-860f-4e0c-8a9c-3376f9cce56b,b07439a2-8f08-4bee-8419-c573a8d5f211,7005687a-9bf2-49a1-ada1-97c42963f3ed,2025-05-23,"Going through some personal issues, performance slightly dipped but expected to recover."
+dbe6ced9-3f34-403f-9af8-7dfe1607cc7c,b07439a2-8f08-4bee-8419-c573a8d5f211,7005687a-9bf2-49a1-ada1-97c42963f3ed,2026-02-26,Has expressed interest in moving to a management role.
+d195a87d-d2b9-40d8-9be1-a7e03668ea95,4af115f3-9587-426e-8692-5c83d30ec93a,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-04-14,"Great team player, always willing to help peers."
+ad437acd-ff6c-4ea3-bde2-d23d531441b2,e110f9cc-0ac9-4ad5-bfa3-e089fb8d61e2,8565ea1d-4f56-4a49-b00a-1ff7618021be,2024-06-23,"Highly motivated, took initiative on the last project."
+777d18af-0423-40b3-98c1-a6ac1e23e7ee,daa279c4-cfbb-4edc-b097-41b95bc02f98,c928550c-2338-463b-930a-29020041a190,2026-05-19,"Great team player, always willing to help peers."
+8111cb31-f6be-4013-9d35-89103e4c4657,abdb5fcd-7427-4be0-b7cf-3fd33f7994b4,c3301c22-2b4b-4c7f-827f-90a886d47311,2021-02-28,Has expressed interest in moving to a management role.
+caaef16b-50f9-4e4d-bf16-f5e6c9021f95,9ac75d6b-a7c5-438b-8779-32931a11f819,75540a9f-e62c-4345-88b2-726080c8100d,2023-03-13,Requires too much supervision for senior-level tasks.
+7b7d2f4a-778c-4bb5-8fa0-cc8b55d8541f,9ac75d6b-a7c5-438b-8779-32931a11f819,75540a9f-e62c-4345-88b2-726080c8100d,2025-09-18,"Great team player, always willing to help peers."
+4cbaf9be-1f33-4b99-b679-0a4def8cdb84,a6ca71af-68b1-4696-9cc0-c12f68153e39,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2019-08-19,"Going through some personal issues, performance slightly dipped but expected to recover."
+49ceeb6e-1007-4b46-9c58-3a35a31e430c,9b525013-824b-4d8b-af0a-ffb13573a7ed,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2024-12-30,Requires too much supervision for senior-level tasks.
+40c7ef03-3358-4b17-a685-d5a5ebab9d24,9b525013-824b-4d8b-af0a-ffb13573a7ed,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-06-01,"Consistent performer, always meets deadlines."
+d32effe6-48ff-4aa6-84e3-1db64e4543c2,539d1f79-5ab4-4900-bc64-e210bc9f2118,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-10-30,Requires too much supervision for senior-level tasks.
+930e2c4b-a57e-454d-a53a-6d28cd788a47,19f19a9e-1840-48d3-ab90-16b8eb779f27,3cd82c5e-529d-4500-8d52-deee030c1ea3,2024-03-23,Employee is showing great leadership potential.
+043f10fb-63cd-4e54-b0d7-88fa4c782b35,19f19a9e-1840-48d3-ab90-16b8eb779f27,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-07-11,Requires too much supervision for senior-level tasks.
+a8f601ab-8927-4f12-a275-612590b2c0ad,e8cadb6c-9e41-491f-8692-78b5892e70d0,630716e5-012e-462e-997f-4bddc29d22c6,2024-03-31,Needs to work on communication skills with cross-functional teams.
+40fd9da7-a383-4eae-b505-5d008d6f413b,e8cadb6c-9e41-491f-8692-78b5892e70d0,630716e5-012e-462e-997f-4bddc29d22c6,2024-05-16,"Consistent performer, always meets deadlines."
+2ecd31e9-dd46-4bd5-be13-e3544844ddae,0f5df6b5-b431-4fe5-9952-5e8871ba31fe,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2025-01-21,"Great team player, always willing to help peers."
+004af11c-e772-4efd-81ce-8bb14caa31f1,b4eb39ea-73f7-422f-b78c-9a89b8a2a3de,8a6cb659-c889-4932-ba72-818cd81574f2,2025-03-14,"Highly motivated, took initiative on the last project."
+e1b8fff9-bf49-4f20-9369-31f01c20c381,8d8a003f-7ede-4ad7-a100-d4d74becae0c,a344149f-bc18-412b-940e-29c201e37a54,2026-07-02,"Highly motivated, took initiative on the last project."
+32742d89-3ce6-4789-b10d-a25f3c92bf72,8d8a003f-7ede-4ad7-a100-d4d74becae0c,a344149f-bc18-412b-940e-29c201e37a54,2022-03-03,"Great team player, always willing to help peers."
+93adb155-2b3c-494f-802a-c853cd61e6cb,8604c655-b776-46c4-bca9-c19d849d3567,93893360-8fd5-40d9-a827-3d8dc0d2f698,2020-05-01,Requires too much supervision for senior-level tasks.
+baba528f-d1a7-4a5e-aef3-f89fe9389dac,8604c655-b776-46c4-bca9-c19d849d3567,93893360-8fd5-40d9-a827-3d8dc0d2f698,2021-12-05,"Struggling with the new tech stack, suggested additional training."
+b76b8aab-e1dc-4f5f-b236-8b9d634a2972,8096ca20-1182-4ba3-a7a1-71c6d9921302,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2024-01-21,"Struggling with the new tech stack, suggested additional training."
+9bd169bb-3407-4d1d-a012-e5320e23ed02,8096ca20-1182-4ba3-a7a1-71c6d9921302,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2023-09-29,Requires too much supervision for senior-level tasks.
+d0c39831-f44b-4a3a-9115-42911629aaf0,e0b16672-0926-4c08-89ba-bf8c920ec5a5,95fee654-165a-4426-8f15-5aa7615c5e52,2020-11-20,Has expressed interest in moving to a management role.
+c31467ad-bb2f-458b-a012-10691e02e636,97bd87b6-09ce-4416-8787-e29f98706077,f9bec295-192b-427e-b468-b90a36d3ed6e,2020-01-06,Needs to work on communication skills with cross-functional teams.
+c892ad7c-4830-4d5c-940a-05072538f72f,97bd87b6-09ce-4416-8787-e29f98706077,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-07-25,"Consistent performer, always meets deadlines."
+e785f2c5-1b74-4198-8f09-a7895cbb7c9c,adb55aaa-18be-43fd-917e-da224abc0a8a,c3301c22-2b4b-4c7f-827f-90a886d47311,2022-03-10,Needs to work on communication skills with cross-functional teams.
+48f5ec46-0a1c-4f71-aa17-c3399b5306cd,b6c921f2-352c-4d16-b6f6-5712a7564bf8,75540a9f-e62c-4345-88b2-726080c8100d,2024-06-21,Needs to work on communication skills with cross-functional teams.
+887a68df-a1d8-4aa5-b813-d2a633242f98,b6c921f2-352c-4d16-b6f6-5712a7564bf8,75540a9f-e62c-4345-88b2-726080c8100d,2023-08-04,Needs to work on communication skills with cross-functional teams.
+134963e1-60ba-4643-b76b-648f6540505b,506a153d-ae9e-47b2-be0f-a0b88c583e1d,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2023-08-05,"Going through some personal issues, performance slightly dipped but expected to recover."
+fe43c486-68d5-4ee3-b836-95e6944b86fb,466490ed-c441-4809-89de-7a7b94f6c805,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-09-26,"Consistent performer, always meets deadlines."
+07e27db1-5f86-4b14-81b4-394852d96d1a,466490ed-c441-4809-89de-7a7b94f6c805,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-06-05,"Frequently arrives late to meetings, need to address punctuality."
+fb837402-c548-4331-8f9a-7662ed72faf7,59154665-8df4-45e9-9d6d-ddf4da3e7528,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-01-20,"Going through some personal issues, performance slightly dipped but expected to recover."
+d632acd3-4dd3-4fb2-b091-900a265dbbd4,59154665-8df4-45e9-9d6d-ddf4da3e7528,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2023-11-26,"Consistent performer, always meets deadlines."
+bba68c78-1b06-4e0b-9b69-162c0c5d98d3,7f08202e-b8b5-4439-9520-6270ec61cd33,8763f813-0fd1-448e-ae96-bd0f6be5d249,2023-12-29,"Great team player, always willing to help peers."
+b1ce1203-95cb-41ef-85c3-26206ada45b8,deca4391-71d5-4f72-bd29-a5aa46fc2e8c,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-01-18,"Highly motivated, took initiative on the last project."
+b2c31d18-722e-4b0b-b29a-69b7f50a4b4d,0c34ff6e-1d03-4985-b4cc-904f80513e64,3cd82c5e-529d-4500-8d52-deee030c1ea3,2021-12-04,Needs to work on communication skills with cross-functional teams.
+639996d3-33a2-4681-8908-730b0f95f7df,0c34ff6e-1d03-4985-b4cc-904f80513e64,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-03-25,"Going through some personal issues, performance slightly dipped but expected to recover."
+a6d00546-5dc1-4a3b-88ee-f912d9a57df8,4c77e810-f54d-4579-92e4-fd850cf38bc3,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-04-21,"Going through some personal issues, performance slightly dipped but expected to recover."
+62f76364-623e-4c58-b931-922fd07223d1,4c77e810-f54d-4579-92e4-fd850cf38bc3,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-03-11,"Going through some personal issues, performance slightly dipped but expected to recover."
+4adc9e7a-58ce-4d6e-a115-dc01fd7759f0,3d48377a-bba1-45d1-ab4c-f924d858a856,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2019-11-23,"Struggling with the new tech stack, suggested additional training."
+6cb88e6c-3698-4b91-afec-370c64b8f84a,a329a60e-e34d-493c-a006-2beb675b04d4,8a6cb659-c889-4932-ba72-818cd81574f2,2019-04-13,"Frequently arrives late to meetings, need to address punctuality."
+ac623508-91bc-4f9b-8c83-74526afe90de,a329a60e-e34d-493c-a006-2beb675b04d4,8a6cb659-c889-4932-ba72-818cd81574f2,2026-06-02,Requires too much supervision for senior-level tasks.
+79a5c621-ce0d-4694-b93a-e6c5f220ae9d,9daa5c6f-e7c0-4657-ac1d-cf6fae66251d,a344149f-bc18-412b-940e-29c201e37a54,2025-12-31,"Great team player, always willing to help peers."
+a730fea3-13e5-48c0-a909-dad9b69ed7ec,f0eb1a24-fb5e-4afa-9880-2ce428caf2e2,555ee223-e3a0-411a-bd41-37eb57af5802,2026-03-23,Needs to work on communication skills with cross-functional teams.
+1775eb38-8eb8-46fe-8df2-f2a634f12e4e,f0eb1a24-fb5e-4afa-9880-2ce428caf2e2,555ee223-e3a0-411a-bd41-37eb57af5802,2023-02-25,"Going through some personal issues, performance slightly dipped but expected to recover."
+32b610a0-faed-44d6-b01f-1935c6d018e5,8313ea82-4a82-46a8-9f77-e7807cc5ff90,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-03-15,Employee is showing great leadership potential.
+9b52b7d0-3752-4c48-a5c0-0def8465f084,8313ea82-4a82-46a8-9f77-e7807cc5ff90,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2026-01-31,Has expressed interest in moving to a management role.
+afed1d9b-2a5c-49de-8169-de7355ba8928,b23f4475-52bb-4426-a043-52b276e609a1,c928550c-2338-463b-930a-29020041a190,2024-09-04,"Struggling with the new tech stack, suggested additional training."
+7dd73331-b704-4579-b7bd-f41179fba8c6,7e762cd4-7767-4252-8739-a4bfaa3789b2,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-12-18,"Struggling with the new tech stack, suggested additional training."
+c5999335-5d3c-4903-b88f-205ff4f3daa4,37e99a2b-2003-441e-acfa-2ff18a0424d7,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-10-15,"Going through some personal issues, performance slightly dipped but expected to recover."
+683ffbe5-3717-48e0-9776-e480cb5361ad,37e99a2b-2003-441e-acfa-2ff18a0424d7,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2022-03-16,"Highly motivated, took initiative on the last project."
+2bf783b3-dc2a-4e2d-9920-e4224ba14151,d544d81b-2eb9-43d3-83ad-151a22284091,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2023-12-02,"Highly motivated, took initiative on the last project."
+61e0f88c-47da-48ef-874e-4f948d562e7c,d544d81b-2eb9-43d3-83ad-151a22284091,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-04-14,"Highly motivated, took initiative on the last project."
+a46b318a-5093-41fc-a99b-c9d950ebc749,7e5c4bfa-b1d0-4843-bdfc-049bb37e59bd,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-08-25,Needs to work on communication skills with cross-functional teams.
+2e90d7fd-b82f-414b-a91c-f94cd81a6207,7e5c4bfa-b1d0-4843-bdfc-049bb37e59bd,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-07-19,Has expressed interest in moving to a management role.
+2d3b15b1-d7c2-4fa2-8a45-37c48a3772c1,11d69685-7474-4539-92b1-dca51165df4f,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-11-15,"Frequently arrives late to meetings, need to address punctuality."
+68ba1031-ec85-4437-a13b-9b65feaab6f6,11d69685-7474-4539-92b1-dca51165df4f,8763f813-0fd1-448e-ae96-bd0f6be5d249,2023-02-01,"Consistent performer, always meets deadlines."
+dfe4c156-5581-4a73-b2bc-5a189dcbfe76,394fa9cc-9d37-4ee8-849c-6cdb1a6d9991,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-05-22,"Great team player, always willing to help peers."
+c9cd7cb5-ea7d-4db7-9564-c9ae200fa0e2,4ccf7927-02dd-40c4-a915-9014404ee1f5,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2021-10-12,Employee is showing great leadership potential.
+8886c5f5-8571-4377-9cb5-64c8387a3bbe,4ccf7927-02dd-40c4-a915-9014404ee1f5,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2018-11-20,"Great team player, always willing to help peers."
+da091c72-e6e2-4951-9fd5-ee9858a3d89f,9d6858ae-5d10-41d3-b613-ff03447a770b,ce210808-0643-4154-b355-0f4fdb9309a7,2024-02-23,"Frequently arrives late to meetings, need to address punctuality."
+03c539b7-889d-44e6-9a42-a214784ce9d3,9d6858ae-5d10-41d3-b613-ff03447a770b,ce210808-0643-4154-b355-0f4fdb9309a7,2022-02-05,Has expressed interest in moving to a management role.
+b286b215-b81f-4340-951b-c45729179ed1,8c8a400b-94b2-4290-8e0d-08959982de63,8a6cb659-c889-4932-ba72-818cd81574f2,2026-07-14,"Great team player, always willing to help peers."
+79614347-6803-4b00-9556-fe37018e9802,8c8a400b-94b2-4290-8e0d-08959982de63,8a6cb659-c889-4932-ba72-818cd81574f2,2022-04-17,"Consistent performer, always meets deadlines."
+15acf1bb-ea47-4351-8e48-99bbb02387ee,879d1e92-5cf6-4093-9848-484a7d782dc3,9c6389a2-f1aa-472a-a405-217b6094b685,2024-09-05,Requires too much supervision for senior-level tasks.
+db8a4c80-f846-47fe-9695-9b6f5a3999a3,36cc0bd8-3e91-48ef-99e7-0974e02a6000,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-01-19,Has expressed interest in moving to a management role.
+131ed7c8-9cbe-40dc-b04d-8dac9f2eecda,36cc0bd8-3e91-48ef-99e7-0974e02a6000,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-12-28,Employee is showing great leadership potential.
+6455e5c4-fb20-40d2-ad20-b67115b64baa,b9b7129e-8f4c-454a-864e-ebee4a271bcf,ddf2f671-973b-4de9-afc4-04e64c763b88,2025-04-07,"Consistent performer, always meets deadlines."
+75d150b9-754e-4213-900a-4f01f0876268,b9b7129e-8f4c-454a-864e-ebee4a271bcf,ddf2f671-973b-4de9-afc4-04e64c763b88,2022-03-23,"Great team player, always willing to help peers."
+a765b5a2-82ad-4c3b-bd16-0e80c5b18b10,4c6e6cc6-b50c-4880-9a3a-78a7641407f5,555ee223-e3a0-411a-bd41-37eb57af5802,2026-07-02,"Going through some personal issues, performance slightly dipped but expected to recover."
+bd1a9c29-d49f-45b6-9063-3f82c6e1c238,4c6e6cc6-b50c-4880-9a3a-78a7641407f5,555ee223-e3a0-411a-bd41-37eb57af5802,2024-04-20,"Consistent performer, always meets deadlines."
+b79479aa-8f39-4e53-a2b9-47ad87bde810,39da6842-bc05-4bad-a0cd-89548cde1957,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-11-10,Employee is showing great leadership potential.
+51483f3a-6632-48f0-834d-919ac5044744,10fb29b0-abc3-4406-b2c8-697f41217e95,8565ea1d-4f56-4a49-b00a-1ff7618021be,2026-04-27,Needs to work on communication skills with cross-functional teams.
+f8b8526b-3768-47ed-b18c-5504c86e4540,10fb29b0-abc3-4406-b2c8-697f41217e95,8565ea1d-4f56-4a49-b00a-1ff7618021be,2025-08-28,Employee is showing great leadership potential.
+14eeb628-1ecf-45d8-aba3-657376b899d8,663e6e23-a861-469d-89c8-69b8e53a8d08,f9bec295-192b-427e-b468-b90a36d3ed6e,2024-11-25,Requires too much supervision for senior-level tasks.
+6cf90606-4d15-4fa2-88e3-03c593a890be,3f79c304-b4fd-4b0a-b7e5-f263b28e556e,c928550c-2338-463b-930a-29020041a190,2026-07-26,Needs to work on communication skills with cross-functional teams.
+6237f5f7-e9d8-4f95-937b-44fff2751fe1,09bb5581-2b05-48fd-a4ba-d2e32bd6ade5,75540a9f-e62c-4345-88b2-726080c8100d,2020-12-18,"Going through some personal issues, performance slightly dipped but expected to recover."
+40102ed7-1d35-4dfd-9101-26e6ce130c9a,09bb5581-2b05-48fd-a4ba-d2e32bd6ade5,75540a9f-e62c-4345-88b2-726080c8100d,2024-12-14,Has expressed interest in moving to a management role.
+cea7571d-ce6a-4e60-a4b9-cd1c5e93b3e7,af1730f2-3420-4781-b074-b50a17d27284,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-03-03,"Consistent performer, always meets deadlines."
+4f539951-6d57-4030-a654-83505072ec6b,6cbb596f-8979-402a-97f4-6473943e5ea9,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2022-10-27,Needs to work on communication skills with cross-functional teams.
+d4286428-6fb6-416c-a823-3e8a37f095f5,6cbb596f-8979-402a-97f4-6473943e5ea9,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2022-12-14,"Great team player, always willing to help peers."
+0bfa641b-6ecd-4688-9825-744bb3330af0,8154c70d-9d90-4ff7-a7cf-9bd75e54ca67,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-04-21,"Struggling with the new tech stack, suggested additional training."
+01718ca8-b0e6-4382-9448-5bd1ecc90d24,b5b66f98-f1a3-45a2-88ca-30dda34c5f6b,8763f813-0fd1-448e-ae96-bd0f6be5d249,2017-10-09,"Going through some personal issues, performance slightly dipped but expected to recover."
+d213af0b-b148-4828-a5d6-f5715be7a502,f08d813b-db73-450e-b906-ebd6ed8c1771,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2023-09-24,Has expressed interest in moving to a management role.
+3e74ea85-6e7d-4bd6-9ac0-7dcb9a21d2bd,f08d813b-db73-450e-b906-ebd6ed8c1771,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2024-07-04,Requires too much supervision for senior-level tasks.
+c5313a85-8e1a-40aa-95cf-7f46ec17149e,31ebb7d5-2174-4f86-b532-eb1a8883618c,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2025-03-16,Requires too much supervision for senior-level tasks.
+dfb2bf46-d354-42d8-af7d-de62f61791bf,6df48676-dd92-4d53-b6d6-5f904495cc1e,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-07-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+a668eab6-a93e-4994-9568-fd5109efbfe2,6df48676-dd92-4d53-b6d6-5f904495cc1e,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-05-05,"Struggling with the new tech stack, suggested additional training."
+97f8da5d-3a85-4acc-80fa-dabf02d7a8dc,809da520-b841-42b3-ae98-2a3172a6e451,ce210808-0643-4154-b355-0f4fdb9309a7,2026-07-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+fdb8dc83-f20e-48d3-812e-91c208ae9c2b,809da520-b841-42b3-ae98-2a3172a6e451,ce210808-0643-4154-b355-0f4fdb9309a7,2026-03-01,"Struggling with the new tech stack, suggested additional training."
+05bedb86-1eeb-4b7e-b746-8b7f85192f30,25e678e9-6adf-4562-9e42-eef2203c139e,630716e5-012e-462e-997f-4bddc29d22c6,2024-05-26,Needs to work on communication skills with cross-functional teams.
+5e135f5c-a1a4-49ad-bef7-4b7da7833545,abbc3eb2-2500-48cd-8100-2f0dc89b68a4,9c6389a2-f1aa-472a-a405-217b6094b685,2021-10-07,Requires too much supervision for senior-level tasks.
+a3b226b5-94d6-44fd-bd74-9d4a6d337d88,899f842f-c064-45b7-9d78-547200f07249,a344149f-bc18-412b-940e-29c201e37a54,2023-08-06,Requires too much supervision for senior-level tasks.
+c10f9d07-81b0-4480-a349-a6acd8adc0d3,899f842f-c064-45b7-9d78-547200f07249,a344149f-bc18-412b-940e-29c201e37a54,2022-10-10,"Frequently arrives late to meetings, need to address punctuality."
+05520776-0092-4960-b90c-a63e9cbe9510,9809544d-13b1-4fb0-bbc2-d8ef22cf963d,7005687a-9bf2-49a1-ada1-97c42963f3ed,2024-09-18,"Frequently arrives late to meetings, need to address punctuality."
+1aca3723-38d6-4268-b4b2-d6ffe47f3aa5,9809544d-13b1-4fb0-bbc2-d8ef22cf963d,7005687a-9bf2-49a1-ada1-97c42963f3ed,2025-06-26,Needs to work on communication skills with cross-functional teams.
+9ebf0342-bcbd-4310-a2c9-d7c1fb209edd,446f1af2-a71c-487d-86ba-866c3f7a99c5,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2018-10-20,"Frequently arrives late to meetings, need to address punctuality."
+18a2bcfa-825a-4cb3-b19a-e639aee1d2b5,b349471d-5090-40e2-a295-9af7c8dd8aca,555ee223-e3a0-411a-bd41-37eb57af5802,2026-06-21,Employee is showing great leadership potential.
+5ef5605b-d982-472c-8b87-f56cb748eb6c,b349471d-5090-40e2-a295-9af7c8dd8aca,555ee223-e3a0-411a-bd41-37eb57af5802,2026-06-27,"Struggling with the new tech stack, suggested additional training."
+43fe601a-1ece-4732-b81b-98f9a37f5883,7247dc34-6ac4-4065-8190-cd35ffd5cbe2,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2023-05-18,Requires too much supervision for senior-level tasks.
+bdbb274f-46a0-4bf5-bcb3-d2ec3ed468e1,9e1026c4-4b1a-4418-9e73-99d1354f286d,c3301c22-2b4b-4c7f-827f-90a886d47311,2023-05-21,"Great team player, always willing to help peers."
+15f8a0fc-e136-4a89-93bb-7144b3c67474,eb201d41-f713-44d4-bf15-a1665fc70b68,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-08-13,Needs to work on communication skills with cross-functional teams.
+2ad38e40-9439-49ab-9313-94aadbe29243,ffc02fa9-5745-4641-99e9-a0a3e6443181,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2019-04-29,"Frequently arrives late to meetings, need to address punctuality."
+1b27c296-3613-48b6-9179-920ce7fd84e9,8974d41f-0de7-496b-9043-f6af1dad6e1d,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2024-12-11,"Struggling with the new tech stack, suggested additional training."
+347d6980-77ef-4a14-aafa-a8de521ff3e7,d0995275-0b82-495e-b4e9-f6e30ec7a007,254e5290-7c0b-4c32-a48f-ce956be85d4a,2020-09-05,"Consistent performer, always meets deadlines."
+f2ebe27f-492e-475a-88e1-88c0ff4b364e,d0995275-0b82-495e-b4e9-f6e30ec7a007,254e5290-7c0b-4c32-a48f-ce956be85d4a,2018-12-26,"Going through some personal issues, performance slightly dipped but expected to recover."
+60e799b9-9aef-46fe-a5fc-04d4ac8388cf,893575da-e159-4500-9106-5395f886f0a4,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2022-06-19,Employee is showing great leadership potential.
+5b8cedce-5eb5-449c-a601-cfa97500bc9a,87fdac6b-1e07-4b33-9f91-bbdbd1b3d9ea,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2019-05-23,"Great team player, always willing to help peers."
+b60d5d5d-1103-4bb6-b221-19cc7cc14e60,87fdac6b-1e07-4b33-9f91-bbdbd1b3d9ea,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2017-10-22,"Struggling with the new tech stack, suggested additional training."
+bdf8b087-3861-43c1-93cf-ae9c313c5028,7185ac7e-4ae5-472f-9dea-96b6b1a9183d,630716e5-012e-462e-997f-4bddc29d22c6,2025-07-27,"Great team player, always willing to help peers."
+855f28a0-488b-45d9-b1fe-0c2a6f615913,7185ac7e-4ae5-472f-9dea-96b6b1a9183d,630716e5-012e-462e-997f-4bddc29d22c6,2026-06-14,"Great team player, always willing to help peers."
+e0c8fe5d-33b8-4438-bfaf-6ce56f17368f,8af390bb-9b14-4623-b79c-10d7bac6f62f,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2024-06-24,"Struggling with the new tech stack, suggested additional training."
+33b4ce47-2088-49f1-bd0f-666f61475298,1a6871a1-a8b5-4434-962e-1fbf4d9d3c7e,a344149f-bc18-412b-940e-29c201e37a54,2026-02-03,"Highly motivated, took initiative on the last project."
+d2a26ead-85b4-4897-96d2-0b3c0dfdda3d,f79c9a0f-1ab0-44db-93c0-3ef5b7053ac4,7005687a-9bf2-49a1-ada1-97c42963f3ed,2025-08-24,"Frequently arrives late to meetings, need to address punctuality."
+b49d3db3-906d-4001-9304-a28a8f902b76,f79c9a0f-1ab0-44db-93c0-3ef5b7053ac4,7005687a-9bf2-49a1-ada1-97c42963f3ed,2025-05-21,"Struggling with the new tech stack, suggested additional training."
+48debb0f-1557-4aef-9ba6-8d6977310439,2f192788-1e23-4e20-a45a-333d35e52d1d,ddf2f671-973b-4de9-afc4-04e64c763b88,2025-08-16,"Going through some personal issues, performance slightly dipped but expected to recover."
+e1ac3550-e8ee-4ea9-9ce8-6ec4098dd4a4,2f192788-1e23-4e20-a45a-333d35e52d1d,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-09-02,"Highly motivated, took initiative on the last project."
+e1c0138a-bda8-41b1-8960-ea3f6860e221,7bae2e41-48ed-48cc-8d87-aaa626b732bc,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2023-09-13,"Consistent performer, always meets deadlines."
+a94712cc-d79c-4c89-bdc6-cb688ffbace3,6169fad8-e5e2-42cb-a448-e5dbf0faabe5,c928550c-2338-463b-930a-29020041a190,2022-08-01,Has expressed interest in moving to a management role.
+86e279ce-78e3-4392-8216-c86a4bd1ae68,6169fad8-e5e2-42cb-a448-e5dbf0faabe5,c928550c-2338-463b-930a-29020041a190,2024-05-25,"Going through some personal issues, performance slightly dipped but expected to recover."
+daf1b02f-2ccd-4e1e-ae4e-cbfadb478171,54a52a99-4424-4bdf-a39a-95a70224bb34,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-09-07,Employee is showing great leadership potential.
+fd65401e-9e2b-4021-b4dc-038ac33dcd30,893a2263-90d9-4370-bfdd-9b00764ad7e7,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-06-17,"Consistent performer, always meets deadlines."
+24959a64-0eab-4e87-8d61-de1155f44a3f,893a2263-90d9-4370-bfdd-9b00764ad7e7,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2018-08-09,"Going through some personal issues, performance slightly dipped but expected to recover."
+b042e7c5-5101-4e46-a78e-54a086787906,5367cc4b-b13a-42ff-bd0b-0efec0089fed,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2024-04-22,"Struggling with the new tech stack, suggested additional training."
+64dd5994-69e7-4ae5-9351-cc36c1689223,5367cc4b-b13a-42ff-bd0b-0efec0089fed,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2024-06-16,"Struggling with the new tech stack, suggested additional training."
+1ad36282-86a9-495b-ad98-1083f462c45a,283af356-9949-47a9-aa87-6271e86a5d24,8763f813-0fd1-448e-ae96-bd0f6be5d249,2026-05-25,"Highly motivated, took initiative on the last project."
+86340cf6-fa20-4669-8c68-7255cf3e882e,38c8f3fd-a9c2-4624-a673-1d187252de5a,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2026-07-08,Employee is showing great leadership potential.
+002cb728-0fce-467a-8dac-edcfc53da874,38c8f3fd-a9c2-4624-a673-1d187252de5a,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2024-09-25,"Highly motivated, took initiative on the last project."
+6a8226a3-49b2-4f93-81ea-8387cf1e4fa1,e9eb8ff7-9e05-46f9-be95-90a625ca15f4,ce210808-0643-4154-b355-0f4fdb9309a7,2024-07-06,"Consistent performer, always meets deadlines."
+0a0ade38-523f-47db-97b3-269ee747c712,df661edc-6c63-4c9a-bf48-8bdeafa583ae,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2021-12-14,"Great team player, always willing to help peers."
+6902aa87-f1c6-4f8d-b0bc-cd4eeb859963,df661edc-6c63-4c9a-bf48-8bdeafa583ae,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2020-01-05,"Great team player, always willing to help peers."
+7b7d2e6e-2735-4c45-b911-c5987421db59,0dc29479-3747-4560-b13b-7c1dfab9ed46,8a6cb659-c889-4932-ba72-818cd81574f2,2025-03-10,Has expressed interest in moving to a management role.
+87fc4e40-d5b8-46af-b99b-ed483f620569,70ae8640-445c-448c-bfe1-20049b33d87d,a344149f-bc18-412b-940e-29c201e37a54,2021-11-03,Requires too much supervision for senior-level tasks.
+852e2cb1-853d-450e-bc84-7e9d3870dd66,be8d4354-3f04-4d14-b53f-14405415cee0,7e265d70-9188-4135-8f84-55b39076442e,2024-06-02,"Consistent performer, always meets deadlines."
+c15d7c08-317e-4c7d-9c3e-4a5ee3ac70fb,85c1f940-0a06-4695-819a-db5e461e1f67,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2026-05-04,Has expressed interest in moving to a management role.
+bb136b65-8afe-4eeb-87d8-860ceaec32b8,85c1f940-0a06-4695-819a-db5e461e1f67,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-12-29,Has expressed interest in moving to a management role.
+c3962c85-d69a-46ca-bda9-6944adf574cc,d933d798-47c0-49fb-a607-031b014feea3,ddf2f671-973b-4de9-afc4-04e64c763b88,2023-03-03,Employee is showing great leadership potential.
+a8e08e6c-fce2-476b-9e6e-43237501cb58,9ca710e6-b8f9-47d4-b123-1e8c2634e14c,555ee223-e3a0-411a-bd41-37eb57af5802,2021-08-18,Employee is showing great leadership potential.
+7d864f61-026f-4253-9332-0e76eb94b8b8,d9380041-90cc-41c2-bac2-a147891b9767,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2019-10-07,Requires too much supervision for senior-level tasks.
+0d876599-28ac-4fcb-9c1b-7fb7c0c29ed1,d9380041-90cc-41c2-bac2-a147891b9767,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-07-12,Has expressed interest in moving to a management role.
+1da8e943-6f1d-4a45-8b5f-cb5695ba0b53,6b282c33-bd7d-4d94-82bb-3051b1986abf,8565ea1d-4f56-4a49-b00a-1ff7618021be,2026-04-04,Employee is showing great leadership potential.
+fd1dce57-5af7-42c2-a464-599d0591c417,6b282c33-bd7d-4d94-82bb-3051b1986abf,8565ea1d-4f56-4a49-b00a-1ff7618021be,2026-04-29,"Highly motivated, took initiative on the last project."
+52bb957b-106c-4cb9-9946-5e94c87b15b0,f063e4f4-3bc1-4a8f-abaf-804f7bad64c8,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-07-14,Has expressed interest in moving to a management role.
+8d1238fa-1014-45be-9eff-68c09d27a327,f063e4f4-3bc1-4a8f-abaf-804f7bad64c8,f9bec295-192b-427e-b468-b90a36d3ed6e,2026-07-25,Employee is showing great leadership potential.
+fe6dc589-a802-4afa-b902-f8be4d984ccd,2733f5d9-3308-418e-8fa0-6419b66f4c41,75540a9f-e62c-4345-88b2-726080c8100d,2017-02-16,Requires too much supervision for senior-level tasks.
+61153890-7bf8-4dd5-9e30-e06949b1f460,2733f5d9-3308-418e-8fa0-6419b66f4c41,75540a9f-e62c-4345-88b2-726080c8100d,2025-02-11,"Consistent performer, always meets deadlines."
+e39cbdcd-d66e-4967-af96-43a8cc5e4d08,cdcc1f09-b070-478f-a6ae-c7b5236ef747,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-09-17,"Frequently arrives late to meetings, need to address punctuality."
+c726b6f8-fe54-49e9-87fe-f11ef190d249,cdcc1f09-b070-478f-a6ae-c7b5236ef747,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-09-15,Requires too much supervision for senior-level tasks.
+b125b7c4-a2bb-48c2-9b09-bea7435d88e1,ea1fe734-8c9c-4177-acef-44ca0be53249,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-07-28,Requires too much supervision for senior-level tasks.
+89c6a19d-0f23-4e69-84e9-f948ca4e37b9,fd51028d-530a-46d7-ac1e-c23fa552ae30,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2017-06-18,Has expressed interest in moving to a management role.
+e4ed1a31-e2b1-4b21-90b3-6b299b412554,fd51028d-530a-46d7-ac1e-c23fa552ae30,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2019-11-15,"Going through some personal issues, performance slightly dipped but expected to recover."
+8053d1a8-4b8a-49bc-9b82-8f51c9e1f95f,54a9fd3e-03b6-4d5f-b70c-08f0ee91f1d7,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2022-11-15,"Struggling with the new tech stack, suggested additional training."
+3b10ea63-c070-4b5b-a51a-c1698a02d1d7,1444ab1a-250d-423c-be1f-662b48191da1,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2023-09-20,Needs to work on communication skills with cross-functional teams.
+01a8591c-3680-46b6-b8e5-404076f24837,1444ab1a-250d-423c-be1f-662b48191da1,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2026-05-22,Employee is showing great leadership potential.
+5a41e018-d972-4156-a146-5013519f62d1,f7a588e2-7488-4812-9136-9be5b8ba8160,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2020-11-22,"Highly motivated, took initiative on the last project."
+b15b520b-cfd9-4665-849c-1eda7b3eda47,1b1a2832-860e-4277-b31f-b81b330b01ef,630716e5-012e-462e-997f-4bddc29d22c6,2024-02-09,Requires too much supervision for senior-level tasks.
+c1fda2cf-24ba-45ed-b39b-73fc55f1621c,1b1a2832-860e-4277-b31f-b81b330b01ef,630716e5-012e-462e-997f-4bddc29d22c6,2021-07-24,Requires too much supervision for senior-level tasks.
+774c4a71-f948-418a-a7f6-0b523cfec868,76234fd0-bf14-4647-a041-5d8da964123e,a344149f-bc18-412b-940e-29c201e37a54,2026-06-23,"Struggling with the new tech stack, suggested additional training."
+ea309459-fede-43e6-9632-7e9b82e18dd9,ebb6416a-c681-4525-8c43-bd2dff552cff,7005687a-9bf2-49a1-ada1-97c42963f3ed,2022-06-03,Needs to work on communication skills with cross-functional teams.
+d1ef64b4-7020-4fb1-9b6d-978640c566dd,20b673a8-62cb-4793-9b96-b48dc5b29e79,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2020-09-28,"Going through some personal issues, performance slightly dipped but expected to recover."
+4f27d2f1-f7dd-4872-a2e9-3922b229c3f2,20b673a8-62cb-4793-9b96-b48dc5b29e79,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2023-06-30,"Frequently arrives late to meetings, need to address punctuality."
+5b2ff04c-9e9c-480b-bfb8-659b561ed4a9,455ae775-9e7b-4b24-ae66-2dfb2d1cdd1f,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-10-09,Needs to work on communication skills with cross-functional teams.
+f0fe9198-5851-408c-8b99-d4b54f724252,455ae775-9e7b-4b24-ae66-2dfb2d1cdd1f,ddf2f671-973b-4de9-afc4-04e64c763b88,2019-11-18,Employee is showing great leadership potential.
+30261137-fe53-47b9-b11b-2ad8fc0972f6,d7a05f4a-9386-4ecc-8c46-ea5f270c19ac,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-08-23,"Consistent performer, always meets deadlines."
+2ccfd97f-b440-4c5c-b67c-c485ef32f92a,989d3187-583b-4a07-8f87-4aafd3fa67d8,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2024-12-21,"Consistent performer, always meets deadlines."
+a475d325-e771-44f0-ba6e-f2503be71181,16fe411b-c60b-4599-ad7d-01cf0581c502,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-04-07,Needs to work on communication skills with cross-functional teams.
+7040464d-a7e8-44b4-8d60-16413f0e691e,c84126f4-b92b-4dce-9f37-e247ee802cef,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-03-23,"Great team player, always willing to help peers."
+96c9787f-f262-4e16-95d1-6f8d88b09968,c84126f4-b92b-4dce-9f37-e247ee802cef,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-09-02,Needs to work on communication skills with cross-functional teams.
+c72073db-0f3c-4f9b-bee2-b0501f074c3d,7b56ef8a-f08a-4659-a439-a173cdf5fdd4,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-06-09,Requires too much supervision for senior-level tasks.
+f6608091-911a-4cd3-8766-1713fa504450,99ed0793-c4fb-41b7-94e8-2bc0da423a98,8763f813-0fd1-448e-ae96-bd0f6be5d249,2024-08-19,Requires too much supervision for senior-level tasks.
+053b11a4-3e86-490f-b6b1-43d8716863f3,99ed0793-c4fb-41b7-94e8-2bc0da423a98,8763f813-0fd1-448e-ae96-bd0f6be5d249,2021-09-07,"Highly motivated, took initiative on the last project."
+d7ea1b6a-f994-4654-b03d-e4128447409a,6fffcd4b-9c81-4509-94f5-a715a7aaae2c,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2023-10-10,"Consistent performer, always meets deadlines."
+ac87238c-b89e-49cf-849c-aa98380104d6,f32d3b9d-ebbd-49e0-af9a-28642265e386,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2020-05-07,Employee is showing great leadership potential.
+6a6e7944-ccde-4f9e-b813-121f9840038b,33df6abd-f6e0-4939-834a-248860d5e33c,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-06-22,Has expressed interest in moving to a management role.
+d132d386-6ed5-41cf-99e5-51ae9a6ef143,33df6abd-f6e0-4939-834a-248860d5e33c,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2025-01-04,Needs to work on communication skills with cross-functional teams.
+fa4c8c63-330f-408f-8190-8ac59c92fafe,acc00b8e-00ef-429a-b690-a7841c0048f8,ce210808-0643-4154-b355-0f4fdb9309a7,2022-09-05,"Highly motivated, took initiative on the last project."
+4e3fb6a7-3c03-43a3-9c75-bf8581fbf185,124e39ad-9169-4fac-8643-2c520a98c6ac,8a6cb659-c889-4932-ba72-818cd81574f2,2024-01-31,Requires too much supervision for senior-level tasks.
+98a524ce-bdb5-49fd-8671-a5590ff02c8a,124e39ad-9169-4fac-8643-2c520a98c6ac,8a6cb659-c889-4932-ba72-818cd81574f2,2023-07-22,Has expressed interest in moving to a management role.
+e288f88b-eb56-4c36-8268-c0a3ebec2fe8,ff2ed1b5-fb63-4c02-946f-72304dc3f4ac,9c6389a2-f1aa-472a-a405-217b6094b685,2024-06-11,Has expressed interest in moving to a management role.
+c65c22f1-965f-4731-9e08-f7616e28341a,ff2ed1b5-fb63-4c02-946f-72304dc3f4ac,9c6389a2-f1aa-472a-a405-217b6094b685,2025-03-30,Requires too much supervision for senior-level tasks.
+99c567f9-76f9-47df-9160-f4a8ff8ed735,17a73295-b85f-43fb-8dfb-b95e77bb1d9c,7e265d70-9188-4135-8f84-55b39076442e,2026-02-01,Requires too much supervision for senior-level tasks.
+f93fe4f8-7144-4a4e-ae98-429ce6f19db0,3be1f31f-ee34-4a88-b200-ffed51e94bd7,ddf2f671-973b-4de9-afc4-04e64c763b88,2023-07-02,Requires too much supervision for senior-level tasks.
+5c9d576b-9fa6-4919-9509-5d4cb98916de,ab505fba-0509-48f0-a4fb-579baaf8b5c6,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2026-01-02,Has expressed interest in moving to a management role.
+3eab66a0-add3-4b5a-93d1-5043fb96a653,467dc8f7-bd08-4ff4-aca2-4610e7cac2ef,8565ea1d-4f56-4a49-b00a-1ff7618021be,2024-11-09,Needs to work on communication skills with cross-functional teams.
+6c0715dc-83f0-4f3a-86d3-72427ebe62c8,467dc8f7-bd08-4ff4-aca2-4610e7cac2ef,8565ea1d-4f56-4a49-b00a-1ff7618021be,2025-04-12,Has expressed interest in moving to a management role.
+5f7b8060-c831-4cc2-9aea-04d26997b34a,9fa9842e-3763-45e3-ba88-c5aaf749a571,f9bec295-192b-427e-b468-b90a36d3ed6e,2025-10-29,"Highly motivated, took initiative on the last project."
+12c6693f-ec74-4ef5-ae3b-beb48635aa9d,b1372615-d519-49ae-b1bb-0a0185abd102,c928550c-2338-463b-930a-29020041a190,2023-06-24,"Great team player, always willing to help peers."
+9dfc378e-1887-4190-9a87-7def4a7f1180,b1372615-d519-49ae-b1bb-0a0185abd102,c928550c-2338-463b-930a-29020041a190,2022-04-14,"Frequently arrives late to meetings, need to address punctuality."
+0cf87508-180b-4f80-91d7-bb40e1a69a53,71bebd95-708e-4367-a0ef-ea1de91e7660,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-11-14,"Struggling with the new tech stack, suggested additional training."
+c9c6385b-dd2a-4969-b6df-c1e7afbefb82,71bebd95-708e-4367-a0ef-ea1de91e7660,c3301c22-2b4b-4c7f-827f-90a886d47311,2023-10-15,"Consistent performer, always meets deadlines."
+c166a0a5-beee-4020-95cc-e97af75f1cdd,43910de2-4787-43e4-8c3c-09616063e2e6,75540a9f-e62c-4345-88b2-726080c8100d,2019-12-12,"Struggling with the new tech stack, suggested additional training."
+4f28fb96-6cb9-4a80-8a9a-362bccfe3cc5,0f82a7ba-6afa-4cb5-bc42-84d048503eff,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-03-25,"Great team player, always willing to help peers."
+1472f934-b1b1-4dc8-ba49-52f712d2dc34,6169f9da-d029-4076-a45e-625ac6abc1fa,3cd82c5e-529d-4500-8d52-deee030c1ea3,2022-06-09,Has expressed interest in moving to a management role.
+fd4217c1-898c-4235-9721-7418168ecea0,6169f9da-d029-4076-a45e-625ac6abc1fa,3cd82c5e-529d-4500-8d52-deee030c1ea3,2021-01-10,Requires too much supervision for senior-level tasks.
+b7c073dc-cb42-4163-99d9-2688c2ddf82e,601813f7-568a-4356-b4e0-c49714d7f7c3,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2022-08-14,"Struggling with the new tech stack, suggested additional training."
+9b190227-10bb-40b2-bddd-7dc6cbc4b3b4,601813f7-568a-4356-b4e0-c49714d7f7c3,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2025-03-10,"Going through some personal issues, performance slightly dipped but expected to recover."
+94f989c1-e01b-4a4f-9b9a-6a152ec9d680,71106971-d71a-4988-b274-1c14c25ec4c6,a344149f-bc18-412b-940e-29c201e37a54,2017-03-29,Requires too much supervision for senior-level tasks.
+afa3be37-7563-4196-bab8-65e510759778,c3fde0b4-699e-4297-9026-f45898e3968a,7e265d70-9188-4135-8f84-55b39076442e,2024-06-26,Has expressed interest in moving to a management role.
+711386da-67c8-4dee-9bb2-f215d28016a5,c3fde0b4-699e-4297-9026-f45898e3968a,7e265d70-9188-4135-8f84-55b39076442e,2026-07-26,"Great team player, always willing to help peers."
+2c0ad82c-d9ca-4ea3-a41a-de7afd5bb5ad,314206cb-4f2e-46f8-a8bb-d85f5e2153b3,555ee223-e3a0-411a-bd41-37eb57af5802,2022-08-16,"Great team player, always willing to help peers."
+b034e0e9-7f6a-4348-b223-3c34f8870768,c80dd545-8c48-4d8a-af92-dd5da6cdebad,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2021-06-01,"Frequently arrives late to meetings, need to address punctuality."
+bb78a328-a6c0-440c-aad8-b9f531db82b7,c80dd545-8c48-4d8a-af92-dd5da6cdebad,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-02-21,"Frequently arrives late to meetings, need to address punctuality."
+2cb9983b-9637-4695-a57e-317200206af9,74e992dc-6731-4397-b84d-cc9906015ded,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2017-08-09,"Great team player, always willing to help peers."
+97e7b85a-701c-4e76-a625-1016f003a300,c9950151-ce32-449c-8063-a404ec0a5cb6,95fee654-165a-4426-8f15-5aa7615c5e52,2019-12-24,Requires too much supervision for senior-level tasks.
+efffee5f-5e29-4c90-9d86-1f11af3b39a0,c9950151-ce32-449c-8063-a404ec0a5cb6,95fee654-165a-4426-8f15-5aa7615c5e52,2018-04-06,Needs to work on communication skills with cross-functional teams.
+bc48775c-0a30-42f7-b659-06e1262f0c4e,5dc9249e-d9d9-4f8c-9b36-12a6186ba787,f9bec295-192b-427e-b468-b90a36d3ed6e,2020-09-15,Has expressed interest in moving to a management role.
+49aeea2c-c059-41e7-a124-e290977a999b,5dc9249e-d9d9-4f8c-9b36-12a6186ba787,f9bec295-192b-427e-b468-b90a36d3ed6e,2021-02-22,"Highly motivated, took initiative on the last project."
+3955f6cb-bc6e-4010-a96b-5628a10541e3,ce967f0a-36fb-4bd1-b20a-8bdb74635668,c928550c-2338-463b-930a-29020041a190,2025-07-12,Needs to work on communication skills with cross-functional teams.
+0b00ee81-fa0a-492d-98ae-ae9eacf4466c,200a85d8-93a0-4bf0-8cf2-63ba9d6416de,75540a9f-e62c-4345-88b2-726080c8100d,2024-10-17,"Struggling with the new tech stack, suggested additional training."
+c065033f-8ef8-42e9-b3ce-3fdbb8515579,200a85d8-93a0-4bf0-8cf2-63ba9d6416de,75540a9f-e62c-4345-88b2-726080c8100d,2024-05-30,"Going through some personal issues, performance slightly dipped but expected to recover."
+fbd7552c-4d02-485e-bb21-0c33c0a5b34b,60bf4c0f-3739-4550-950e-5ddcb8c7dcec,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2023-05-28,Needs to work on communication skills with cross-functional teams.
+061041f6-41ba-43ff-81d1-b430804a1859,60bf4c0f-3739-4550-950e-5ddcb8c7dcec,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-06-24,Employee is showing great leadership potential.
+cac1c0f9-afb3-4888-9d9f-b1337670af0f,9bf48e2b-fcf3-4379-b692-a4c64f480057,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-05-08,Requires too much supervision for senior-level tasks.
+7a3cd9b8-317b-4eaf-8071-cc873ee29ca0,6008e480-eba1-402f-911c-bc81bf1b71d1,8763f813-0fd1-448e-ae96-bd0f6be5d249,2022-08-09,Requires too much supervision for senior-level tasks.
+fe726234-9ee6-47f1-a1e2-ff67046f82d0,68ea8624-427b-4187-8564-5f8b5633961f,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2021-02-03,Employee is showing great leadership potential.
+6c9792a1-8ddc-4c29-a409-79fcb8de774c,723f6352-cd73-4943-9522-064f21a4f5e2,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2021-08-27,"Great team player, always willing to help peers."
+fed4e3b5-b7c5-46e7-a4b4-e16241f534a1,723f6352-cd73-4943-9522-064f21a4f5e2,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2021-04-26,Employee is showing great leadership potential.
+f52e1a3a-40f6-4792-9eec-52ba0a86d63a,fc963031-fd98-4b7f-9002-95f576b0a761,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-07-02,Requires too much supervision for senior-level tasks.
+5c10b012-8879-42d2-99c9-7a7c3ac9d6ca,fc963031-fd98-4b7f-9002-95f576b0a761,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-05-25,Requires too much supervision for senior-level tasks.
+5f3ac24b-83a4-4e92-b34b-fcfa9bd26fca,3f149f50-403f-4032-aefc-ea3becada6d9,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-03-03,"Struggling with the new tech stack, suggested additional training."
+2d35be58-0210-4a26-8c35-ea227dc8d2e6,fb90b2de-6e00-49ae-88b2-63dcc1c25553,630716e5-012e-462e-997f-4bddc29d22c6,2024-03-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+f7d211de-95a8-408e-9b45-47c2586b9c47,645e458e-1580-43ad-a3ef-859d0053e098,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2025-09-10,"Consistent performer, always meets deadlines."
+ef5b6640-6d78-4cf6-8be7-b6b8d17f57b1,36c19f05-fea9-45af-85d5-b607ca044fef,9c6389a2-f1aa-472a-a405-217b6094b685,2026-03-20,"Great team player, always willing to help peers."
+6be88a9d-1436-493f-bcef-ee0ff0bf854d,24928538-c360-4079-bab2-92bf4275169b,7005687a-9bf2-49a1-ada1-97c42963f3ed,2023-01-27,Has expressed interest in moving to a management role.
+3b3a8c4a-1c54-47ba-90aa-7ec7fcd9298d,ffc144d4-1eec-4706-b909-7a55c25164d3,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2020-07-01,"Highly motivated, took initiative on the last project."
+34a496e3-db2a-421b-8f1a-1c02edbff604,ffc144d4-1eec-4706-b909-7a55c25164d3,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2020-10-02,Requires too much supervision for senior-level tasks.
+a9f1ddc2-f3fe-4907-bf4f-d79c0894bb07,8bd51501-351b-4888-8ab7-461958bbbbff,93893360-8fd5-40d9-a827-3d8dc0d2f698,2019-10-19,"Highly motivated, took initiative on the last project."
+27f1d421-61bd-4d6f-84ef-e60160ba58cc,8bd51501-351b-4888-8ab7-461958bbbbff,93893360-8fd5-40d9-a827-3d8dc0d2f698,2022-03-16,"Going through some personal issues, performance slightly dipped but expected to recover."
+17fb9d6f-ae26-474d-b1f2-1ad28c2e191b,c0962f3b-36d0-4e65-9a26-d97e171373a9,ddf2f671-973b-4de9-afc4-04e64c763b88,2024-12-18,"Consistent performer, always meets deadlines."
+0b25be81-ffb3-4595-a9b9-618219a18163,c0962f3b-36d0-4e65-9a26-d97e171373a9,ddf2f671-973b-4de9-afc4-04e64c763b88,2026-04-27,"Great team player, always willing to help peers."
+4850c72d-d3b1-4aaf-bfb5-4ace002103ab,f18e5367-960a-4189-ad25-c33b1e3fa7c2,c3301c22-2b4b-4c7f-827f-90a886d47311,2022-06-26,Employee is showing great leadership potential.
+7a4d88cb-f6ea-42c8-b18a-87fc55e7551b,ba1c17d1-be48-4303-a212-c01242cbd177,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-07-09,"Struggling with the new tech stack, suggested additional training."
+eae54577-f5f8-48f9-a695-3f6246b8afeb,9070d78e-f15e-41a9-8298-150308a9a8b3,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2018-04-06,"Great team player, always willing to help peers."
+dd4c75a2-2bd9-4c6c-bf44-228f4fcecf03,9070d78e-f15e-41a9-8298-150308a9a8b3,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-03-03,"Struggling with the new tech stack, suggested additional training."
+a831fccb-5a93-4a71-bf73-e9c104dc3cf1,2042b704-06cb-4acd-8efa-cb9a5a7d6b25,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2023-01-15,Needs to work on communication skills with cross-functional teams.
+780a717f-7ea0-427a-ae91-4e96c843b9a0,2042b704-06cb-4acd-8efa-cb9a5a7d6b25,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2022-06-11,"Highly motivated, took initiative on the last project."
+a4a8a91a-9f80-48c8-a656-3d5438e2197c,0c57e314-8e11-4161-ae43-97f5df987669,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-08-25,Requires too much supervision for senior-level tasks.
+a1c051f7-5b09-4930-84b9-3bd352001d5e,0c57e314-8e11-4161-ae43-97f5df987669,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2021-04-26,"Great team player, always willing to help peers."
+a460b28e-62b9-4014-8658-5690ecb63257,4f47c9b7-2a5b-436a-a6a3-a94fb35bbea7,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-08-02,"Frequently arrives late to meetings, need to address punctuality."
+1ffaa830-e635-4e3c-9cd3-05b4442a5c1f,4f47c9b7-2a5b-436a-a6a3-a94fb35bbea7,8763f813-0fd1-448e-ae96-bd0f6be5d249,2021-04-14,"Going through some personal issues, performance slightly dipped but expected to recover."
+82253836-569e-498d-90f9-75ffcf76a372,4da024d6-6cf1-41f1-a37a-7b6b33912a9b,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2026-02-28,"Highly motivated, took initiative on the last project."
+27dd7084-0250-42ac-ab0d-f6205acad551,bd508695-2de6-4c92-af4d-02a4ee535a1a,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2024-10-26,"Going through some personal issues, performance slightly dipped but expected to recover."
+a43ed651-e27c-4687-a858-ff505e192c3b,c8c70739-739e-4af5-a740-3cdff11d0030,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-11-11,"Great team player, always willing to help peers."
+57d6fdb8-b0a8-4d02-95e7-b522ee20b999,c8c70739-739e-4af5-a740-3cdff11d0030,3cd82c5e-529d-4500-8d52-deee030c1ea3,2020-03-09,Has expressed interest in moving to a management role.
+924c7732-7deb-419a-bcb0-bcdcc87bb622,8d09b0ad-4d02-4e87-bc0f-15a94bf8b13a,ce210808-0643-4154-b355-0f4fdb9309a7,2016-01-28,"Going through some personal issues, performance slightly dipped but expected to recover."
+618490cc-1b84-4b3f-8d4b-69b94082ba49,8d09b0ad-4d02-4e87-bc0f-15a94bf8b13a,ce210808-0643-4154-b355-0f4fdb9309a7,2026-03-30,"Consistent performer, always meets deadlines."
+8e2e3476-2e39-4fa5-98ac-c8d980d84e7c,a38f45ea-ee5d-46e5-94ee-d34f79c06891,630716e5-012e-462e-997f-4bddc29d22c6,2021-01-12,Has expressed interest in moving to a management role.
+c97a503c-ec5c-4ab3-ac9b-b9a9232fb74d,a38f45ea-ee5d-46e5-94ee-d34f79c06891,630716e5-012e-462e-997f-4bddc29d22c6,2020-10-26,Employee is showing great leadership potential.
+46a1b3e3-f1db-4cf2-b36a-2bdd1d644b00,0c960f5a-c1ac-47a1-bbaa-2d44ba05ec61,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2023-04-05,Employee is showing great leadership potential.
+ebc9ac4f-6eef-4b35-a7b3-0c5a06f85393,395876ab-2b1f-4140-947a-8b2170e3411c,8a6cb659-c889-4932-ba72-818cd81574f2,2023-07-01,Employee is showing great leadership potential.
+9407aa15-893a-47a9-a994-41e2f6ce8e42,395876ab-2b1f-4140-947a-8b2170e3411c,8a6cb659-c889-4932-ba72-818cd81574f2,2020-06-29,"Consistent performer, always meets deadlines."
+2b44db24-d5f1-4776-beaa-302b5d7413e4,f485b527-f05f-4867-b308-cbb8ff448ae9,9c6389a2-f1aa-472a-a405-217b6094b685,2020-03-02,Employee is showing great leadership potential.
+65d0b76f-deca-4c64-8190-377e762d02d4,f485b527-f05f-4867-b308-cbb8ff448ae9,9c6389a2-f1aa-472a-a405-217b6094b685,2019-08-14,"Consistent performer, always meets deadlines."
+f63ceab2-45af-4dc2-a7fa-a84f93e4a9c7,58f961f7-a9e9-4ed2-973b-55fa9f8464d6,93893360-8fd5-40d9-a827-3d8dc0d2f698,2024-10-26,"Great team player, always willing to help peers."
+dac51ace-4d6c-4dc4-a3fd-39d8d99f4445,58f961f7-a9e9-4ed2-973b-55fa9f8464d6,93893360-8fd5-40d9-a827-3d8dc0d2f698,2020-10-16,"Going through some personal issues, performance slightly dipped but expected to recover."
+32004f4c-a600-4d8d-9709-6925e04159b8,0fbcfd00-dbd8-4899-9926-85e23abfb5ab,ddf2f671-973b-4de9-afc4-04e64c763b88,2025-05-27,"Frequently arrives late to meetings, need to address punctuality."
+8726c4fa-dea5-4d45-94e6-3a6854c1c520,9366bdd7-1827-4ab2-916d-a65852f3ebe3,555ee223-e3a0-411a-bd41-37eb57af5802,2024-09-01,Has expressed interest in moving to a management role.
+3c55c212-093c-4cb5-b87e-3c58f9dfd6e1,9366bdd7-1827-4ab2-916d-a65852f3ebe3,555ee223-e3a0-411a-bd41-37eb57af5802,2025-03-01,"Great team player, always willing to help peers."
+a294a1b9-4776-4872-8380-a1689af8c281,14dc194c-c6fd-4333-88e2-f5d1bc353e54,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2026-01-24,Employee is showing great leadership potential.
+1a4ef335-e499-44c5-8c9e-4a85bfc0c5cd,14dc194c-c6fd-4333-88e2-f5d1bc353e54,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2023-05-01,"Highly motivated, took initiative on the last project."
+7574cb79-80d3-4ba6-b9e5-79132303bf03,ef77c048-5b4a-4e5f-b9d2-ba3ea69769cb,8565ea1d-4f56-4a49-b00a-1ff7618021be,2025-05-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+4da5de01-b644-4cab-9fff-e1dfe2e1a734,555b0e4f-c9e5-47a3-8dcb-5a9a9c4354f1,f9bec295-192b-427e-b468-b90a36d3ed6e,2025-01-05,"Struggling with the new tech stack, suggested additional training."
+20adb9bc-8911-43d6-b46e-abeadb96bb8a,555b0e4f-c9e5-47a3-8dcb-5a9a9c4354f1,f9bec295-192b-427e-b468-b90a36d3ed6e,2025-08-30,"Struggling with the new tech stack, suggested additional training."
+f7e8a3ee-2e13-40a3-b53e-715cbcf7eb87,033f8ff3-b82a-45c9-905d-172af59fc7f9,c928550c-2338-463b-930a-29020041a190,2023-10-01,"Going through some personal issues, performance slightly dipped but expected to recover."
+52974ffd-2f9e-4df2-ab7a-651f75898acc,692909c0-619b-472a-8e83-d0d087d3ca74,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-06-21,Requires too much supervision for senior-level tasks.
+7e8eaf41-be79-44e7-bccd-d29f289a10c4,692909c0-619b-472a-8e83-d0d087d3ca74,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-03-20,"Consistent performer, always meets deadlines."
+384636ab-81f4-4e31-8c32-bf56d283599b,67d755bf-a43f-4276-8a1f-7f16122bca42,75540a9f-e62c-4345-88b2-726080c8100d,2025-02-25,"Consistent performer, always meets deadlines."
+7cda9eb5-ec90-4a75-8af9-003395da199c,82b76527-c935-4b6e-b277-9eb2318aa67e,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-04-04,"Consistent performer, always meets deadlines."
+cbee012c-25df-492f-b9bd-828d96e052a4,82b76527-c935-4b6e-b277-9eb2318aa67e,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2021-04-22,"Frequently arrives late to meetings, need to address punctuality."
+015b0261-408d-451b-897c-8d9ae7c09146,5599d60f-6518-4ae5-b5d8-bb3c47f1aba5,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2024-04-23,"Frequently arrives late to meetings, need to address punctuality."
+27ae973e-bdca-4b56-8f3a-c0ce7f4a534d,5599d60f-6518-4ae5-b5d8-bb3c47f1aba5,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2021-03-07,"Going through some personal issues, performance slightly dipped but expected to recover."
+ff80e655-6a26-4e67-883a-23ba2d38e131,ae5aa971-692a-42b8-a193-5408b3914ae9,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-01-08,"Going through some personal issues, performance slightly dipped but expected to recover."
+c5dc749c-ba47-4e8d-bcb5-c5f3578104a2,ae5aa971-692a-42b8-a193-5408b3914ae9,3cd82c5e-529d-4500-8d52-deee030c1ea3,2022-02-21,Requires too much supervision for senior-level tasks.
+b1ec1819-683d-4df5-b947-1f3c3f3d731d,c822b7e5-cd0d-48f8-8286-4b09bd12b1b1,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2023-12-14,Requires too much supervision for senior-level tasks.
+412b0701-2c74-4625-8335-ce8cb6994759,4a92cb5c-6bb1-4cb3-8a41-599177ff596f,630716e5-012e-462e-997f-4bddc29d22c6,2017-04-25,Employee is showing great leadership potential.
+d74647d1-4b8b-45d7-9c57-a69eb9870748,eaa88430-0dfe-4c8b-88e7-006d4c186a37,8a6cb659-c889-4932-ba72-818cd81574f2,2019-08-21,Employee is showing great leadership potential.
+16dbcc44-0988-4301-a88c-60a0100b91e2,5fe2f125-6419-4f33-b6a6-2c2d8be35a3a,a344149f-bc18-412b-940e-29c201e37a54,2019-05-19,"Struggling with the new tech stack, suggested additional training."
+9a8c69f9-f3f3-4669-8806-e4525d7602c7,5fe2f125-6419-4f33-b6a6-2c2d8be35a3a,a344149f-bc18-412b-940e-29c201e37a54,2019-08-18,"Going through some personal issues, performance slightly dipped but expected to recover."
+ca8c6b72-c67d-4dec-9057-96fb81fbc285,a929dc16-0c29-4b0d-9edd-93111b79ca8a,7005687a-9bf2-49a1-ada1-97c42963f3ed,2025-06-08,Requires too much supervision for senior-level tasks.
+03b5a861-8806-4d64-bd14-d20e8622b476,a929dc16-0c29-4b0d-9edd-93111b79ca8a,7005687a-9bf2-49a1-ada1-97c42963f3ed,2022-11-19,"Highly motivated, took initiative on the last project."
+3ad23991-7ea2-4d94-b288-4e9035dd4504,8772a587-a814-4c40-9ffa-01f07a23e11a,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2026-04-26,"Consistent performer, always meets deadlines."
+6edfd313-1540-4a8c-9e7d-6a07daeb6be3,13e6bfc3-3929-4f23-a54f-3f2bb2966312,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-06-20,Employee is showing great leadership potential.
+c299abce-22f0-4a3d-9aa8-713c222c39d6,13e6bfc3-3929-4f23-a54f-3f2bb2966312,93893360-8fd5-40d9-a827-3d8dc0d2f698,2019-02-06,"Consistent performer, always meets deadlines."
+97170ae5-aec0-41ef-a787-5c99e58b92b5,96e871d5-f00c-404a-ad65-75765d43993e,555ee223-e3a0-411a-bd41-37eb57af5802,2021-07-24,"Consistent performer, always meets deadlines."
+3791ad7b-ef75-420b-b263-9d864ae9f172,21873b7c-9ad6-416e-8e19-cf9163cac91b,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2022-06-12,"Going through some personal issues, performance slightly dipped but expected to recover."
+4995b25d-bcf9-4df4-b50a-dc80026457af,c3ba6d27-5250-4549-ad46-333b8f1907f5,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2026-04-08,Requires too much supervision for senior-level tasks.
+e5dfc528-6e2e-40a8-bc43-63067f3c0287,c3ba6d27-5250-4549-ad46-333b8f1907f5,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2025-05-08,"Highly motivated, took initiative on the last project."
+ea10598d-d542-4d76-b5a8-d10a5dea7ec1,0bf63119-100d-47bd-ac30-c233e86a4ebf,95fee654-165a-4426-8f15-5aa7615c5e52,2025-11-05,"Struggling with the new tech stack, suggested additional training."
+22aa6636-207c-451b-905e-2b0d637f32aa,0bf63119-100d-47bd-ac30-c233e86a4ebf,95fee654-165a-4426-8f15-5aa7615c5e52,2025-09-23,Employee is showing great leadership potential.
+345ae285-1941-403a-99a5-1af60e91bef9,9280ccaf-2cd7-4890-bdd7-4e459a68703d,f9bec295-192b-427e-b468-b90a36d3ed6e,2021-10-04,Needs to work on communication skills with cross-functional teams.
+a45508ad-c841-421a-8675-c8f385584e69,9280ccaf-2cd7-4890-bdd7-4e459a68703d,f9bec295-192b-427e-b468-b90a36d3ed6e,2021-11-25,"Highly motivated, took initiative on the last project."
+3e3663d5-080d-46fe-a497-6a8238c5e8b7,137b2a8e-ff95-441b-8784-ad3a73145ae4,c928550c-2338-463b-930a-29020041a190,2022-12-15,"Frequently arrives late to meetings, need to address punctuality."
+0673e70b-856d-4ebb-9312-f2b193a6db39,009cc850-8d30-42f1-850b-93806566e3b3,75540a9f-e62c-4345-88b2-726080c8100d,2026-04-09,Requires too much supervision for senior-level tasks.
+0624206a-c8f6-4257-bc99-6a1ddc3e745f,c3cb1bc2-b4bc-46a9-9d07-5af1a4286613,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2024-06-03,Requires too much supervision for senior-level tasks.
+60e57285-83fb-4d9b-aaa6-1e36f6eb9577,c3cb1bc2-b4bc-46a9-9d07-5af1a4286613,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-05-17,Needs to work on communication skills with cross-functional teams.
+57ec9b3d-0c79-46b3-bfd6-f3447c9daa33,f2074da0-31ad-4f44-9f4e-6758c09dea0d,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-06-24,"Struggling with the new tech stack, suggested additional training."
+87c16422-1bc6-448e-a9da-8dc5d3b76b43,f2074da0-31ad-4f44-9f4e-6758c09dea0d,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-01-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+6c280db6-25a3-4768-a070-02a9422cd12a,38cd41e0-bbef-40b4-b450-64a130a935de,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-07-08,"Struggling with the new tech stack, suggested additional training."
+987d6aa4-f3a7-4aa1-99bf-fb81ee1d70a0,98172343-218d-4f1a-83d9-2dabdc2f94e3,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2024-04-23,"Great team player, always willing to help peers."
+9e6db616-a599-44ef-9f31-bf6876ea51c1,98172343-218d-4f1a-83d9-2dabdc2f94e3,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2018-07-20,Requires too much supervision for senior-level tasks.
+cadc9c46-7c12-4e9f-804e-9b8c64676190,bdab553e-38b0-4faf-bc1f-99a6f8c2139c,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-06-26,"Great team player, always willing to help peers."
+d608f112-091a-41a1-97fe-c30b3cd315b8,bdab553e-38b0-4faf-bc1f-99a6f8c2139c,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-12-20,"Highly motivated, took initiative on the last project."
+97c1d981-b9b7-4dcf-b44c-604c19867f9b,13c053c2-dfe2-4050-a08d-9695b43faefd,8a6cb659-c889-4932-ba72-818cd81574f2,2022-05-25,"Great team player, always willing to help peers."
+b4ac2a7a-4965-48b9-ba80-23072cdaaabe,13c053c2-dfe2-4050-a08d-9695b43faefd,8a6cb659-c889-4932-ba72-818cd81574f2,2020-10-07,Needs to work on communication skills with cross-functional teams.
+e2165cf5-8c71-441c-8a6b-e8d81bee49c3,6203e1ee-0792-49e0-822d-a1e187c0089f,9c6389a2-f1aa-472a-a405-217b6094b685,2026-06-25,Requires too much supervision for senior-level tasks.
+4ada9226-6617-4047-9954-9384b0d56c45,6203e1ee-0792-49e0-822d-a1e187c0089f,9c6389a2-f1aa-472a-a405-217b6094b685,2025-08-06,"Consistent performer, always meets deadlines."
+9c1b526b-2fc5-45f8-9cf5-28c174709361,df2a0329-c692-4e94-8099-b2befe8cb4f1,a344149f-bc18-412b-940e-29c201e37a54,2026-01-06,"Going through some personal issues, performance slightly dipped but expected to recover."
+37780e99-a682-4deb-be9b-1724b34be65e,df2a0329-c692-4e94-8099-b2befe8cb4f1,a344149f-bc18-412b-940e-29c201e37a54,2026-05-09,"Great team player, always willing to help peers."
+3c8e7c60-46f7-4a1f-a1d6-e2c3c07b56ba,24fa7844-f037-4700-ab8d-0966b364447a,7005687a-9bf2-49a1-ada1-97c42963f3ed,2021-01-24,"Highly motivated, took initiative on the last project."
+7ec3309e-5e9e-4dd4-bdb4-8b6044c37f5a,5ae2f0cb-3910-4e07-8272-5fcf199e2b8c,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2020-10-26,Employee is showing great leadership potential.
+2da5164a-83cf-428a-aeb6-2a2611302095,a5565b05-2d1d-47ae-9733-4870196f4919,93893360-8fd5-40d9-a827-3d8dc0d2f698,2026-07-16,Has expressed interest in moving to a management role.
+aa74d8ef-4093-48c6-8a66-9c117f97f92f,a5565b05-2d1d-47ae-9733-4870196f4919,93893360-8fd5-40d9-a827-3d8dc0d2f698,2026-07-18,Needs to work on communication skills with cross-functional teams.
+bcac80a6-ec17-4a5a-97a3-73592c55bb7c,57de502e-22e1-4ed1-9d06-915def99a041,555ee223-e3a0-411a-bd41-37eb57af5802,2026-06-08,"Great team player, always willing to help peers."
+f6c32d73-6b98-41aa-b4d6-807f6062e095,57de502e-22e1-4ed1-9d06-915def99a041,555ee223-e3a0-411a-bd41-37eb57af5802,2026-06-28,"Highly motivated, took initiative on the last project."
+500fee8c-0c9d-4a23-9ebc-c3f219b3b6ff,194c2d4d-cbaf-4d32-9d95-35974370aa55,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2021-07-12,"Highly motivated, took initiative on the last project."
+2e6aabd4-8018-494d-8bc5-becc0a04997e,194c2d4d-cbaf-4d32-9d95-35974370aa55,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2020-03-25,Has expressed interest in moving to a management role.
+2cbbf047-4042-4856-8d9f-f26c240fbada,0a2d0c29-bf33-469b-bf9a-9918fd034a27,95fee654-165a-4426-8f15-5aa7615c5e52,2025-01-25,Employee is showing great leadership potential.
+0cdd3e68-f56e-442c-a690-ef2b200d9129,17df8764-268a-4bea-baad-d6c3edccd53b,f9bec295-192b-427e-b468-b90a36d3ed6e,2025-01-15,"Struggling with the new tech stack, suggested additional training."
+3caa829d-be56-4051-9c75-303d4468a412,28eb26fa-ab54-4970-9074-337df40283f7,c928550c-2338-463b-930a-29020041a190,2024-05-30,Requires too much supervision for senior-level tasks.
+fbb0788c-f538-473c-8821-a5f70e50a2ef,39b89e8b-c52e-4a98-859d-1d5d3c304b5c,c3301c22-2b4b-4c7f-827f-90a886d47311,2021-06-23,Has expressed interest in moving to a management role.
+9e8949bd-b27a-46a6-befc-a3b621c6dccd,e7268767-badc-4731-83f1-3df575365ff3,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2025-08-17,Has expressed interest in moving to a management role.
+62c978df-3b89-451f-9517-0b8f944fd231,e7268767-badc-4731-83f1-3df575365ff3,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2024-08-29,"Going through some personal issues, performance slightly dipped but expected to recover."
+fd8615f6-b04d-45ce-af43-df08d884e5b9,4746108b-2b48-4072-8347-d981b2a167dd,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-09-06,Needs to work on communication skills with cross-functional teams.
+1b2e703f-da26-48d2-a8d2-95f3ae6a5792,4746108b-2b48-4072-8347-d981b2a167dd,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2020-12-17,"Frequently arrives late to meetings, need to address punctuality."
+d8ed35f6-dd6c-419f-afbf-9f400be62755,974fa9da-cf65-4282-89de-2802d4861605,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2023-06-26,Employee is showing great leadership potential.
+05b0cdf5-2fbf-469f-a206-2cb58ba404bd,bfa0e697-2948-40b9-949d-992a5c256b49,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2021-08-23,"Highly motivated, took initiative on the last project."
+6cd2c3fd-b107-4e9b-ae2d-4c3fe43c6cfa,bfa0e697-2948-40b9-949d-992a5c256b49,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2021-12-14,"Going through some personal issues, performance slightly dipped but expected to recover."
+6af8ccdf-9122-4cc9-aa42-60a5cc49cf21,91f44267-9ca9-4728-bbb6-47cdf75e54b0,ce210808-0643-4154-b355-0f4fdb9309a7,2023-09-16,"Highly motivated, took initiative on the last project."
+342ed7b3-5aaa-4439-8721-400913cadf2a,91f44267-9ca9-4728-bbb6-47cdf75e54b0,ce210808-0643-4154-b355-0f4fdb9309a7,2024-11-02,Has expressed interest in moving to a management role.
+618ec852-f79e-4226-bf0f-4ee8591bbf88,da8ce03c-ee82-407f-8ea5-486bd9a0fbb8,630716e5-012e-462e-997f-4bddc29d22c6,2024-11-24,Employee is showing great leadership potential.
+4163eed5-51ab-44f6-b2e0-a07f77735f28,da8ce03c-ee82-407f-8ea5-486bd9a0fbb8,630716e5-012e-462e-997f-4bddc29d22c6,2026-02-12,"Great team player, always willing to help peers."
+6c1289c2-b074-4f8f-85f9-371544582bf5,91d04517-3109-4ab1-bfe1-b6c857f3a46d,8a6cb659-c889-4932-ba72-818cd81574f2,2026-03-31,"Going through some personal issues, performance slightly dipped but expected to recover."
+69404063-50e2-47ab-a855-6987539a27d6,91d04517-3109-4ab1-bfe1-b6c857f3a46d,8a6cb659-c889-4932-ba72-818cd81574f2,2026-05-21,Needs to work on communication skills with cross-functional teams.
+27f0df59-fe13-4876-a551-4eb99645f6e2,93668de2-9fd6-475a-8b3f-1d572df1be43,9c6389a2-f1aa-472a-a405-217b6094b685,2024-01-31,"Going through some personal issues, performance slightly dipped but expected to recover."
+3ee19705-d8c3-4fb8-91a4-f7cd8073b9e3,93668de2-9fd6-475a-8b3f-1d572df1be43,9c6389a2-f1aa-472a-a405-217b6094b685,2023-04-13,"Frequently arrives late to meetings, need to address punctuality."
+18445f25-384a-4a3f-ba1d-1beda3f1c2e0,2f47c07c-47e8-496e-9ec4-329b6d3edd9c,7e265d70-9188-4135-8f84-55b39076442e,2025-03-09,"Great team player, always willing to help peers."
+f49a4fb8-6eb4-49f1-bcee-dace9c0588df,2f47c07c-47e8-496e-9ec4-329b6d3edd9c,7e265d70-9188-4135-8f84-55b39076442e,2025-04-25,"Going through some personal issues, performance slightly dipped but expected to recover."
+b86033d9-9aa7-4a8e-b807-0863e48b3ec1,cebbe511-4c2c-4c7d-a230-f44666ef9523,93893360-8fd5-40d9-a827-3d8dc0d2f698,2023-06-07,Has expressed interest in moving to a management role.
+b9709ae5-c6d9-43ca-b307-0bb73eb15351,cebbe511-4c2c-4c7d-a230-f44666ef9523,93893360-8fd5-40d9-a827-3d8dc0d2f698,2020-11-27,"Struggling with the new tech stack, suggested additional training."
+ac827306-9633-45d2-987c-32d74240fe07,83c12692-31b0-4f95-9fb2-2be01728e558,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-03-21,"Consistent performer, always meets deadlines."
+ef989904-cd0c-4584-87a6-7694c6df0f5e,83c12692-31b0-4f95-9fb2-2be01728e558,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2026-06-21,"Frequently arrives late to meetings, need to address punctuality."
+cfe772f8-47b3-4bd8-a6ef-1127066dcced,56eb90fa-3458-4639-aaf8-0b1b51432e5e,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2026-01-20,"Great team player, always willing to help peers."
+ab50fd5a-2279-46b9-9e5d-056babb9fa6c,ece3a728-1821-4f16-af15-4fc1f10e243c,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-11-15,Needs to work on communication skills with cross-functional teams.
+c0c8a5e7-fd63-4c78-adf9-00fa8dd04a4a,ece3a728-1821-4f16-af15-4fc1f10e243c,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-10-27,"Great team player, always willing to help peers."
+c0e830a5-cb8c-4af2-a60b-4451c0e74340,07a06782-a249-43ee-9861-1e2fc00edae5,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2025-10-29,"Struggling with the new tech stack, suggested additional training."
+4fa8cef4-6c10-4bbe-8a7a-097778fddf18,1dd36d2a-3c27-4e99-81a3-db24afce861e,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2026-07-18,Employee is showing great leadership potential.
+5cf5d84f-bee1-4dcb-8425-a738a18bbde9,210193fa-13a9-4336-8276-a7ba84ff6f4b,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-07-13,"Great team player, always willing to help peers."
+82f7223e-57df-4ff7-9787-59f70de8514a,ffd28dac-4402-4061-bd63-9c2eaeed32ef,630716e5-012e-462e-997f-4bddc29d22c6,2023-07-19,"Consistent performer, always meets deadlines."
+083eb182-43c9-4abe-b4b7-25b47d4649fc,ffd28dac-4402-4061-bd63-9c2eaeed32ef,630716e5-012e-462e-997f-4bddc29d22c6,2025-04-24,Needs to work on communication skills with cross-functional teams.
+898ae604-4a7a-4da1-b7aa-77c670a080a6,e9026fe8-88b8-4303-95f7-eea22a0d07c9,8a6cb659-c889-4932-ba72-818cd81574f2,2024-12-18,Has expressed interest in moving to a management role.
+1e960c61-cc97-454c-ad0b-6dbdd5e4d7ca,5f278c3e-b991-4163-bb3c-40087bf6cb5e,a344149f-bc18-412b-940e-29c201e37a54,2026-02-24,"Consistent performer, always meets deadlines."
+1d8a1992-9cc9-44ff-ac6d-563472b2514a,5f278c3e-b991-4163-bb3c-40087bf6cb5e,a344149f-bc18-412b-940e-29c201e37a54,2018-10-12,Needs to work on communication skills with cross-functional teams.
+e716b57e-4cbb-4d05-bcdb-db7dc8a70aa5,5104331f-3d2e-473c-9d86-d3c3a6a90982,7005687a-9bf2-49a1-ada1-97c42963f3ed,2019-04-06,"Frequently arrives late to meetings, need to address punctuality."
+0f450c8b-f93d-46c5-97ef-4e409794788a,4df09699-6a4e-4ac4-b26f-572ebe12edd6,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2026-01-15,"Great team player, always willing to help peers."
+46d024b0-f90f-44c8-b7e2-4556327eb2be,4df09699-6a4e-4ac4-b26f-572ebe12edd6,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2021-07-04,"Highly motivated, took initiative on the last project."
+103fc78c-5f46-4745-a8b0-90136469ba0b,208428f7-c4e3-4799-9619-74fc175e4855,93893360-8fd5-40d9-a827-3d8dc0d2f698,2021-02-21,"Highly motivated, took initiative on the last project."
+917d6646-8ede-46ca-b996-1108ea8177a9,208428f7-c4e3-4799-9619-74fc175e4855,93893360-8fd5-40d9-a827-3d8dc0d2f698,2019-07-18,"Highly motivated, took initiative on the last project."
+681be5ae-20c2-417f-b08f-ba41294eb3f0,f08c083f-2286-4890-8f1a-b0fa03961ae5,ddf2f671-973b-4de9-afc4-04e64c763b88,2017-08-09,Employee is showing great leadership potential.
+5b2b99f6-b297-4248-b9bf-08d4e2122070,f08c083f-2286-4890-8f1a-b0fa03961ae5,ddf2f671-973b-4de9-afc4-04e64c763b88,2017-01-21,"Great team player, always willing to help peers."
+f4ec36a2-bcbc-4f66-bf86-a10b39baa16d,6f7ea124-f58c-43ba-b0e8-1d3dfb3d0996,555ee223-e3a0-411a-bd41-37eb57af5802,2023-04-24,Has expressed interest in moving to a management role.
+2a948f02-436b-469f-81b9-01bb97c7d171,6f7ea124-f58c-43ba-b0e8-1d3dfb3d0996,555ee223-e3a0-411a-bd41-37eb57af5802,2025-01-30,Has expressed interest in moving to a management role.
+ec7c1431-3163-4b45-a0d3-86f064d9aa34,135d249a-b869-4bf6-a450-5d8f90fc6564,c928550c-2338-463b-930a-29020041a190,2025-08-19,"Consistent performer, always meets deadlines."
+c37df9dc-b450-48c5-8e22-91eee7dc2944,890f24ef-b428-4193-8a6b-40bf74a427a3,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-03-11,"Consistent performer, always meets deadlines."
+a11413f2-c114-4782-bb4b-1d9faabd6913,244c29e7-764b-4ce2-9164-148a5d124f2a,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-04-27,Requires too much supervision for senior-level tasks.
+6a26d673-3544-4bd1-a7f9-5ce984c4c0e2,244c29e7-764b-4ce2-9164-148a5d124f2a,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-04-08,"Frequently arrives late to meetings, need to address punctuality."
+1fa22a74-f02a-4a03-aa30-8b22391ad938,6ed3f653-7d1d-40dd-a5e3-98cce7ac7aa7,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2024-07-11,Employee is showing great leadership potential.
+1f87178b-4919-4a2f-a0fc-c22d02c40f41,41048425-a655-4d49-9961-624af791eaac,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2023-09-28,"Great team player, always willing to help peers."
+f4e52d78-6786-4ddb-a881-193e1b79dc61,9438e025-ade4-4a30-960a-9b49c93f3aa2,ce210808-0643-4154-b355-0f4fdb9309a7,2017-05-29,"Going through some personal issues, performance slightly dipped but expected to recover."
+b9a90606-3dd1-43fa-8eb1-ac47da8f117b,9438e025-ade4-4a30-960a-9b49c93f3aa2,ce210808-0643-4154-b355-0f4fdb9309a7,2021-02-11,Needs to work on communication skills with cross-functional teams.
+00606b08-6e0f-4386-98ca-0b150530dfc2,fcdfb524-f31d-4f16-8c75-8ae05a307294,630716e5-012e-462e-997f-4bddc29d22c6,2021-03-13,"Highly motivated, took initiative on the last project."
+5674404d-5e2a-41b5-87e1-3cb78e83c976,fcdfb524-f31d-4f16-8c75-8ae05a307294,630716e5-012e-462e-997f-4bddc29d22c6,2019-11-01,"Struggling with the new tech stack, suggested additional training."
+a7400eb9-6ae0-4347-9d41-cb834bfc6c6e,6d30cd3d-7403-416b-a831-b7d794f8bc47,9c6389a2-f1aa-472a-a405-217b6094b685,2017-11-25,Needs to work on communication skills with cross-functional teams.
+941ce274-9102-49b2-8767-cd923f0394ef,6d30cd3d-7403-416b-a831-b7d794f8bc47,9c6389a2-f1aa-472a-a405-217b6094b685,2025-06-11,"Struggling with the new tech stack, suggested additional training."
+fe176d41-817d-44ea-a781-f916f0068204,0a54cf5c-0a30-4783-9a22-169d62bcc8c9,a344149f-bc18-412b-940e-29c201e37a54,2024-07-10,Employee is showing great leadership potential.
+8872c41a-151b-4325-995c-e5b17ba7990c,0a54cf5c-0a30-4783-9a22-169d62bcc8c9,a344149f-bc18-412b-940e-29c201e37a54,2026-07-12,"Frequently arrives late to meetings, need to address punctuality."
+48339a12-f8c2-4f0a-a397-e586776559c7,5670d01a-a957-4bc5-a7b9-b19c7ae914a7,7e265d70-9188-4135-8f84-55b39076442e,2023-01-26,"Consistent performer, always meets deadlines."
+dd81a471-bbc7-4bb9-bb09-424c375ab421,5670d01a-a957-4bc5-a7b9-b19c7ae914a7,7e265d70-9188-4135-8f84-55b39076442e,2026-02-15,Needs to work on communication skills with cross-functional teams.
+64a186ba-7ff6-4997-9a73-dbf73498e4c6,eb4cd8f9-da1f-4308-b6f4-d7a6cb912034,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-12-04,Has expressed interest in moving to a management role.
+a5e05109-bbf9-431c-8679-a7499d221b2d,8db2e339-db0e-4217-953a-c7aa6adea0bf,ddf2f671-973b-4de9-afc4-04e64c763b88,2025-01-26,"Highly motivated, took initiative on the last project."
+fcc3d62c-c576-4c79-963c-8090b2f718a2,8db2e339-db0e-4217-953a-c7aa6adea0bf,ddf2f671-973b-4de9-afc4-04e64c763b88,2023-09-07,Employee is showing great leadership potential.
+49329c4c-7148-4d69-8b00-ee14696c1706,41ebb9f8-62fb-4645-bf42-922e890f1fe7,555ee223-e3a0-411a-bd41-37eb57af5802,2024-05-28,"Going through some personal issues, performance slightly dipped but expected to recover."
+6e61760d-00ad-4f1b-9b46-405bf81c9ed2,9eb2a895-3e50-4a94-8984-1d96609f3b97,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2023-12-28,"Highly motivated, took initiative on the last project."
+1a06a37d-2542-4c63-92e5-f3612c53f02c,fee3b507-980a-42a1-b326-cdaab6a63e04,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2026-06-17,"Frequently arrives late to meetings, need to address punctuality."
+65a3a7b1-60f0-4eef-9dba-bd989e062e03,fee3b507-980a-42a1-b326-cdaab6a63e04,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2026-07-14,Has expressed interest in moving to a management role.
+3c95b139-4a5a-4296-a800-9e57eca5a0d0,6729e45e-1135-4176-b523-b4c5af5b721a,95fee654-165a-4426-8f15-5aa7615c5e52,2019-05-07,"Highly motivated, took initiative on the last project."
+c895b354-5e9d-4f75-b21b-c5cd40b163bc,2e9d1eae-af9e-4ac2-83f6-334feae25fb3,f9bec295-192b-427e-b468-b90a36d3ed6e,2024-09-13,"Highly motivated, took initiative on the last project."
+818bffc6-636e-46ed-b976-977705088c91,2e9d1eae-af9e-4ac2-83f6-334feae25fb3,f9bec295-192b-427e-b468-b90a36d3ed6e,2023-07-05,Has expressed interest in moving to a management role.
+3bfaa939-30b5-468f-8d27-00d6451620e3,c06f6c24-c571-4a2e-ab88-14f868da1704,75540a9f-e62c-4345-88b2-726080c8100d,2022-05-17,Has expressed interest in moving to a management role.
+d2e843b7-e289-4fc9-8942-8dcc756684e5,c06f6c24-c571-4a2e-ab88-14f868da1704,75540a9f-e62c-4345-88b2-726080c8100d,2022-06-30,"Consistent performer, always meets deadlines."
+2a435ad8-4099-4c33-bd9c-4a12dd422a4b,554f394c-a042-431e-81b2-1db361df546e,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-06-24,"Going through some personal issues, performance slightly dipped but expected to recover."
+4be14166-cf6c-404f-b36d-11d779ee6c23,d3c472fe-21cc-45af-bcb4-02747da2c9de,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2023-03-20,"Consistent performer, always meets deadlines."
+274876eb-f0b2-474e-bfbf-3411dd42d04b,d3c472fe-21cc-45af-bcb4-02747da2c9de,b2876e84-60b7-4ebb-aa0a-3fbd7a27bca2,2025-01-20,"Struggling with the new tech stack, suggested additional training."
+5d0baa95-8604-40f0-b5a7-8de658125586,4135adb1-79ed-4479-8419-3da9bebf621a,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-10-27,"Consistent performer, always meets deadlines."
+12182582-40ae-4986-8c78-c1ab2bc115ed,4135adb1-79ed-4479-8419-3da9bebf621a,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2025-12-24,"Struggling with the new tech stack, suggested additional training."
+e5db4e25-e197-4c24-8220-e9ce2dc40655,29deae47-9422-43ef-a683-ceb20dd94df6,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2023-04-06,"Frequently arrives late to meetings, need to address punctuality."
+d263d693-e956-4e50-8cc8-b39575d1119f,fa3a12f8-60bb-49bb-a843-d86c8968b990,630716e5-012e-462e-997f-4bddc29d22c6,2026-06-17,"Frequently arrives late to meetings, need to address punctuality."
+90947d9a-107f-47ec-820f-d6cf0f8dade8,4e0c4813-33a4-47a3-a994-c56f516b53f2,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2017-01-31,"Going through some personal issues, performance slightly dipped but expected to recover."
+52448136-c571-4edb-8111-bf90782f02ae,4e0c4813-33a4-47a3-a994-c56f516b53f2,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2019-09-30,"Going through some personal issues, performance slightly dipped but expected to recover."
+0f4e4324-de17-4349-bccf-51fe1c7c9f7f,8111a374-326a-431e-bd1d-017e65d0a888,8a6cb659-c889-4932-ba72-818cd81574f2,2025-03-11,"Consistent performer, always meets deadlines."
+61ae8c8b-1a6e-48f1-a704-712aa3f4d5bf,c4e9fbaa-f78d-4256-8496-232ecba358c7,a344149f-bc18-412b-940e-29c201e37a54,2025-04-17,Employee is showing great leadership potential.
+a0488d67-d3d5-4d28-aaea-02f2f8846a07,45741b25-fe6d-4e99-a28e-af0429c654bd,7e265d70-9188-4135-8f84-55b39076442e,2022-12-25,Employee is showing great leadership potential.
+2afd645a-5b75-4358-ab84-c74b2bf4694c,45741b25-fe6d-4e99-a28e-af0429c654bd,7e265d70-9188-4135-8f84-55b39076442e,2021-01-20,"Great team player, always willing to help peers."
+5425b671-2bce-4bb2-afef-a9ff98a6f3ff,877eada1-fdbe-4ff9-b406-9f1e9cf96035,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-09-05,Employee is showing great leadership potential.
+bd78d00c-9fec-413d-88be-ed1247baf7d9,877eada1-fdbe-4ff9-b406-9f1e9cf96035,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2025-11-26,"Going through some personal issues, performance slightly dipped but expected to recover."
+1e71aa0c-64c8-4062-bcac-bcbf5ed70293,885c9200-8cfd-4bab-912a-827a569ab455,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-05-03,Needs to work on communication skills with cross-functional teams.
+d732dfd9-a9d9-4464-be82-d3035e1787ee,885c9200-8cfd-4bab-912a-827a569ab455,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-07-25,"Great team player, always willing to help peers."
+45d349d7-36ec-43dc-bfe8-0d8ff28bd4fd,a322ea38-ec43-47d6-a805-c06b5196cde2,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2023-09-19,Has expressed interest in moving to a management role.
+be7f0a98-9ff9-4fc2-8dad-bcf21de5e411,a322ea38-ec43-47d6-a805-c06b5196cde2,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-01-30,Has expressed interest in moving to a management role.
+07bf56b5-a567-4175-b0a0-d2f23c015820,28826ffb-e935-4c8b-a2f7-d43d6ad28000,8565ea1d-4f56-4a49-b00a-1ff7618021be,2026-02-06,Has expressed interest in moving to a management role.
+6ddd6ce0-ce7e-41bf-bd72-fa648af6ace4,2326da6b-27bc-4f2d-bb30-eb12cc553360,95fee654-165a-4426-8f15-5aa7615c5e52,2019-01-22,"Consistent performer, always meets deadlines."
+390b2eab-d17b-4808-b51a-ec5d60339716,2326da6b-27bc-4f2d-bb30-eb12cc553360,95fee654-165a-4426-8f15-5aa7615c5e52,2021-04-29,Requires too much supervision for senior-level tasks.
+b39c5dae-2f5c-4d8d-a622-53437ae38da9,f0f04098-5ff1-4144-9e21-153702a6d077,c928550c-2338-463b-930a-29020041a190,2025-01-27,Requires too much supervision for senior-level tasks.
+b45c98e3-4703-4a75-823d-361b4e8d795e,f0f04098-5ff1-4144-9e21-153702a6d077,c928550c-2338-463b-930a-29020041a190,2024-03-24,"Highly motivated, took initiative on the last project."
+50796326-66ee-4af9-a5c7-bb5488b8218d,c8c7da67-e978-4d8a-9f00-99b4b1fd5aaf,75540a9f-e62c-4345-88b2-726080c8100d,2026-02-20,Has expressed interest in moving to a management role.
+30e36e83-f45b-4efd-bd1b-b5df54cc51f7,671c624d-8489-43b4-8093-7c331e3deb9f,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2022-11-13,Employee is showing great leadership potential.
+ead63238-39ac-4ba4-80c1-9cf41921c21f,671c624d-8489-43b4-8093-7c331e3deb9f,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-02-02,"Great team player, always willing to help peers."
+e186716f-d8f5-4ecf-8d68-797887d60886,4303086e-daf0-427e-b8d8-4d7df24f1c98,254e5290-7c0b-4c32-a48f-ce956be85d4a,2023-08-26,Requires too much supervision for senior-level tasks.
+b1675442-c661-47c7-8074-74042f2392a7,2b7eb652-f379-4a6f-8b61-39366f6fa132,8763f813-0fd1-448e-ae96-bd0f6be5d249,2018-04-30,"Struggling with the new tech stack, suggested additional training."
+5926ef23-f81d-4659-a798-8b9822be61e8,d863e254-1298-4dd6-8afe-230f4ae808a9,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2026-05-02,"Great team player, always willing to help peers."
+b870a2be-a125-4b2f-ac17-3bd3526d7c4d,e919d7f4-6bf3-4f5d-8db1-3a1113dd13c6,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2024-11-05,Requires too much supervision for senior-level tasks.
+3b277569-c81a-41b4-8f2d-c8ea8a5a11f2,c14875cc-351c-4481-8fc0-59dd1e73b75b,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-06-14,Employee is showing great leadership potential.
+5ea54854-5455-4c3f-956a-27f55bb7700c,c14875cc-351c-4481-8fc0-59dd1e73b75b,3cd82c5e-529d-4500-8d52-deee030c1ea3,2025-10-10,Requires too much supervision for senior-level tasks.
+089a2338-385b-4467-a4d4-b7bb9cfe6e6b,085a2ceb-ac23-44aa-9926-56c3a013de03,ce210808-0643-4154-b355-0f4fdb9309a7,2025-10-25,Has expressed interest in moving to a management role.
+ea6f31c1-cd49-46be-a3a7-487d132aa1e8,085a2ceb-ac23-44aa-9926-56c3a013de03,ce210808-0643-4154-b355-0f4fdb9309a7,2024-12-21,"Going through some personal issues, performance slightly dipped but expected to recover."
+b55be2b7-a712-437c-99fe-3758ad6924e2,561f4e4d-0cbc-4d2c-85d0-31e9fb0012f4,630716e5-012e-462e-997f-4bddc29d22c6,2019-04-11,Needs to work on communication skills with cross-functional teams.
+da9943c7-103f-4496-ad1e-0fcafd995377,561f4e4d-0cbc-4d2c-85d0-31e9fb0012f4,630716e5-012e-462e-997f-4bddc29d22c6,2025-05-15,Requires too much supervision for senior-level tasks.
+6d7cb792-4503-47ef-bb59-f022f3979354,5db931e2-3c80-4427-82a9-37fee22c0a53,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2024-02-21,"Struggling with the new tech stack, suggested additional training."
+b8e5f7be-ada8-48ec-8d77-1529c688867c,5db931e2-3c80-4427-82a9-37fee22c0a53,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2022-09-11,"Consistent performer, always meets deadlines."
+9d841efe-97d9-4782-a123-d0db6d2aebfc,c06e1d95-b09f-4489-81c3-7866cbf1a0c5,9c6389a2-f1aa-472a-a405-217b6094b685,2025-11-25,"Frequently arrives late to meetings, need to address punctuality."
+88c7db84-a69c-4e87-931c-a806afd90cf9,209311d8-3065-4f89-be4c-8429dde22e37,a344149f-bc18-412b-940e-29c201e37a54,2025-01-20,Needs to work on communication skills with cross-functional teams.
+7d29d860-26d3-45e5-acf6-b7991090ca41,70876684-231b-41e4-9042-b4f27b56abaf,7005687a-9bf2-49a1-ada1-97c42963f3ed,2019-01-22,"Frequently arrives late to meetings, need to address punctuality."
+e8d55ce8-1021-4d7e-8b79-2211f0d2cbb1,e92a46b5-7dd8-4322-bf7f-575449b01094,7e265d70-9188-4135-8f84-55b39076442e,2023-08-01,Employee is showing great leadership potential.
+1f753ca6-4426-4ea9-9039-48af9e381de7,e92a46b5-7dd8-4322-bf7f-575449b01094,7e265d70-9188-4135-8f84-55b39076442e,2024-12-15,Employee is showing great leadership potential.
+ad61ed26-8a16-4093-bc4f-2a3c7af806ca,940ca94e-cbdd-4a2a-8d4e-b35961b49b27,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2020-08-06,Requires too much supervision for senior-level tasks.
+0de68f1e-1f5c-4d68-a3b9-4f6b5dc9ba75,a0f22ff0-da45-410b-8937-25d76d91f2d1,93893360-8fd5-40d9-a827-3d8dc0d2f698,2020-12-19,"Great team player, always willing to help peers."
+27333d04-e69a-432f-bc91-4bfa6ed46b3f,6092d8ec-aac2-4dfb-a042-ef15d77c8890,ddf2f671-973b-4de9-afc4-04e64c763b88,2026-07-09,"Frequently arrives late to meetings, need to address punctuality."
+a2154ba0-6eac-47c6-bc36-2fc7b847cfbb,6092d8ec-aac2-4dfb-a042-ef15d77c8890,ddf2f671-973b-4de9-afc4-04e64c763b88,2025-11-07,"Frequently arrives late to meetings, need to address punctuality."
+2f7651bb-f7b0-4dfe-9cd4-19247ca53f96,1207b3ed-0a11-4ecb-91e6-8523b1ba02ac,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2025-06-05,"Consistent performer, always meets deadlines."
+ed165db0-2adc-47e2-a665-f5cbd0fe2386,1207b3ed-0a11-4ecb-91e6-8523b1ba02ac,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2026-03-03,"Great team player, always willing to help peers."
+3a72a8b5-1ac7-4b7b-9d1f-d582b06f7b0c,ab236748-dbd9-4d4e-9b09-66e0ae34a01e,8565ea1d-4f56-4a49-b00a-1ff7618021be,2024-01-18,"Frequently arrives late to meetings, need to address punctuality."
+ab3a48e4-abca-4385-a38a-d60bce15d342,7045d5b1-a7d8-408f-a6e6-29a55c4d4fa9,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-03-24,"Highly motivated, took initiative on the last project."
+44d48709-0096-488e-b3fa-2bde245995f2,af7354ab-8885-46c1-a03d-851c37672e6c,75540a9f-e62c-4345-88b2-726080c8100d,2021-03-28,"Frequently arrives late to meetings, need to address punctuality."
+3b190816-e876-458a-8f20-972cc8ac0cd0,4c57513d-51ef-4839-86f3-61bdad7e62e7,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2024-07-06,"Struggling with the new tech stack, suggested additional training."
+714acea7-4ee1-4b55-90e6-ee02d63d1bcf,4c57513d-51ef-4839-86f3-61bdad7e62e7,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2019-03-21,"Great team player, always willing to help peers."
+d0086562-bbb1-46b3-995d-5f4411f2e510,6483974b-6944-4487-85ba-49e73b4795e8,8763f813-0fd1-448e-ae96-bd0f6be5d249,2025-02-20,"Highly motivated, took initiative on the last project."
+9ac33c71-8996-4efe-bce9-7a0449728ee8,71f7ec58-bd72-45fd-8eb9-e4d6bc82a900,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2023-12-03,Employee is showing great leadership potential.
+67859c4c-b3d8-4495-98bf-a056563e01ab,71f7ec58-bd72-45fd-8eb9-e4d6bc82a900,0a372f95-d7ee-49d9-a2df-e7ddf82290de,2023-05-04,"Going through some personal issues, performance slightly dipped but expected to recover."
+a20e8618-60c2-4109-a2e1-961e0e57f9a9,d89cfaa9-d2a8-44e2-b086-531578a4fba4,3cd82c5e-529d-4500-8d52-deee030c1ea3,2026-03-25,Requires too much supervision for senior-level tasks.
+f53237c6-cee2-4242-971e-e10be5c655e8,cc2d3a8b-43fd-4ba6-9ab6-e47d7de509c8,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2018-03-28,"Consistent performer, always meets deadlines."
+23f8e91d-4f59-42e4-b71f-3a42e941e5b6,cc2d3a8b-43fd-4ba6-9ab6-e47d7de509c8,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2023-12-08,"Great team player, always willing to help peers."
+53cf22f7-73b1-4602-a33a-5fc4051bac60,8953a919-d946-4ef7-9afe-8e9e922dc7c2,ce210808-0643-4154-b355-0f4fdb9309a7,2023-02-14,"Frequently arrives late to meetings, need to address punctuality."
+c4672aaf-3779-46c6-8616-8526159c239c,8953a919-d946-4ef7-9afe-8e9e922dc7c2,ce210808-0643-4154-b355-0f4fdb9309a7,2023-04-18,"Great team player, always willing to help peers."
+bcfd3aed-824a-4b42-9f68-3f29cc96dc4e,aab939b0-6851-41f9-970f-25f909bd1b33,8a6cb659-c889-4932-ba72-818cd81574f2,2025-03-20,Requires too much supervision for senior-level tasks.
+7b0b9983-cc20-427b-ae13-821de01147bc,a7fb0a5d-aada-47c3-8091-8f139ffc46ac,7005687a-9bf2-49a1-ada1-97c42963f3ed,2026-05-24,Needs to work on communication skills with cross-functional teams.
+213c313f-1a10-4535-a2c7-0e5a94f5cc3a,51b4fcb0-6b62-4415-8a66-85828a0a5a9b,7e265d70-9188-4135-8f84-55b39076442e,2026-05-05,"Highly motivated, took initiative on the last project."
+a4425b8e-4fb7-4c73-ad80-9ee9af0b5c5d,78133e3a-dd3a-4c34-80b2-e89d269599f0,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2023-10-21,Has expressed interest in moving to a management role.
+c0eb565d-5ac8-4e7a-8518-acd2653162b6,78133e3a-dd3a-4c34-80b2-e89d269599f0,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2024-05-01,Requires too much supervision for senior-level tasks.
+660c3ff9-2d81-4b30-bdd8-374ace783ac3,d78b9cae-7a7d-4017-9ba8-e9c43970b164,93893360-8fd5-40d9-a827-3d8dc0d2f698,2025-02-21,"Highly motivated, took initiative on the last project."
+874d3423-52e2-45c0-9c06-d5addadd8713,7cd9c28a-1820-412b-a55c-253d3bb426d0,555ee223-e3a0-411a-bd41-37eb57af5802,2022-11-13,"Struggling with the new tech stack, suggested additional training."
+948d04b0-1b71-43b7-ac34-3304d6baab5a,7cd9c28a-1820-412b-a55c-253d3bb426d0,555ee223-e3a0-411a-bd41-37eb57af5802,2026-05-25,Employee is showing great leadership potential.
+46b4bb63-8f19-498b-8ea4-c17207b16409,5455cfbc-b5d2-4bcd-a26d-90ee773eb42e,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-06-10,Has expressed interest in moving to a management role.
+b5e4447b-a4eb-4369-a885-41220122427e,5455cfbc-b5d2-4bcd-a26d-90ee773eb42e,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2024-09-17,Requires too much supervision for senior-level tasks.
+bc090de5-02b1-4a69-a867-ed3ff73e11f1,dc960f6c-3b71-4192-a7ce-10110c09a333,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2023-12-17,Has expressed interest in moving to a management role.
+1bbf8822-43e3-411c-8e63-b701c5138e7b,dc960f6c-3b71-4192-a7ce-10110c09a333,d4ebadd9-8f6f-4097-bfeb-370bc1312ecf,2025-05-16,Has expressed interest in moving to a management role.
+723e6363-5cdc-4690-85ba-808c3d79db57,30cf89b3-120e-4f15-a4f4-d5918eeabdaf,95fee654-165a-4426-8f15-5aa7615c5e52,2026-05-25,Has expressed interest in moving to a management role.
+ad89e2da-b492-4267-8272-c8a12dddb4ab,30cf89b3-120e-4f15-a4f4-d5918eeabdaf,95fee654-165a-4426-8f15-5aa7615c5e52,2026-05-17,Employee is showing great leadership potential.
+477d222f-5151-4155-b0c7-44f574eed1f4,f94795c7-d7b8-49cb-889e-5ec3018b1417,f9bec295-192b-427e-b468-b90a36d3ed6e,2025-02-07,"Going through some personal issues, performance slightly dipped but expected to recover."
+64c7d654-2414-4fcc-86c1-eb6ee6f0798a,f94795c7-d7b8-49cb-889e-5ec3018b1417,f9bec295-192b-427e-b468-b90a36d3ed6e,2023-01-12,"Great team player, always willing to help peers."
+1ce39841-1f90-4891-8b47-e32487d1b604,281b04eb-1ea1-468b-aa3d-9e69c1e9caf4,c3301c22-2b4b-4c7f-827f-90a886d47311,2025-07-04,"Highly motivated, took initiative on the last project."
+d1e0bcf3-9933-4036-90ff-39fd015b9b01,603f653b-cd9d-4a78-9ada-bd830d1222de,75540a9f-e62c-4345-88b2-726080c8100d,2026-06-19,"Great team player, always willing to help peers."
+9c94cfe0-428a-496a-937a-8a4e7bb59843,058835db-aa7d-4d63-8bbb-8ee34e102435,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-09-28,"Highly motivated, took initiative on the last project."
+60e2edfc-7099-4a84-9823-d34bc86aa8fb,70a47f0f-b8a9-4542-a67e-22d00147db82,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2019-07-27,Requires too much supervision for senior-level tasks.
+cea8f386-4db5-47cf-a594-7ce073c77a00,70a47f0f-b8a9-4542-a67e-22d00147db82,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2022-07-14,Requires too much supervision for senior-level tasks.
+73154641-754b-4eca-bcab-f03a975c2d43,d6f2237d-4f28-499c-bb1b-712a2be2e0da,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-05-25,"Great team player, always willing to help peers."
+1ed5d964-ea67-4e15-93fa-4f4874b55822,d6f2237d-4f28-499c-bb1b-712a2be2e0da,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2026-07-08,"Consistent performer, always meets deadlines."
+ffd7e68b-df5e-422c-a29f-4a123f399604,971d8162-50bf-49f8-adf8-ffc36e79e16c,630716e5-012e-462e-997f-4bddc29d22c6,2025-10-04,"Frequently arrives late to meetings, need to address punctuality."
+62fdef8f-010a-4e27-aaf1-431c616f8954,971d8162-50bf-49f8-adf8-ffc36e79e16c,630716e5-012e-462e-997f-4bddc29d22c6,2026-02-06,"Great team player, always willing to help peers."
+67747354-64f8-40be-a14c-16291a80db63,d6cc4a2a-4713-46a2-b06a-d3549166836c,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2026-07-21,"Great team player, always willing to help peers."
+02f7628a-79c9-480d-b926-8977879e4f60,b89faaa1-7b72-44e7-bde1-b0245ed5508f,8a6cb659-c889-4932-ba72-818cd81574f2,2016-10-12,"Frequently arrives late to meetings, need to address punctuality."
+9da278a9-ff6a-4f9e-95f7-5c8a5606a4be,b89faaa1-7b72-44e7-bde1-b0245ed5508f,8a6cb659-c889-4932-ba72-818cd81574f2,2018-11-20,Employee is showing great leadership potential.
+bea86ae0-24e4-419d-9be9-e6621e951355,70770191-22c8-4a63-8fdf-fdcc07142c64,a344149f-bc18-412b-940e-29c201e37a54,2023-02-25,"Highly motivated, took initiative on the last project."
+dc8f034c-ec93-4cd0-a6db-baacc3f86907,0ada5e68-2a0f-42d6-b418-5445bf5797bf,7e265d70-9188-4135-8f84-55b39076442e,2025-10-15,Requires too much supervision for senior-level tasks.
+f981ee33-965b-471f-abcf-03d14236efa8,3ce024ee-07a0-4cdc-8b58-93e4e8cd9550,93893360-8fd5-40d9-a827-3d8dc0d2f698,2026-06-24,Has expressed interest in moving to a management role.
+35ac2b21-ce30-4b4a-a60e-c9930c929894,cba70765-fcf1-4b0f-9455-a897bf1d5d0a,ddf2f671-973b-4de9-afc4-04e64c763b88,2023-09-05,Needs to work on communication skills with cross-functional teams.
+31845bc9-57d4-4d9a-815c-0d927a7ddffb,8d7f2e51-9388-4991-ba17-86ae452c8138,555ee223-e3a0-411a-bd41-37eb57af5802,2026-07-16,"Great team player, always willing to help peers."
+7416312b-4943-49a4-966e-a985dcd7becb,8d7f2e51-9388-4991-ba17-86ae452c8138,555ee223-e3a0-411a-bd41-37eb57af5802,2026-06-20,Employee is showing great leadership potential.
+2a202e3e-9518-4ea2-8571-52ab403ee89e,609e6dd4-8064-4640-a50c-9c1426e3556a,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2023-05-15,"Going through some personal issues, performance slightly dipped but expected to recover."
+e6b35679-a621-452e-8f44-f66558bcfc4a,609e6dd4-8064-4640-a50c-9c1426e3556a,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2023-06-12,Employee is showing great leadership potential.
+0faf40c0-0757-4b57-bc1a-97c2ca370261,7987a6d1-8781-42da-8e7c-6474dbd6e103,95fee654-165a-4426-8f15-5aa7615c5e52,2025-02-15,"Great team player, always willing to help peers."
+d965006c-9e29-4413-a71e-fbe0c78524eb,7987a6d1-8781-42da-8e7c-6474dbd6e103,95fee654-165a-4426-8f15-5aa7615c5e52,2026-01-22,"Going through some personal issues, performance slightly dipped but expected to recover."
+e23f2323-b315-4a30-a89c-ec7ec33bded2,7ce07a62-407d-4ef6-b458-05accc1a818f,c928550c-2338-463b-930a-29020041a190,2021-11-29,"Highly motivated, took initiative on the last project."
+2a768097-6f81-4b7b-bc35-9bec0d5c8df1,7ce07a62-407d-4ef6-b458-05accc1a818f,c928550c-2338-463b-930a-29020041a190,2024-09-06,Requires too much supervision for senior-level tasks.
+61fefcff-885c-4b66-8fd5-8e33ffc9356c,1500cb23-4c46-48cd-a3fc-1a5796c6907d,75540a9f-e62c-4345-88b2-726080c8100d,2026-01-26,"Great team player, always willing to help peers."
+9eb4869f-434d-4dd9-9bdd-ecaa072b504f,1500cb23-4c46-48cd-a3fc-1a5796c6907d,75540a9f-e62c-4345-88b2-726080c8100d,2025-01-04,"Great team player, always willing to help peers."
+b51b3cf4-66bf-4d3d-a003-15f31206c386,25460e67-8195-4e3a-b103-fe2f4bf6a74d,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-04-21,"Consistent performer, always meets deadlines."
+a8c21557-79cd-4ec9-a8a4-1cb243637ab8,1b04417b-7bed-45a8-a80c-b499773e93f6,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2023-12-24,Needs to work on communication skills with cross-functional teams.
+38d2f06b-3c19-4ae8-a501-35b530718f32,7102d329-3428-4c69-b9db-7ba8832be7d7,8763f813-0fd1-448e-ae96-bd0f6be5d249,2022-06-17,"Great team player, always willing to help peers."
+08672755-ee37-413e-8001-e0b226623e31,9222b7d7-411c-4450-9f57-77ad8b63e395,526dd8a4-62c4-44d0-8e3b-c6005383a6e8,2023-10-06,"Consistent performer, always meets deadlines."
+e5b4f318-4d51-43ef-beff-81705a0371fd,83c009a7-fe47-4ae0-9834-6870ad55dec2,3cd82c5e-529d-4500-8d52-deee030c1ea3,2022-04-05,"Struggling with the new tech stack, suggested additional training."
+1334c0d8-2813-46b4-9cd9-e7c6f8ff4561,77b4dc15-f2d6-42db-987b-cc5541016cd6,40d6cd96-c5d0-4455-b009-0b0046dcb51b,2016-11-07,"Consistent performer, always meets deadlines."
+eafc63d9-d938-4431-81ee-87449623c221,4342f3e0-326c-4582-b4f1-4bf1111e82a5,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2026-03-17,"Going through some personal issues, performance slightly dipped but expected to recover."
+1e0f147c-00d1-4fa4-b487-264d09395ae6,4342f3e0-326c-4582-b4f1-4bf1111e82a5,543b70df-c750-4d2d-8b42-9ad31bebe5d1,2026-03-05,Employee is showing great leadership potential.
+7147b12e-68b3-4941-84e3-83f8eb3cd399,5024cb83-b861-469a-ba3e-170777c0fb68,8a6cb659-c889-4932-ba72-818cd81574f2,2025-06-13,"Going through some personal issues, performance slightly dipped but expected to recover."
+60bb643d-1094-4a3b-a274-6dd247668a11,5024cb83-b861-469a-ba3e-170777c0fb68,8a6cb659-c889-4932-ba72-818cd81574f2,2021-02-25,"Struggling with the new tech stack, suggested additional training."
+467459ee-96c6-49f0-86df-21cdb6f853bb,554ad7fa-5860-44f9-936d-88543f20d497,9c6389a2-f1aa-472a-a405-217b6094b685,2025-08-26,Employee is showing great leadership potential.
+4c6c3cd8-19ce-4c18-a666-ec651f4733b4,8413f6a1-c5d3-4aff-b6dd-c47dc684aa2b,7005687a-9bf2-49a1-ada1-97c42963f3ed,2024-07-18,"Frequently arrives late to meetings, need to address punctuality."
+4736a80b-f35f-4aa9-9244-8697c2586411,b5b414ac-2f4b-4568-97f3-ada752747836,7e265d70-9188-4135-8f84-55b39076442e,2024-04-20,"Great team player, always willing to help peers."
+ce6bb1d9-7bf7-4066-bae4-87d45d0316b0,003eaf72-a659-4fc9-b389-92e8dde85a9f,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2023-05-05,"Great team player, always willing to help peers."
+3664fe3e-aa18-427f-8b46-03ba97270b92,003eaf72-a659-4fc9-b389-92e8dde85a9f,36f9d437-0f3f-4390-b929-2ead8cea5fb5,2022-01-31,Needs to work on communication skills with cross-functional teams.
+2f9732c2-d106-480b-a1f2-00fc533208a8,6d5a2659-b9d1-48a9-98bd-c6d1f05552e4,93893360-8fd5-40d9-a827-3d8dc0d2f698,2018-06-19,"Going through some personal issues, performance slightly dipped but expected to recover."
+9e8f8dae-42a2-4c15-bf88-58b67f485c0c,edda6399-9c98-4213-9aab-e80339958da9,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2023-09-18,"Consistent performer, always meets deadlines."
+13236ee0-9493-4fd5-9fc9-8619cb2ee658,edda6399-9c98-4213-9aab-e80339958da9,5ca802ef-bd45-459e-8fb9-c2b0ce1e03cc,2018-07-15,"Frequently arrives late to meetings, need to address punctuality."
+e08b7bfe-e6b1-4618-b240-cc2ca1099398,01123f95-8d85-41a4-acfb-070a8814c836,c928550c-2338-463b-930a-29020041a190,2023-05-28,Has expressed interest in moving to a management role.
+bfd57538-fb56-47f3-a631-56c49f8f3d98,d3747db9-45c5-4472-bb41-900a15f67849,c3301c22-2b4b-4c7f-827f-90a886d47311,2024-06-20,"Consistent performer, always meets deadlines."
+1bd054d9-7063-417e-af6f-390e8c0b19d2,d3747db9-45c5-4472-bb41-900a15f67849,c3301c22-2b4b-4c7f-827f-90a886d47311,2022-02-05,Has expressed interest in moving to a management role.
+928bbced-6402-4b9c-8cd3-3ac479daaf30,1dc9dbe9-1497-4b4b-81f3-63eeeb2c460a,75540a9f-e62c-4345-88b2-726080c8100d,2026-05-15,"Highly motivated, took initiative on the last project."
+893c87a4-8df2-4853-a0d4-9201224b095d,1dc9dbe9-1497-4b4b-81f3-63eeeb2c460a,75540a9f-e62c-4345-88b2-726080c8100d,2017-11-24,Needs to work on communication skills with cross-functional teams.
+7fd49913-9d50-497c-bb38-52c60d254192,6dc1e9b2-969b-4c0f-a6b9-0023ebc43acb,a21c8a2b-18ab-4040-b6ca-9d87668287e2,2023-04-04,Has expressed interest in moving to a management role.
+c0d1316a-6f45-471b-a337-94100ec9c08c,4bb85093-fb6b-4162-a954-bc7a0250bcf2,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2025-01-01,"Consistent performer, always meets deadlines."
+589c3154-0259-4e1d-9857-2be7c4a52fde,4bb85093-fb6b-4162-a954-bc7a0250bcf2,f29a8f01-0ea3-45f6-a563-5ab88bd21740,2026-02-10,Requires too much supervision for senior-level tasks.
+22c37610-b7f2-422c-ba62-90a689968402,6735cd62-b3e5-4045-b4bb-cfa4164374b6,0dc34f7f-1c7f-4008-9b7a-8c416421e4fa,2026-03-11,"Great team player, always willing to help peers."
+4e2999a3-6f4a-4dde-930d-1c7f7aa4d712,f3c72ba4-6fcf-48b3-8212-246922d9c619,254e5290-7c0b-4c32-a48f-ce956be85d4a,2024-08-25,Requires too much supervision for senior-level tasks.
+d4464e4b-5260-4aa5-b8cb-fe399bf8499a,f3c72ba4-6fcf-48b3-8212-246922d9c619,254e5290-7c0b-4c32-a48f-ce956be85d4a,2025-06-15,Requires too much supervision for senior-level tasks.
+54e7794c-5121-4fc9-ac10-8f8a9b800beb,4ba9cbd7-17ed-4f0f-82b0-18cfeac762f9,9c6389a2-f1aa-472a-a405-217b6094b685,2026-07-26,Employee is showing great leadership potential.

@@ -78,6 +78,17 @@ export const bulkImportEmployees = createAsyncThunk(
   },
 );
 
+export const fetchEmployee360 = createAsyncThunk(
+  'employee/fetchEmployee360',
+  async (id, { rejectWithValue }) => {
+    try {
+      return await employeeService.getEmployee360(id);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch 360 profile.');
+    }
+  },
+);
+
 const employeeSlice = createSlice({
   name: 'employee',
   initialState: {
@@ -87,6 +98,7 @@ const employeeSlice = createSlice({
     limit: 10,
     totalPages: 1,
     currentEmployee: null,
+    employee360: null,
     filters: {
       search: '',
       departmentId: '',
@@ -234,6 +246,21 @@ const employeeSlice = createSlice({
         state.successMessage = `Import completed! Successfully imported ${action.payload.importedCount} employee(s).`;
       })
       .addCase(bulkImportEmployees.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // fetchEmployee360
+      .addCase(fetchEmployee360.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.employee360 = null;
+      })
+      .addCase(fetchEmployee360.fulfilled, (state, action) => {
+        state.loading = false;
+        state.employee360 = action.payload;
+        state.currentEmployee = action.payload.employee;
+      })
+      .addCase(fetchEmployee360.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

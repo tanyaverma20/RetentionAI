@@ -1,0 +1,6 @@
+DepartmentID,Name,Code,Description,Location,IsActive
+ddb2f8ea-e856-4cff-ab3e-6fb0654cac87,Engineering,ENG1,Engineering department for internal operations.,Bangalore,true
+198b9a3c-3147-4c7d-ab5e-e5f92d510165,Sales,SAL2,Sales department for internal operations.,Mumbai,true
+aee8398e-dcb0-4523-99e8-602cefec2b55,Marketing,MAR3,Marketing department for internal operations.,Delhi,true
+75f9e8f5-86bc-44b1-89e1-172996323318,Human Resources,HUM4,Human Resources department for internal operations.,Hyderabad,true
+bc6349a5-37e5-41d7-81d9-a869c12bbaf3,Finance,FIN5,Finance department for internal operations.,Pune,true

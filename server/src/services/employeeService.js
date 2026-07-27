@@ -12,6 +12,30 @@
 import { AppError } from '../errors/AppError.js';
 import * as departmentRepository from '../repositories/departmentRepository.js';
 import * as employeeRepository from '../repositories/employeeRepository.js';
+import { Attendance } from '../models/Attendance.js';
+import { Performance } from '../models/Performance.js';
+import { Survey } from '../models/Survey.js';
+import { EmployeeFeedback } from '../models/EmployeeFeedback.js';
+import { ManagerNote } from '../models/ManagerNote.js';
+
+/**
+ * Fetch a complete 360° profile aggregating all HR sub-collections.
+ * @param {string} employeeId
+ * @param {object} authContext
+ */
+export async function getEmployee360(employeeId, authContext) {
+  const employee = await getEmployeeProfile(employeeId, authContext);
+
+  const [attendance, performance, surveys, feedback, managerNotes] = await Promise.all([
+    Attendance.find({ employeeId }).sort({ attendanceDate: -1 }).limit(12).lean(),
+    Performance.find({ employeeId }).sort({ reviewPeriod: -1 }).lean(),
+    Survey.find({ employeeId }).sort({ surveyDate: -1 }).lean(),
+    EmployeeFeedback.find({ employeeId }).sort({ feedbackDate: -1 }).limit(20).lean(),
+    ManagerNote.find({ employeeId }).sort({ noteDate: -1 }).limit(20).lean(),
+  ]);
+
+  return { employee, attendance, performance, surveys, feedback, managerNotes };
+}
 
 /**
  * Create a new employee.

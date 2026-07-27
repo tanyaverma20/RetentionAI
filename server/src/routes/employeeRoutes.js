@@ -46,6 +46,9 @@ employeeRouter.post(
 // List employees (scope enforced inside controller/service based on user role)
 employeeRouter.get('/', employeeController.listEmployees);
 
+// 360° profile — aggregates all HR sub-collections for one employee
+employeeRouter.get('/:employeeId/360', validateEmployeeIdParam, employeeController.getEmployee360);
+
 // View employee profile (scope checked inside service layer)
 employeeRouter.get('/:employeeId', validateEmployeeIdParam, employeeController.getEmployeeProfile);
 

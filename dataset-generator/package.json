@@ -1,0 +1,19 @@
+{
+  "name": "dataset-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@faker-js/faker": "^10.5.0",
+    "csv-writer": "^1.6.0",
+    "dayjs": "^1.11.21",
+    "uuid": "^14.0.1"
+  }
+}

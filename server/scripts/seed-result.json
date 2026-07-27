@@ -1,0 +1,17 @@
+{
+  "mongoUri": "mongodb://127.0.0.1:52111/",
+  "orgId": "60d5ec388832a828f8000000",
+  "sampleEmployeeIds": [
+    "6a675d2c591bbca62455fa0d",
+    "6a675d2c591bbca62455fa0e",
+    "6a675d2c591bbca62455fa0f",
+    "6a675d2c591bbca62455fa10",
+    "6a675d2c591bbca62455fa11",
+    "6a675d2c591bbca62455fa12",
+    "6a675d2c591bbca62455fa13",
+    "6a675d2c591bbca62455fa14",
+    "6a675d2c591bbca62455fa15",
+    "6a675d2c591bbca62455fa16"
+  ],
+  "totalEmployees": 1470
+}

@@ -11,6 +11,11 @@ export const employeeService = {
     return response.data.data;
   },
 
+  async getEmployee360(id) {
+    const response = await api.get(`/employees/${id}/360`);
+    return response.data.data;
+  },
+
   async createEmployee(data) {
     const response = await api.post('/employees', data);
     return response.data.data;

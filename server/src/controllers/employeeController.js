@@ -62,6 +62,15 @@ export async function getEmployeeProfile(request, response, next) {
   }
 }
 
+export async function getEmployee360(request, response, next) {
+  try {
+    const data = await employeeService.getEmployee360(request.params.employeeId, request.auth);
+    return sendSuccess(response, 200, data, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function updateEmployee(request, response, next) {
   try {
     const employee = await employeeService.updateEmployee(

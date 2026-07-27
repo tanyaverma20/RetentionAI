@@ -3,28 +3,265 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { fetchDepartments } from '../store/slices/departmentSlice';
-import {
-  fetchEmployeeProfile,
-  fetchEmployees,
-  updateEmployee,
-} from '../store/slices/employeeSlice';
+import { fetchEmployee360, updateEmployee } from '../store/slices/employeeSlice';
 
+// ─── Helpers ────────────────────────────────────────────────────────────────
+const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
+const TABS = ['Overview', 'Attendance', 'Performance', 'Surveys', 'Feedback', 'Notes'];
+
+function ScoreBar({ label, value, max = 5, color = 'indigo' }) {
+  const pct = Math.round((value / max) * 100);
+  const colors = {
+    indigo: 'bg-indigo-500',
+    emerald: 'bg-emerald-500',
+    amber: 'bg-amber-500',
+    rose: 'bg-rose-500',
+    violet: 'bg-violet-500',
+  };
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs text-slate-400">
+        <span>{label}</span>
+        <span className="font-bold text-slate-200">{value}/{max}</span>
+      </div>
+      <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+        <div className={`h-full rounded-full transition-all duration-700 ${colors[color] || colors.indigo}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function InfoRow({ label, value }) {
+  return (
+    <div className="py-2.5 flex justify-between items-center border-b border-slate-800/60 last:border-0">
+      <span className="text-sm text-slate-400">{label}</span>
+      <span className="text-sm font-semibold text-slate-200 text-right max-w-[60%] truncate">{value || '—'}</span>
+    </div>
+  );
+}
+
+function SectionCard({ title, icon, children, className = '' }) {
+  return (
+    <div className={`p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4 ${className}`}>
+      <h2 className="flex items-center gap-2 text-base font-bold text-slate-100">
+        <span className="text-indigo-400">{icon}</span>
+        {title}
+      </h2>
+      {children}
+    </div>
+  );
+}
+
+// ─── Tab Content ─────────────────────────────────────────────────────────────
+function TabOverview({ emp }) {
+  const dept = emp.departmentId;
+  const mgr = emp.managerId;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <SectionCard title="Personal Information" icon="👤">
+        <InfoRow label="Email" value={emp.email} />
+        <InfoRow label="Phone" value={emp.phone} />
+        <InfoRow label="Gender" value={emp.gender?.replace('_', ' ')} />
+        <InfoRow label="Date of Birth" value={fmt(emp.dateOfBirth)} />
+      </SectionCard>
+      <SectionCard title="Organizational Placement" icon="🏢">
+        <InfoRow label="Department" value={dept ? `${dept.name} (${dept.code})` : 'Unassigned'} />
+        <InfoRow label="Direct Manager" value={mgr ? `${mgr.firstName} ${mgr.lastName}` : 'None'} />
+        <InfoRow label="Joining Date" value={fmt(emp.joiningDate)} />
+        <InfoRow label="Employment Type" value={emp.employmentType?.replace('_', ' ')} />
+        <InfoRow label="Work Location" value={emp.workLocation} />
+        <InfoRow label="Linked Account" value={emp.userId?.email} />
+      </SectionCard>
+    </div>
+  );
+}
+
+function TabAttendance({ records }) {
+  if (!records?.length)
+    return <p className="text-sm text-slate-500 text-center py-8">No attendance records found.</p>;
+
+  const avg = (key) => Math.round(records.reduce((s, r) => s + (r[key] || 0), 0) / records.length);
+
+  return (
+    <div className="space-y-5">
+      {/* Summary KPIs */}
+      <div className="grid grid-cols-3 gap-4">
+        {[
+          { label: 'Avg Days Present', value: avg('totalHoursWorked') / 8, color: 'emerald' },
+          { label: 'Avg Overtime Hrs', value: avg('overtimeHours'), color: 'amber' },
+          { label: 'Records (6mo)', value: records.length, color: 'indigo' },
+        ].map(({ label, value, color }) => (
+          <div key={label} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-center">
+            <div className={`text-2xl font-black text-${color}-400`}>{Math.round(value)}</div>
+            <div className="text-xs text-slate-500 mt-1">{label}</div>
+          </div>
+        ))}
+      </div>
+      {/* Records */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-slate-800 text-slate-500 text-xs uppercase">
+              <th className="py-2 pr-4 text-left">Month</th>
+              <th className="py-2 pr-4 text-right">Status</th>
+              <th className="py-2 pr-4 text-right">Hours</th>
+              <th className="py-2 pr-4 text-right">Overtime</th>
+              <th className="py-2 text-right">Mode</th>
+            </tr>
+          </thead>
+          <tbody>
+            {records.map((r) => (
+              <tr key={r._id} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
+                <td className="py-2.5 pr-4 font-mono text-slate-300">{fmt(r.attendanceDate)}</td>
+                <td className="py-2.5 pr-4 text-right">
+                  <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${r.attendanceStatus === 'PRESENT' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                    {r.attendanceStatus}
+                  </span>
+                </td>
+                <td className="py-2.5 pr-4 text-right text-slate-300">{r.totalHoursWorked}h</td>
+                <td className="py-2.5 pr-4 text-right text-amber-400">{r.overtimeHours}h</td>
+                <td className="py-2.5 text-right">
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${r.workMode === 'REMOTE' ? 'bg-violet-500/10 text-violet-400' : 'bg-slate-800 text-slate-400'}`}>{r.workMode}</span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function TabPerformance({ records }) {
+  if (!records?.length)
+    return <p className="text-sm text-slate-500 text-center py-8">No performance reviews found.</p>;
+
+  const latest = records[0];
+  return (
+    <div className="space-y-5">
+      {/* Latest highlight */}
+      <div className="p-5 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl flex items-center justify-between gap-4">
+        <div>
+          <p className="text-xs text-indigo-400 font-semibold uppercase tracking-wider">Latest Review — {latest.reviewPeriod}</p>
+          <p className="text-3xl font-black text-indigo-300 mt-1">{latest.performanceScore}<span className="text-lg text-slate-500">/5</span></p>
+          <p className="text-sm text-slate-400 mt-1">Goal Achievement: <span className="font-bold text-slate-200">{latest.goalAchievement}%</span></p>
+        </div>
+        {latest.promotionRecommendation && (
+          <span className="px-3 py-1.5 text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full flex items-center gap-1.5">
+            🏆 Promotion Recommended
+          </span>
+        )}
+      </div>
+      {/* All reviews */}
+      <div className="space-y-3">
+        {records.map((r) => (
+          <div key={r._id} className="p-4 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-slate-200">{r.reviewPeriod}</p>
+              <p className="text-xs text-slate-500">Goal Achievement: {r.goalAchievement}%</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {r.promotionRecommendation && <span className="text-xs px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded-full">Promoted</span>}
+              <div className="text-right">
+                <div className="text-xl font-black text-slate-200">{r.performanceScore}<span className="text-sm text-slate-600">/5</span></div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TabSurveys({ records }) {
+  if (!records?.length)
+    return <p className="text-sm text-slate-500 text-center py-8">No survey responses found.</p>;
+
+  return (
+    <div className="space-y-5">
+      {records.map((s) => (
+        <div key={s._id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-slate-200">Survey — {fmt(s.surveyDate)}</p>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <ScoreBar label="Engagement Score" value={s.engagementScore} color="indigo" />
+            <ScoreBar label="Job Satisfaction" value={s.jobSatisfaction} color="emerald" />
+            <ScoreBar label="Work-Life Balance" value={s.workLifeBalance} color="amber" />
+            <ScoreBar label="Career Growth" value={s.careerGrowthScore} color="violet" />
+            <ScoreBar label="Manager Relationship" value={s.managerRelationshipScore} color="indigo" />
+            <ScoreBar label="Stress Level (inverse)" value={s.stressLevel} color="rose" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TabFeedback({ records }) {
+  if (!records?.length)
+    return <p className="text-sm text-slate-500 text-center py-8">No feedback records found.</p>;
+
+  const catColors = { MANAGEMENT: 'amber', WORK_ENVIRONMENT: 'indigo', COMPENSATION: 'emerald', BENEFITS: 'violet', OTHER: 'slate' };
+  return (
+    <div className="space-y-3">
+      {records.map((f) => {
+        const color = catColors[f.category] || 'slate';
+        return (
+          <div key={f._id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between">
+              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full bg-${color}-500/10 text-${color}-400 border border-${color}-500/20`}>{f.category?.replace('_', ' ')}</span>
+              <span className="text-xs text-slate-500 font-mono">{fmt(f.feedbackDate)}</span>
+            </div>
+            <p className="text-sm text-slate-300 leading-relaxed">{f.feedbackText}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function TabNotes({ records }) {
+  if (!records?.length)
+    return <p className="text-sm text-slate-500 text-center py-8">No manager notes found.</p>;
+
+  return (
+    <div className="space-y-3">
+      {records.map((n) => (
+        <div key={n._id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex gap-2">
+              {n.performanceConcern && <span className="px-2 py-0.5 text-xs bg-rose-500/10 text-rose-400 rounded-full">⚠ Performance Concern</span>}
+              {n.promotionDiscussion && <span className="px-2 py-0.5 text-xs bg-emerald-500/10 text-emerald-400 rounded-full">🏆 Promotion Discussion</span>}
+              {n.followUpRequired && <span className="px-2 py-0.5 text-xs bg-amber-500/10 text-amber-400 rounded-full">📌 Follow-Up Required</span>}
+            </div>
+            <span className="text-xs text-slate-500 font-mono">{fmt(n.noteDate)}</span>
+          </div>
+          <p className="text-sm text-slate-300 leading-relaxed">{n.observation}</p>
+          {n.recommendation && <p className="text-xs text-indigo-300 italic mt-1">→ {n.recommendation}</p>}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function EmployeeProfile() {
   const { id } = useParams();
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const { user } = useSelector((state) => state.auth);
   const { departments } = useSelector((state) => state.department);
-  const { currentEmployee, loading, error } = useSelector((state) => state.employee);
-
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const { employee360, currentEmployee, loading, error } = useSelector((state) => state.employee);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
 
   useEffect(() => {
     if (id) {
-      dispatch(fetchEmployeeProfile(id));
+      dispatch(fetchEmployee360(id));
       dispatch(fetchDepartments());
     }
   }, [dispatch, id]);
@@ -32,13 +269,17 @@ export default function EmployeeProfile() {
   const handleUpdate = async (formData) => {
     await dispatch(updateEmployee({ id, data: formData }));
     setIsEditModalOpen(false);
-    dispatch(fetchEmployeeProfile(id));
+    dispatch(fetchEmployee360(id));
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="relative w-16 h-16">
+          <div className="absolute inset-0 rounded-full border-4 border-indigo-500/20" />
+          <div className="absolute inset-0 rounded-full border-4 border-t-indigo-500 animate-spin" />
+        </div>
+        <p className="text-sm text-slate-400 animate-pulse">Loading 360° profile…</p>
       </div>
     );
   }
@@ -46,188 +287,133 @@ export default function EmployeeProfile() {
   if (error || !currentEmployee) {
     return (
       <div className="p-8 text-center bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
-        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
-          <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-bold text-slate-100">Unable to load employee profile</h2>
-        <p className="text-sm text-slate-400 max-w-md mx-auto">
-          {error || 'The requested employee profile does not exist or you do not have authorization to view it.'}
-        </p>
-        <Link
-          to="/employees"
-          className="inline-block px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl"
-        >
-          Return to Employees Directory
+        <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-3xl">⚠️</div>
+        <h2 className="text-xl font-bold text-slate-100">Unable to load profile</h2>
+        <p className="text-sm text-slate-400 max-w-md mx-auto">{error || 'Employee not found or access denied.'}</p>
+        <Link to="/employees" className="inline-block px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl">
+          Return to Directory
         </Link>
       </div>
     );
   }
 
-  const dept = currentEmployee.departmentId;
-  const manager = currentEmployee.managerId;
+  const emp = currentEmployee;
+  const dept = emp.departmentId;
+  const { attendance = [], performance = [], surveys = [], feedback = [], managerNotes = [] } = employee360 || {};
+
+  // Compute a quick retention risk heuristic for the profile badge
+  const avgEngagement = surveys.length ? surveys.reduce((s, r) => s + r.engagementScore, 0) / surveys.length : null;
+  const avgPerf = performance.length ? performance.reduce((s, r) => s + r.performanceScore, 0) / performance.length : null;
+  const riskLevel = avgEngagement && avgEngagement < 2.5 ? 'High' : avgEngagement && avgEngagement < 3.5 ? 'Medium' : 'Low';
+  const riskColors = { High: 'rose', Medium: 'amber', Low: 'emerald' };
+  const rc = riskColors[riskLevel];
+
+  const tabContent = {
+    Overview: <TabOverview emp={emp} />,
+    Attendance: <TabAttendance records={attendance} />,
+    Performance: <TabPerformance records={performance} />,
+    Surveys: <TabSurveys records={surveys} />,
+    Feedback: <TabFeedback records={feedback} />,
+    Notes: <TabNotes records={managerNotes} />,
+  };
+
+  const tabCounts = {
+    Attendance: attendance.length,
+    Performance: performance.length,
+    Surveys: surveys.length,
+    Feedback: feedback.length,
+    Notes: managerNotes.length,
+  };
 
   return (
     <div className="space-y-6">
-      {/* Top Bar with Navigation & Actions */}
+      {/* Navigation */}
       <div className="flex items-center justify-between">
-        <button
-          onClick={() => navigate('/employees')}
-          className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
+        <button onClick={() => navigate('/employees')} className="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           Back to Employees
         </button>
-
         {canEdit && (
-          <button
-            onClick={() => setIsEditModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/25 transition-all"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
+          <button onClick={() => setIsEditModalOpen(true)} className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl shadow-lg shadow-indigo-600/20 transition-all">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
             Edit Profile
           </button>
         )}
       </div>
 
-      {/* Main Profile Header Card */}
-      <div className="p-8 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-indigo-600 to-violet-600 border-2 border-indigo-400/30 flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-indigo-600/20">
-            {currentEmployee.firstName?.[0]}
-            {currentEmployee.lastName?.[0]}
-          </div>
-
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-extrabold text-slate-100">
-                {currentEmployee.firstName} {currentEmployee.lastName}
-              </h1>
-              <span className="px-3 py-1 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
-                {currentEmployee.employeeCode}
-              </span>
+      {/* Hero Card */}
+      <div className="relative overflow-hidden p-8 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/5 via-transparent to-violet-600/5 pointer-events-none" />
+        <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-center gap-6">
+            {/* Avatar */}
+            <div className="relative shrink-0">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-indigo-600 to-violet-600 border-2 border-indigo-400/30 flex items-center justify-center text-4xl font-black text-white shadow-2xl shadow-indigo-600/30">
+                {emp.firstName?.[0]}{emp.lastName?.[0]}
+              </div>
+              <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-slate-900 ${emp.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-600'}`} />
             </div>
 
-            <p className="text-base font-semibold text-slate-300 mt-0.5">
-              {currentEmployee.designation} •{' '}
-              <span className="text-indigo-400">{dept?.name || 'No Department'}</span>
-            </p>
-
-            <div className="flex flex-wrap items-center gap-3 mt-3">
-              <span
-                className={`px-2.5 py-1 text-xs font-mono font-semibold rounded-full border ${
-                  currentEmployee.isDeleted
-                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                }`}
-              >
-                {currentEmployee.isDeleted ? 'DELETED' : currentEmployee.status}
-              </span>
-
-              <span className="px-2.5 py-1 text-xs font-mono font-medium bg-slate-800 text-slate-300 border border-slate-700 rounded-full">
-                {currentEmployee.employmentType?.replace('_', ' ')}
-              </span>
-
-              <span className="text-xs text-slate-400 flex items-center gap-1">
-                <svg className="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                </svg>
-                {currentEmployee.workLocation || 'Office'}
-              </span>
+            <div className="space-y-1">
+              <div className="flex items-center gap-3 flex-wrap">
+                <h1 className="text-3xl font-extrabold text-slate-100">{emp.firstName} {emp.lastName}</h1>
+                <span className="px-2.5 py-0.5 text-xs font-mono font-bold text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded-full">{emp.employeeCode}</span>
+              </div>
+              <p className="text-base font-semibold text-slate-300">{emp.designation} · <span className="text-indigo-400">{dept?.name || 'No Dept'}</span></p>
+              <div className="flex flex-wrap gap-2 mt-2">
+                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border bg-${rc}-500/10 text-${rc}-400 border-${rc}-500/20`}>
+                  {riskLevel} Risk
+                </span>
+                <span className="px-2.5 py-0.5 text-xs font-mono bg-slate-800 text-slate-400 border border-slate-700 rounded-full">{emp.status}</span>
+                <span className="px-2.5 py-0.5 text-xs bg-slate-800 text-slate-400 border border-slate-700 rounded-full">📍 {emp.workLocation}</span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-2xl text-right w-full md:w-auto">
-          <div className="text-xs text-slate-500 font-mono uppercase">Compensation</div>
-          <div className="text-2xl font-black text-slate-100">
-            ${(currentEmployee.salary || 0).toLocaleString()}{' '}
-            <span className="text-xs font-normal text-slate-400">/ yr</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid of Profile Detail Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Section 1: Personal Details */}
-        <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            Personal Information
-          </h2>
-
-          <div className="divide-y divide-slate-800/60 text-sm">
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Email Address</span>
-              <span className="font-semibold text-slate-200">{currentEmployee.email}</span>
+          {/* KPI strip */}
+          <div className="grid grid-cols-3 gap-3 w-full md:w-auto">
+            <div className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-center">
+              <div className="text-xl font-black text-emerald-400">{avgPerf ? avgPerf.toFixed(1) : '—'}</div>
+              <div className="text-xs text-slate-500 mt-0.5">Avg Performance</div>
             </div>
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Phone Number</span>
-              <span className="font-semibold text-slate-200">{currentEmployee.phone || 'N/A'}</span>
+            <div className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-center">
+              <div className="text-xl font-black text-indigo-400">{avgEngagement ? avgEngagement.toFixed(1) : '—'}</div>
+              <div className="text-xs text-slate-500 mt-0.5">Avg Engagement</div>
             </div>
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Gender</span>
-              <span className="font-semibold text-slate-200">{currentEmployee.gender}</span>
-            </div>
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Date of Birth</span>
-              <span className="font-mono text-slate-200">
-                {currentEmployee.dateOfBirth
-                  ? new Date(currentEmployee.dateOfBirth).toLocaleDateString()
-                  : 'N/A'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Section 2: Organizational Details */}
-        <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl space-y-4">
-          <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5m3 0h1m-1-4h.01M9 16h.01M9 12h.01M13 16h.01M13 12h.01" />
-            </svg>
-            Organizational Placement
-          </h2>
-
-          <div className="divide-y divide-slate-800/60 text-sm">
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Department</span>
-              <span className="font-semibold text-slate-200">
-                {dept ? `${dept.name} (${dept.code})` : 'Unassigned'}
-              </span>
-            </div>
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Direct Manager</span>
-              <span className="font-semibold text-slate-200">
-                {manager ? `${manager.firstName} ${manager.lastName}` : 'None Assigned'}
-              </span>
-            </div>
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Joining Date</span>
-              <span className="font-mono text-slate-200">
-                {currentEmployee.joiningDate
-                  ? new Date(currentEmployee.joiningDate).toLocaleDateString()
-                  : 'N/A'}
-              </span>
-            </div>
-            <div className="py-2.5 flex justify-between">
-              <span className="text-slate-400">Linked User Account</span>
-              <span className="font-mono text-xs text-slate-300">
-                {currentEmployee.userId?.email || 'No Linked Account'}
-              </span>
+            <div className="p-3 bg-slate-950/50 border border-slate-800 rounded-2xl text-center">
+              <div className="text-xl font-black text-violet-400">₹{((emp.salary || 0) / 100000).toFixed(1)}L</div>
+              <div className="text-xs text-slate-500 mt-0.5">Annual CTC</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Edit Form Modal */}
+      {/* Tab Bar */}
+      <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide p-1 bg-slate-900 border border-slate-800 rounded-2xl">
+        {TABS.map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl transition-all whitespace-nowrap ${
+              activeTab === tab
+                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+            }`}
+          >
+            {tab}
+            {tabCounts[tab] !== undefined && (
+              <span className={`px-1.5 py-0.5 text-xs rounded-full ${activeTab === tab ? 'bg-white/20' : 'bg-slate-800 text-slate-500'}`}>
+                {tabCounts[tab]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab Content */}
+      <div className="animate-fade-in">{tabContent[activeTab]}</div>
+
+      {/* Edit Modal */}
       <EmployeeFormModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
