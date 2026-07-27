@@ -5,9 +5,13 @@ import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { requestId } from './middlewares/requestId.js';
 import { sanitizeInput } from './middlewares/sanitizeInput.js';
+import { analyticsRouter } from './routes/analyticsRoutes.js';
 import { authRouter } from './routes/authRoutes.js';
+import { departmentRouter } from './routes/departmentRoutes.js';
+import { employeeRouter } from './routes/employeeRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { userRouter } from './routes/userRoutes.js';
+import hrRouter from './routes/hrRoutes.js';
 
 export const app = express();
 
@@ -28,5 +32,9 @@ app.use(sanitizeInput);
 app.use(healthRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/departments', departmentRouter);
+app.use('/api/v1/employees', employeeRouter);
+app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/hr', hrRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);

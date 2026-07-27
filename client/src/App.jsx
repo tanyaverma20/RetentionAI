@@ -3,7 +3,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import BaseLayout from './layouts/BaseLayout';
+import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
+import DepartmentAnalytics from './pages/DepartmentAnalytics';
+import Departments from './pages/Departments';
+import EmployeeProfile from './pages/EmployeeProfile';
+import Employees from './pages/Employees';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -35,9 +40,15 @@ export default function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Protected Routes */}
+        {/* Protected Routes — all wrapped in DashboardLayout (provides Sidebar + scrollable content) */}
         <Route element={<ProtectedRoute />}>
-          <Route path="/dashboard" element={<Dashboard />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/analytics/departments" element={<DepartmentAnalytics />} />
+            <Route path="/departments" element={<Departments />} />
+            <Route path="/employees" element={<Employees />} />
+            <Route path="/employees/:id" element={<EmployeeProfile />} />
+          </Route>
         </Route>
 
         {/* Fallback */}
@@ -46,3 +57,4 @@ export default function App() {
     </Routes>
   );
 }
+

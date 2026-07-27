@@ -65,3 +65,11 @@ export const emailSchema = z
   .toLowerCase()
   .email('Provide a valid email address.')
   .max(254, 'Email must not exceed 254 characters.');
+
+/**
+ * Validate pagination parameters.
+ */
+export const paginationSchema = z.object({
+  page: z.string().regex(/^\d+$/).transform(Number).optional().default("1"),
+  limit: z.string().regex(/^\d+$/).transform(Number).optional().default("10")
+});

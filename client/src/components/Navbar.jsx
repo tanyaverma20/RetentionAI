@@ -1,12 +1,17 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { logoutUser } from '../store/slices/authSlice';
+
+const DASHBOARD_PATHS = ['/dashboard', '/analytics', '/departments', '/employees'];
 
 export default function Navbar() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated, user } = useSelector((state) => state.auth);
+
+  const isDashboard = DASHBOARD_PATHS.some((p) => location.pathname.startsWith(p));
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -19,66 +24,88 @@ export default function Navbar() {
         return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       case 'HR_MANAGER':
         return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+      case 'DEPARTMENT_MANAGER':
       case 'DEPT_MANAGER':
         return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
-      case 'ANALYST':
-        return 'bg-amber-500/20 text-amber-300 border-amber-500/30';
       default:
         return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/80 border-b border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
-            R
-          </div>
-          <div>
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200">
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/90 border-b border-slate-800 shrink-0">
+      <div className="w-full px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
+
+        {/* ── Left: Logo (hidden on dashboard since sidebar shows it) ── */}
+        {!isDashboard && (
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
+              R
+            </div>
+            <span className="text-lg font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200 hidden sm:block">
               RetentionAI
             </span>
-            <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-medium">
-              v1.0
-            </span>
-          </div>
-        </Link>
+          </Link>
+        )}
 
-        <nav className="flex items-center gap-4">
+        {/* ── Dashboard breadcrumb / system status ── */}
+        {isDashboard && (
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-emerald-400 font-semibold">Live</span>
+            </div>
+            <span>·</span>
+            <span>RetentionAI Analytics Engine</span>
+          </div>
+        )}
+
+        {/* ── Right: Auth context ── */}
+        <nav className="flex items-center gap-3 ml-auto">
           {isAuthenticated && user ? (
-            <div className="flex items-center gap-4">
-              <Link
-                to="/dashboard"
-                className="text-sm font-medium text-slate-300 hover:text-white transition-colors"
-              >
-                Dashboard
-              </Link>
-              <div className="h-4 w-px bg-slate-800" />
-              <div className="flex items-center gap-3">
-                <div className="text-right hidden sm:block">
-                  <div className="text-sm font-semibold text-white">{user.name}</div>
-                  <div className="text-xs text-slate-400">{user.email}</div>
+            <>
+              {/* Quick navigation links — only shown when NOT in dashboard (sidebar handles those) */}
+              {!isDashboard && (
+                <div className="hidden sm:flex items-center gap-4 mr-2">
+                  <Link to="/dashboard" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                    Dashboard
+                  </Link>
+                  <Link to="/departments" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                    Departments
+                  </Link>
+                  <Link to="/employees" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                    Employees
+                  </Link>
                 </div>
-                <span
-                  className={`text-xs px-2.5 py-1 rounded-md font-mono font-semibold border ${getRoleBadgeStyle(
-                    user.role,
-                  )}`}
-                >
+              )}
+
+              <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+
+              {/* User identity */}
+              <div className="flex items-center gap-2.5">
+                <div className="text-right hidden md:block">
+                  <div className="text-xs font-semibold text-white leading-tight">{user.name}</div>
+                  <div className="text-[10px] text-slate-500 leading-tight truncate max-w-[140px]">{user.email}</div>
+                </div>
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow">
+                  {(user.name || 'U')[0]}
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-semibold border hidden sm:inline ${getRoleBadgeStyle(user.role)}`}>
                   {user.role}
                 </span>
-                <button
-                  onClick={handleLogout}
-                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all"
-                >
-                  Sign Out
-                </button>
               </div>
-            </div>
+
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all"
+              >
+                Sign Out
+              </button>
+            </>
           ) : (
             <Link
               to="/login"
-              className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/20 transition-all hover:shadow-indigo-600/40"
+              className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/20 transition-all"
             >
               Sign In
             </Link>
@@ -88,3 +115,4 @@ export default function Navbar() {
     </header>
   );
 }
+

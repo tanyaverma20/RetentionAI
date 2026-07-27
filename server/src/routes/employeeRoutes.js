@@ -1,0 +1,80 @@
+/**
+ * @file employeeRoutes.js
+ * @description Express router for Employee management endpoints.
+ *
+ * Why this file exists
+ * --------------------
+ * Defines HTTP routes for employee listing, profile access, editing, soft-deletion,
+ * restoration, and CSV bulk import.
+ */
+
+import { Router } from 'express';
+import { ROLE_NAMES } from '../config/roles.js';
+import * as employeeController from '../controllers/employeeController.js';
+import { AppError } from '../errors/AppError.js';
+import { authenticate } from '../middlewares/authenticate.js';
+import { authorize } from '../middlewares/authorize.js';
+import { validate } from '../middlewares/validate.js';
+import { objectIdSchema } from '../validators/common.js';
+import {
+  bulkImportSchema,
+  createEmployeeSchema,
+  updateEmployeeSchema,
+} from '../validators/employeeValidators.js';
+
+export const employeeRouter = Router();
+
+const validateEmployeeIdParam = (req, _res, next) => {
+  const result = objectIdSchema.safeParse(req.params.employeeId);
+  if (!result.success) {
+    return next(new AppError(400, 'VALIDATION_ERROR', 'Invalid employee ID parameter.'));
+  }
+  next();
+};
+
+// All employee endpoints require authentication
+employeeRouter.use(authenticate);
+
+// Bulk import endpoint (restricted to ADMIN and HR_MANAGER)
+employeeRouter.post(
+  '/bulk-import',
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  validate(bulkImportSchema),
+  employeeController.bulkImport,
+);
+
+// List employees (scope enforced inside controller/service based on user role)
+employeeRouter.get('/', employeeController.listEmployees);
+
+// View employee profile (scope checked inside service layer)
+employeeRouter.get('/:employeeId', validateEmployeeIdParam, employeeController.getEmployeeProfile);
+
+// Write endpoints: restricted to ADMIN and HR_MANAGER
+employeeRouter.post(
+  '/',
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  validate(createEmployeeSchema),
+  employeeController.createEmployee,
+);
+
+employeeRouter.patch(
+  '/:employeeId',
+  validateEmployeeIdParam,
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  validate(updateEmployeeSchema),
+  employeeController.updateEmployee,
+);
+
+employeeRouter.delete(
+  '/:employeeId',
+  validateEmployeeIdParam,
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  employeeController.softDeleteEmployee,
+);
+
+employeeRouter.post(
+  '/:employeeId/restore',
+  validateEmployeeIdParam,
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  employeeController.restoreEmployee,
+);
