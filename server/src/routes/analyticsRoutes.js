@@ -24,3 +24,7 @@ analyticsRouter.get('/demographics', analyticsController.getDemographics);
 analyticsRouter.get('/employees', analyticsController.getEmployeeInsights);
 analyticsRouter.get('/hr-metrics', analyticsController.getHrMetrics);
 
+// AI Global Analytics Routes
+analyticsRouter.get('/ai/feature-importance', analyticsController.getAiFeatureImportance);
+analyticsRouter.get('/ai/plots/global/:plotType', analyticsController.getAiGlobalPlot);
+

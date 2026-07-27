@@ -6,6 +6,7 @@ import BaseLayout from './layouts/BaseLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import Dashboard from './pages/Dashboard';
 import DepartmentAnalytics from './pages/DepartmentAnalytics';
+import AiAnalytics from './pages/AiAnalytics';
 import Departments from './pages/Departments';
 import EmployeeProfile from './pages/EmployeeProfile';
 import Employees from './pages/Employees';
@@ -45,6 +46,7 @@ export default function App() {
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/analytics/departments" element={<DepartmentAnalytics />} />
+            <Route path="/analytics/ai" element={<AiAnalytics />} />
             <Route path="/departments" element={<Departments />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />

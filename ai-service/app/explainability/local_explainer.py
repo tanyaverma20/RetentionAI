@@ -195,17 +195,17 @@ def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
     raw_values: dict[str, Any] = {
         "salary":           employee_doc.get("salary", 0),
         "age":              (
-            (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("dateOfBirth", "1990-01-01"))).days / 365.25
+            (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("dateOfBirth", "1990-01-01")).tz_localize(None)).days / 365.25
             if employee_doc.get("dateOfBirth") else "N/A"
         ),
         "tenure_months":    (
-            (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01"))).days / 30.43
+            (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01")).tz_localize(None)).days / 30.43
             if employee_doc.get("joiningDate") else "N/A"
         ),
         "salary_per_tenure": (
             employee_doc.get("salary", 0) / (
                 max(
-                    (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01"))).days / 30.43,
+                    (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01")).tz_localize(None)).days / 30.43,
                     1,
                 )
             )

@@ -11,6 +11,7 @@
 import { AppError } from '../errors/AppError.js';
 import * as employeeService from '../services/employeeService.js';
 import { aiService } from '../services/aiService.js';
+import { getProfilePictureUrl } from '../middlewares/uploadMiddleware.js';
 import { sendSuccess } from '../utils/response.js';
 
 export async function createEmployee(request, response, next) {
@@ -125,6 +126,34 @@ export async function bulkImport(request, response, next) {
 
     const result = await employeeService.bulkImportEmployees(rowsToImport);
     return sendSuccess(response, 200, result, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function uploadAvatar(request, response, next) {
+  try {
+    if (!request.file) {
+      return next(new AppError(400, 'NO_FILE', 'No file was uploaded.'));
+    }
+    const url = getProfilePictureUrl(request.file.filename);
+    const employee = await employeeService.updateEmployee(
+      request.params.employeeId,
+      { profilePicture: url },
+    );
+    return sendSuccess(response, 200, { profilePicture: url, employee }, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getEmployeeTimeline(request, response, next) {
+  try {
+    const timeline = await employeeService.getEmployeeTimeline(
+      request.params.employeeId,
+      request.auth,
+    );
+    return sendSuccess(response, 200, timeline, request.requestId);
   } catch (error) {
     return next(error);
   }

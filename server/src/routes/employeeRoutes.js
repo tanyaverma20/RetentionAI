@@ -14,6 +14,7 @@ import * as employeeController from '../controllers/employeeController.js';
 import { AppError } from '../errors/AppError.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { authorize } from '../middlewares/authorize.js';
+import { handleProfilePictureUpload } from '../middlewares/uploadMiddleware.js';
 import { validate } from '../middlewares/validate.js';
 import { objectIdSchema } from '../validators/common.js';
 import {
@@ -83,4 +84,20 @@ employeeRouter.post(
   validateEmployeeIdParam,
   authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
   employeeController.restoreEmployee,
+);
+
+// Avatar upload
+employeeRouter.post(
+  '/:employeeId/avatar',
+  validateEmployeeIdParam,
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  handleProfilePictureUpload,
+  employeeController.uploadAvatar,
+);
+
+// Employee Timeline
+employeeRouter.get(
+  '/:employeeId/timeline',
+  validateEmployeeIdParam,
+  employeeController.getEmployeeTimeline,
 );

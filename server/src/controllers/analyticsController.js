@@ -9,7 +9,9 @@
  */
 
 import * as analyticsService from '../services/analyticsService.js';
+import { aiService } from '../services/aiService.js';
 import { sendSuccess } from '../utils/response.js';
+import { AppError } from '../errors/AppError.js';
 
 export async function getDashboardSummary(request, response, next) {
   try {
@@ -69,6 +71,39 @@ export async function getHrMetrics(request, response, next) {
   try {
     const metrics = await analyticsService.getHrMetrics(request.auth, request.query);
     return sendSuccess(response, 200, metrics, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getAiFeatureImportance(request, response, next) {
+  try {
+    const nSamples = request.query.n_samples ? parseInt(request.query.n_samples, 10) : 100;
+    const importance = await aiService.getGlobalFeatureImportance(nSamples);
+    return sendSuccess(response, 200, importance, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getAiGlobalPlot(request, response, next) {
+  try {
+    const plotType = request.params.plotType; // summaryBeeswarm, summaryBar, dependence
+    const feature = request.query.feature || 'salary';
+    const nSamples = request.query.n_samples ? parseInt(request.query.n_samples, 10) : 100;
+
+    const plots = await aiService.getGlobalPlots(feature, nSamples);
+    const plotPath = plots[plotType];
+
+    if (!plotPath) {
+      throw new AppError(404, 'PLOT_NOT_FOUND', `Plot type ${plotType} not found.`);
+    }
+
+    return response.sendFile(plotPath, (err) => {
+      if (err) {
+        next(new AppError(404, 'PLOT_READ_ERROR', 'Failed to read plot file.'));
+      }
+    });
   } catch (error) {
     return next(error);
   }

@@ -5,6 +5,7 @@ import { ensureSystemRoles } from './services/roleService.js';
 import { findUserByEmail, createUser } from './repositories/userRepository.js';
 import { findRoleByName } from './repositories/roleRepository.js';
 import { hashPassword } from './utils/password.js';
+import { seedDemoData } from './seeders/seedDemoData.js';
 
 async function seedAdminUser() {
   const adminEmail = 'admin@example.test';
@@ -28,6 +29,7 @@ async function startServer() {
   await connectDatabase();
   await ensureSystemRoles();
   await seedAdminUser();
+  await seedDemoData();
   const server = app.listen(env.port, () => {
     console.log(`RetentionAI server listening on port ${env.port}`);
   });

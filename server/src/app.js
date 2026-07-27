@@ -16,7 +16,7 @@ import hrRouter from './routes/hrRoutes.js';
 export const app = express();
 
 app.use(requestId);
-app.use(helmet());
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 app.use(
   cors({
     origin(origin, callback) {

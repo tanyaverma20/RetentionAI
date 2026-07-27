@@ -57,6 +57,21 @@ export const createEmployeeSchema = z
     workLocation: z.string().trim().max(100, 'Work location must not exceed 100 characters.').optional(),
     status: statusEnum.optional().default('ACTIVE'),
     userId: objectIdSchema.nullable().optional(),
+    profilePicture: z.string().trim().optional().nullable(),
+    address: z.object({
+      street:  z.string().trim().max(200).optional().default(''),
+      city:    z.string().trim().max(100).optional().default(''),
+      state:   z.string().trim().max(100).optional().default(''),
+      country: z.string().trim().max(100).optional().default(''),
+      zip:     z.string().trim().max(20).optional().default(''),
+    }).optional(),
+    emergencyContact: z.object({
+      name:     z.string().trim().max(100).optional().default(''),
+      phone:    z.string().trim().max(30).optional().default(''),
+      relation: z.string().trim().max(50).optional().default(''),
+    }).optional(),
+    skills: z.array(z.string().trim().max(100)).optional().default([]),
+    profileNotes: z.string().trim().max(2000).optional().default(''),
   })
   .strict();
 
@@ -87,6 +102,21 @@ export const updateEmployeeSchema = z
     workLocation: z.string().trim().max(100).optional(),
     status: statusEnum.optional(),
     userId: objectIdSchema.nullable().optional(),
+    profilePicture: z.string().trim().optional().nullable(),
+    address: z.object({
+      street:  z.string().trim().max(200).optional(),
+      city:    z.string().trim().max(100).optional(),
+      state:   z.string().trim().max(100).optional(),
+      country: z.string().trim().max(100).optional(),
+      zip:     z.string().trim().max(20).optional(),
+    }).optional(),
+    emergencyContact: z.object({
+      name:     z.string().trim().max(100).optional(),
+      phone:    z.string().trim().max(30).optional(),
+      relation: z.string().trim().max(50).optional(),
+    }).optional(),
+    skills: z.array(z.string().trim().max(100)).optional(),
+    profileNotes: z.string().trim().max(2000).optional(),
   })
   .strict()
   .refine((val) => Object.keys(val).length > 0, {

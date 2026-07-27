@@ -18,6 +18,11 @@
  * - `userId`          – Optional link to corresponding `User` authentication record.
  * - `status`          – Enum (`ACTIVE`, `INACTIVE`, `TERMINATED`, `ON_LEAVE`).
  * - `isDeleted`       – Soft delete flag for auditability and compliance.
+ * - `address`         – Structured home/work address (street, city, state, country, zip).
+ * - `emergencyContact`– Emergency contact details (name, phone, relation).
+ * - `skills`          – Array of skill strings for competency tracking and AI features.
+ * - `profileNotes`    – Free-text HR notes stored on the employee profile.
+ * - `profilePicture`  – Local file path or CDN URL to avatar image (extensible to S3/Cloudinary).
  *
  * Indexes
  * -------
@@ -128,6 +133,32 @@ const employeeSchema = new mongoose.Schema(
       ref: 'User',
       default: null,
       index: true,
+    },
+    profilePicture: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    address: {
+      street:  { type: String, trim: true, default: '' },
+      city:    { type: String, trim: true, default: '' },
+      state:   { type: String, trim: true, default: '' },
+      country: { type: String, trim: true, default: '' },
+      zip:     { type: String, trim: true, default: '' },
+    },
+    emergencyContact: {
+      name:     { type: String, trim: true, default: '' },
+      phone:    { type: String, trim: true, default: '' },
+      relation: { type: String, trim: true, default: '' },
+    },
+    skills: {
+      type: [String],
+      default: [],
+    },
+    profileNotes: {
+      type: String,
+      trim: true,
+      default: '',
     },
   },
   { timestamps: true },

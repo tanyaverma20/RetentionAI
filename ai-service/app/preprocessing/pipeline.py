@@ -133,8 +133,8 @@ def fit_transform_pipeline(df: pd.DataFrame):
     current_date = pd.Timestamp(2026, 7, 27)
     
     # Date variables
-    df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth'])
-    df['joiningDate'] = pd.to_datetime(df['joiningDate'])
+    df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth']).dt.tz_localize(None)
+    df['joiningDate'] = pd.to_datetime(df['joiningDate']).dt.tz_localize(None)
     
     df['age'] = ((current_date - df['dateOfBirth']).dt.days / 365.25).astype(float)
     df['tenure_months'] = ((current_date - df['joiningDate']).dt.days / 30.43).astype(float)
@@ -202,8 +202,8 @@ def transform_inference(df: pd.DataFrame, scaler, encoders):
     current_date = pd.Timestamp(2026, 7, 27)
     
     # 1. Feature Engineering
-    df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth'])
-    df['joiningDate'] = pd.to_datetime(df['joiningDate'])
+    df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth']).dt.tz_localize(None)
+    df['joiningDate'] = pd.to_datetime(df['joiningDate']).dt.tz_localize(None)
     
     df['age'] = ((current_date - df['dateOfBirth']).dt.days / 365.25).astype(float)
     df['tenure_months'] = ((current_date - df['joiningDate']).dt.days / 30.43).astype(float)

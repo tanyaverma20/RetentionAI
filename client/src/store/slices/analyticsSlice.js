@@ -53,6 +53,19 @@ export const fetchMonthlyTrends = createAsyncThunk(
   },
 );
 
+export const fetchAiFeatureImportance = createAsyncThunk(
+  'analytics/fetchAiFeatureImportance',
+  async (params, { rejectWithValue }) => {
+    try {
+      return await analyticsService.getAiFeatureImportance(params);
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error?.message || 'Failed to fetch AI feature importance.',
+      );
+    }
+  },
+);
+
 const analyticsSlice = createSlice({
   name: 'analytics',
   initialState: {
@@ -79,6 +92,9 @@ const analyticsSlice = createSlice({
       endDate: '',
       search: '',
     },
+    aiGlobalImportance: null,
+    aiLoading: false,
+    aiError: null,
     loading: false,
     error: null,
   },
@@ -126,6 +142,19 @@ const analyticsSlice = createSlice({
       // fetchDepartmentStats
       .addCase(fetchDepartmentStats.fulfilled, (state, action) => {
         state.departmentStats = action.payload;
+      })
+      // fetchAiFeatureImportance
+      .addCase(fetchAiFeatureImportance.pending, (state) => {
+        state.aiLoading = true;
+        state.aiError = null;
+      })
+      .addCase(fetchAiFeatureImportance.fulfilled, (state, action) => {
+        state.aiLoading = false;
+        state.aiGlobalImportance = action.payload;
+      })
+      .addCase(fetchAiFeatureImportance.rejected, (state, action) => {
+        state.aiLoading = false;
+        state.aiError = action.payload;
       });
   },
 });

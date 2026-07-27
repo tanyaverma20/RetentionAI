@@ -30,6 +30,11 @@ export const analyticsService = {
     const response = await api.get('/analytics/employees', { params });
     return response.data.data;
   },
+
+  async getAiFeatureImportance(params = {}) {
+    const response = await api.get('/analytics/ai/feature-importance', { params });
+    return response.data.data;
+  },
 };
 
 export default analyticsService;
