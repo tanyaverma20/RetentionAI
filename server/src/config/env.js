@@ -13,6 +13,8 @@ const envSchema = z.object({
   BCRYPT_SALT_ROUNDS: z.coerce.number().int().min(10).max(14).default(12),
   PASSWORD_RESET_TTL_MINUTES: z.coerce.number().int().positive().default(30),
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
+  AI_SERVICE_URL: z.string().default('http://127.0.0.1:8000'),
+  AI_SERVICE_TOKEN: z.string().default('replace-with-a-service-token'),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -36,4 +38,8 @@ export const env = {
   bcryptSaltRounds: parsedEnv.data.BCRYPT_SALT_ROUNDS,
   passwordResetTtlMinutes: parsedEnv.data.PASSWORD_RESET_TTL_MINUTES,
   logLevel: parsedEnv.data.LOG_LEVEL,
+  aiService: {
+    url: parsedEnv.data.AI_SERVICE_URL,
+    token: parsedEnv.data.AI_SERVICE_TOKEN,
+  },
 };

@@ -49,6 +49,9 @@ employeeRouter.get('/', employeeController.listEmployees);
 // 360° profile — aggregates all HR sub-collections for one employee
 employeeRouter.get('/:employeeId/360', validateEmployeeIdParam, employeeController.getEmployee360);
 
+// AI Explainability — fetch SHAP insights for attrition risk
+employeeRouter.get('/:employeeId/explain', validateEmployeeIdParam, employeeController.explainEmployeeRisk);
+
 // View employee profile (scope checked inside service layer)
 employeeRouter.get('/:employeeId', validateEmployeeIdParam, employeeController.getEmployeeProfile);
 

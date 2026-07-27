@@ -3,11 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { fetchDepartments } from '../store/slices/departmentSlice';
-import { fetchEmployee360, updateEmployee } from '../store/slices/employeeSlice';
+import { fetchEmployee360, fetchEmployeeExplanation, updateEmployee } from '../store/slices/employeeSlice';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
-const TABS = ['Overview', 'Attendance', 'Performance', 'Surveys', 'Feedback', 'Notes'];
+const TABS = ['Overview', 'AI Insights', 'Attendance', 'Performance', 'Surveys', 'Feedback', 'Notes'];
 
 function ScoreBar({ label, value, max = 5, color = 'indigo' }) {
   const pct = Math.round((value / max) * 100);
@@ -245,6 +245,84 @@ function TabNotes({ records }) {
   );
 }
 
+// ─── AI Insights Tab ────────────────────────────────────────────────────────
+function TabAIInsights({ explanation }) {
+  if (!explanation)
+    return <p className="text-sm text-slate-500 text-center py-8">No AI insights available.</p>;
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <SectionCard title="Attrition Risk Summary" icon="🧠">
+        <p className="text-sm text-slate-300 leading-relaxed mb-4">{explanation.narrative}</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Risk Score</div>
+            <div className={`text-2xl font-black ${explanation.riskLevel === 'HIGH' ? 'text-rose-400' : explanation.riskLevel === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {(explanation.riskScore * 100).toFixed(1)}%
+            </div>
+          </div>
+          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Risk Level</div>
+            <div className={`text-xl font-black mt-1 ${explanation.riskLevel === 'HIGH' ? 'text-rose-400' : explanation.riskLevel === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {explanation.riskLevel}
+            </div>
+          </div>
+          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Confidence</div>
+            <div className="text-xl font-black text-indigo-400 mt-1">
+              {(explanation.confidence * 100).toFixed(1)}%
+            </div>
+          </div>
+          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Base Value</div>
+            <div className="text-xl font-black text-slate-400 mt-1">
+              {(explanation.baseValue * 100).toFixed(1)}%
+            </div>
+          </div>
+        </div>
+      </SectionCard>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <SectionCard title="Top Risk Factors (Increases Risk)" icon="⚠️" className="border-rose-500/20">
+          {explanation.topPositiveContributors.length === 0 ? (
+            <p className="text-sm text-slate-500">None identified.</p>
+          ) : (
+            <div className="space-y-3">
+              {explanation.topPositiveContributors.map((c) => (
+                <div key={c.featureKey} className="flex justify-between items-center p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-200">{c.displayName}</div>
+                    <div className="text-xs text-slate-400">{c.formattedValue}</div>
+                  </div>
+                  <div className="text-sm font-black text-rose-400">+{c.shapValue.toFixed(3)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+        
+        <SectionCard title="Top Protective Factors (Reduces Risk)" icon="🛡️" className="border-emerald-500/20">
+          {explanation.topNegativeContributors.length === 0 ? (
+            <p className="text-sm text-slate-500">None identified.</p>
+          ) : (
+            <div className="space-y-3">
+              {explanation.topNegativeContributors.map((c) => (
+                <div key={c.featureKey} className="flex justify-between items-center p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
+                  <div>
+                    <div className="text-sm font-semibold text-slate-200">{c.displayName}</div>
+                    <div className="text-xs text-slate-400">{c.formattedValue}</div>
+                  </div>
+                  <div className="text-sm font-black text-emerald-400">{c.shapValue.toFixed(3)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function EmployeeProfile() {
   const { id } = useParams();
@@ -255,13 +333,14 @@ export default function EmployeeProfile() {
 
   const { user } = useSelector((state) => state.auth);
   const { departments } = useSelector((state) => state.department);
-  const { employee360, currentEmployee, loading, error } = useSelector((state) => state.employee);
+  const { employee360, employeeExplanation, currentEmployee, loading, error } = useSelector((state) => state.employee);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
 
   useEffect(() => {
     if (id) {
       dispatch(fetchEmployee360(id));
+      dispatch(fetchEmployeeExplanation(id));
       dispatch(fetchDepartments());
     }
   }, [dispatch, id]);
@@ -301,15 +380,18 @@ export default function EmployeeProfile() {
   const dept = emp.departmentId;
   const { attendance = [], performance = [], surveys = [], feedback = [], managerNotes = [] } = employee360 || {};
 
-  // Compute a quick retention risk heuristic for the profile badge
-  const avgEngagement = surveys.length ? surveys.reduce((s, r) => s + r.engagementScore, 0) / surveys.length : null;
-  const avgPerf = performance.length ? performance.reduce((s, r) => s + r.performanceScore, 0) / performance.length : null;
-  const riskLevel = avgEngagement && avgEngagement < 2.5 ? 'High' : avgEngagement && avgEngagement < 3.5 ? 'Medium' : 'Low';
-  const riskColors = { High: 'rose', Medium: 'amber', Low: 'emerald' };
+  // Use real ML risk from explanation if available
+  const riskLevel = employeeExplanation?.riskLevel || 'Pending';
+  const riskScore = employeeExplanation?.riskScore;
+  const riskColors = { HIGH: 'rose', MEDIUM: 'amber', LOW: 'emerald', Pending: 'slate' };
   const rc = riskColors[riskLevel];
+
+  const avgPerf = performance.length ? performance.reduce((s, r) => s + r.performanceScore, 0) / performance.length : null;
+  const avgEngagement = surveys.length ? surveys.reduce((s, r) => s + r.engagementScore, 0) / surveys.length : null;
 
   const tabContent = {
     Overview: <TabOverview emp={emp} />,
+    'AI Insights': <TabAIInsights explanation={employeeExplanation} />,
     Attendance: <TabAttendance records={attendance} />,
     Performance: <TabPerformance records={performance} />,
     Surveys: <TabSurveys records={surveys} />,
@@ -362,7 +444,10 @@ export default function EmployeeProfile() {
               <p className="text-base font-semibold text-slate-300">{emp.designation} · <span className="text-indigo-400">{dept?.name || 'No Dept'}</span></p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border bg-${rc}-500/10 text-${rc}-400 border-${rc}-500/20`}>
-                  {riskLevel} Risk
+                  {riskScore !== undefined ? `${(riskScore * 100).toFixed(0)}% Risk` : 'ML Loading...'}
+                </span>
+                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border bg-${rc}-500/10 text-${rc}-400 border-${rc}-500/20`}>
+                  {riskLevel}
                 </span>
                 <span className="px-2.5 py-0.5 text-xs font-mono bg-slate-800 text-slate-400 border border-slate-700 rounded-full">{emp.status}</span>
                 <span className="px-2.5 py-0.5 text-xs bg-slate-800 text-slate-400 border border-slate-700 rounded-full">📍 {emp.workLocation}</span>

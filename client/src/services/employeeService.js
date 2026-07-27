@@ -16,6 +16,11 @@ export const employeeService = {
     return response.data.data;
   },
 
+  async getEmployeeExplanation(id) {
+    const response = await api.get(`/employees/${id}/explain`);
+    return response.data.data;
+  },
+
   async createEmployee(data) {
     const response = await api.post('/employees', data);
     return response.data.data;

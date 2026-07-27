@@ -89,6 +89,17 @@ export const fetchEmployee360 = createAsyncThunk(
   },
 );
 
+export const fetchEmployeeExplanation = createAsyncThunk(
+  'employee/fetchEmployeeExplanation',
+  async (id, { rejectWithValue }) => {
+    try {
+      return await employeeService.getEmployeeExplanation(id);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch AI explanation.');
+    }
+  },
+);
+
 const employeeSlice = createSlice({
   name: 'employee',
   initialState: {
@@ -99,6 +110,7 @@ const employeeSlice = createSlice({
     totalPages: 1,
     currentEmployee: null,
     employee360: null,
+    employeeExplanation: null,
     filters: {
       search: '',
       departmentId: '',
@@ -261,6 +273,20 @@ const employeeSlice = createSlice({
         state.currentEmployee = action.payload.employee;
       })
       .addCase(fetchEmployee360.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // fetchEmployeeExplanation
+      .addCase(fetchEmployeeExplanation.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.employeeExplanation = null;
+      })
+      .addCase(fetchEmployeeExplanation.fulfilled, (state, action) => {
+        state.loading = false;
+        state.employeeExplanation = action.payload;
+      })
+      .addCase(fetchEmployeeExplanation.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

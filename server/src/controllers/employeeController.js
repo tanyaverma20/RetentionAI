@@ -8,7 +8,9 @@
  * invokes `employeeService` functions, and formats standardized responses.
  */
 
+import { AppError } from '../errors/AppError.js';
 import * as employeeService from '../services/employeeService.js';
+import { aiService } from '../services/aiService.js';
 import { sendSuccess } from '../utils/response.js';
 
 export async function createEmployee(request, response, next) {
@@ -66,6 +68,15 @@ export async function getEmployee360(request, response, next) {
   try {
     const data = await employeeService.getEmployee360(request.params.employeeId, request.auth);
     return sendSuccess(response, 200, data, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function explainEmployeeRisk(request, response, next) {
+  try {
+    const explanation = await aiService.explainEmployeeRisk(request.params.employeeId);
+    return sendSuccess(response, 200, explanation, request.requestId);
   } catch (error) {
     return next(error);
   }
