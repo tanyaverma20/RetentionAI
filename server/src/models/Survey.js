@@ -49,6 +49,30 @@ const surveySchema = new mongoose.Schema(
       max: 5,
       required: true,
     },
+    learningOpportunities: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true,
+    },
+    recognition: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true,
+    },
+    compensationSatisfaction: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true,
+    },
+    overallHappiness: {
+      type: Number,
+      min: 1,
+      max: 5,
+      required: true,
+    },
     surveyComments: {
       type: String,
       trim: true,

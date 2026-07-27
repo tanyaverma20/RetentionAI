@@ -7,20 +7,37 @@ from bson import ObjectId
 
 # Keep track of expected features in order
 FEATURE_COLS = [
-    'salary', 
     'age', 
-    'tenure_months', 
-    'salary_per_tenure', 
-    'age_at_joining',
     'gender', 
-    'employmentType', 
-    'workLocation', 
+    'departmentId',
     'designation', 
-    'departmentId'
+    'salary', 
+    'tenure_months', 
+    'years_in_current_role',
+    'years_since_last_promotion',
+    'training_hours',
+    'performance_rating',
+    'overtime_hours',
+    'distance_from_home',
+    'environment_satisfaction',
+    'job_satisfaction',
+    'work_life_balance',
+    'attendance_percentage',
+    'leave_count',
+    'promotion_count',
+    'avg_survey_score',
+    'feedback_frequency',
+    'employmentType', 
+    'workLocation'
 ]
 
 CATEGORICAL_COLS = ['gender', 'employmentType', 'workLocation', 'designation', 'departmentId']
-NUMERICAL_COLS = ['salary', 'age', 'tenure_months', 'salary_per_tenure', 'age_at_joining']
+NUMERICAL_COLS = [
+    'age', 'salary', 'tenure_months', 'years_in_current_role', 'years_since_last_promotion',
+    'training_hours', 'performance_rating', 'overtime_hours', 'distance_from_home',
+    'environment_satisfaction', 'job_satisfaction', 'work_life_balance', 'attendance_percentage',
+    'leave_count', 'promotion_count', 'avg_survey_score', 'feedback_frequency'
+]
 
 def load_data_from_db(mongo_uri: str, db_name: str) -> pd.DataFrame:
     """
@@ -112,7 +129,22 @@ def generate_synthetic_data(num_records: int = 1000) -> pd.DataFrame:
             "salary": salary,
             "workLocation": work_loc,
             "status": status,
-            "isDeleted": False
+            "isDeleted": False,
+            # Synthesized additional features
+            "years_in_current_role": max(0, tenure_months / 12.0 - np.random.uniform(0, 3)),
+            "years_since_last_promotion": max(0, tenure_months / 12.0 - np.random.uniform(0, 5)),
+            "training_hours": np.random.randint(0, 100),
+            "performance_rating": np.random.randint(1, 6),
+            "overtime_hours": np.random.randint(0, 50),
+            "distance_from_home": np.random.randint(1, 50),
+            "environment_satisfaction": np.random.randint(1, 6),
+            "job_satisfaction": np.random.randint(1, 6),
+            "work_life_balance": np.random.randint(1, 6),
+            "attendance_percentage": np.random.uniform(70, 100),
+            "leave_count": np.random.randint(0, 30),
+            "promotion_count": np.random.randint(0, 4),
+            "avg_survey_score": np.random.uniform(1, 5),
+            "feedback_frequency": np.random.randint(0, 10)
         })
         
     return pd.DataFrame(data)
@@ -133,13 +165,17 @@ def fit_transform_pipeline(df: pd.DataFrame):
     current_date = pd.Timestamp(2026, 7, 27)
     
     # Date variables
-    df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth']).dt.tz_localize(None)
-    df['joiningDate'] = pd.to_datetime(df['joiningDate']).dt.tz_localize(None)
-    
-    df['age'] = ((current_date - df['dateOfBirth']).dt.days / 365.25).astype(float)
-    df['tenure_months'] = ((current_date - df['joiningDate']).dt.days / 30.43).astype(float)
-    df['salary_per_tenure'] = df['salary'].astype(float) / (df['tenure_months'] + 1.0)
-    df['age_at_joining'] = df['age'] - (df['tenure_months'] / 12.0)
+    if 'dateOfBirth' in df.columns:
+        df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth']).dt.tz_localize(None)
+        df['age'] = ((current_date - df['dateOfBirth']).dt.days / 365.25).astype(float)
+    else:
+        df['age'] = 30.0
+        
+    if 'joiningDate' in df.columns:
+        df['joiningDate'] = pd.to_datetime(df['joiningDate']).dt.tz_localize(None)
+        df['tenure_months'] = ((current_date - df['joiningDate']).dt.days / 30.43).astype(float)
+    else:
+        df['tenure_months'] = 24.0
     
     # 2. Fill missing values
     for col in NUMERICAL_COLS:
@@ -201,14 +237,18 @@ def transform_inference(df: pd.DataFrame, scaler, encoders):
     df = df.copy()
     current_date = pd.Timestamp(2026, 7, 27)
     
-    # 1. Feature Engineering
-    df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth']).dt.tz_localize(None)
-    df['joiningDate'] = pd.to_datetime(df['joiningDate']).dt.tz_localize(None)
-    
-    df['age'] = ((current_date - df['dateOfBirth']).dt.days / 365.25).astype(float)
-    df['tenure_months'] = ((current_date - df['joiningDate']).dt.days / 30.43).astype(float)
-    df['salary_per_tenure'] = df['salary'].astype(float) / (df['tenure_months'] + 1.0)
-    df['age_at_joining'] = df['age'] - (df['tenure_months'] / 12.0)
+    # Date variables
+    if 'dateOfBirth' in df.columns:
+        df['dateOfBirth'] = pd.to_datetime(df['dateOfBirth']).dt.tz_localize(None)
+        df['age'] = ((current_date - df['dateOfBirth']).dt.days / 365.25).astype(float)
+    else:
+        df['age'] = 30.0
+        
+    if 'joiningDate' in df.columns:
+        df['joiningDate'] = pd.to_datetime(df['joiningDate']).dt.tz_localize(None)
+        df['tenure_months'] = ((current_date - df['joiningDate']).dt.days / 30.43).astype(float)
+    else:
+        df['tenure_months'] = 24.0
     
     # 2. Fill missing values
     for col in NUMERICAL_COLS:

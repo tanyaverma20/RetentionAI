@@ -14,6 +14,9 @@ import { employeeRouter } from './routes/employeeRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
 import { userRouter } from './routes/userRoutes.js';
 import hrRouter from './routes/hrRoutes.js';
+import { reportingRouter } from './routes/reportingRoutes.js';
+import { searchRouter } from './routes/searchRoutes.js';
+import { aiRouter } from './routes/aiRoutes.js';
 
 export const app = express();
 
@@ -44,5 +47,8 @@ app.use('/api/v1/departments', departmentRouter);
 app.use('/api/v1/employees', employeeRouter);
 app.use('/api/v1/analytics', analyticsRouter);
 app.use('/api/v1/hr', hrRouter);
+app.use('/api/v1/reports', reportingRouter);
+app.use('/api/v1/search', searchRouter);
+app.use('/api/v1/ai', aiRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);

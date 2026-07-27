@@ -10,6 +10,7 @@ import {
   clearEmployeeSuccess,
   createEmployee,
   fetchEmployees,
+  predictBatchEmployees,
   resetFilters,
   restoreEmployee,
   setFilter,
@@ -18,6 +19,27 @@ import {
   updateEmployee,
 } from '../store/slices/employeeSlice';
 import { bulkImportHrRecords } from '../store/slices/hrSlice';
+
+const RISK_STYLES = {
+  HIGH: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+  MEDIUM: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  LOW: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+};
+
+function RiskBadge({ riskLevel, probability }) {
+  if (!riskLevel) return <span className="text-xs text-slate-600 italic">No Data</span>;
+  const style = RISK_STYLES[riskLevel] || 'bg-slate-700/30 text-slate-500';
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${style}`}>
+        {riskLevel}
+      </span>
+      {probability !== undefined && (
+        <span className="text-xs font-mono text-slate-400">{(probability * 100).toFixed(0)}%</span>
+      )}
+    </div>
+  );
+}
 
 export default function Employees() {
   const dispatch = useDispatch();
@@ -42,6 +64,7 @@ export default function Employees() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [deleteConfirmEmp, setDeleteConfirmEmp] = useState(null);
+  const [riskFilter, setRiskFilter] = useState('');
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
 
@@ -156,6 +179,17 @@ export default function Employees() {
         {canManage && (
           <div className="flex flex-wrap items-center gap-3">
             <button
+              onClick={async () => {
+                await dispatch(predictBatchEmployees({}));
+                dispatch(fetchEmployees({ page, limit, search: filters.search, departmentId: filters.departmentId, designation: filters.designation, status: filters.status, includeDeleted: filters.includeDeleted, sortBy: filters.sortBy, sortOrder: filters.sortOrder }));
+              }}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-60 border border-violet-500/30 rounded-2xl transition-all"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+              {loading ? 'Running AI…' : 'Run AI Prediction'}
+            </button>
+            <button
               onClick={() => setIsImportModalOpen(true)}
               className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl transition-all"
             >
@@ -165,10 +199,7 @@ export default function Employees() {
               Bulk Import CSV
             </button>
             <button
-              onClick={() => {
-                setSelectedEmployee(null);
-                setIsFormModalOpen(true);
-              }}
+              onClick={() => { setSelectedEmployee(null); setIsFormModalOpen(true); }}
               className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-lg shadow-indigo-600/25 transition-all transform hover:-translate-y-0.5"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -248,6 +279,18 @@ export default function Employees() {
             <option value="TERMINATED">Terminated</option>
           </select>
 
+          {/* Risk Filter */}
+          <select
+            value={riskFilter}
+            onChange={(e) => setRiskFilter(e.target.value)}
+            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+          >
+            <option value="">All Risk Levels</option>
+            <option value="HIGH">🔴 High Risk</option>
+            <option value="MEDIUM">🟡 Medium Risk</option>
+            <option value="LOW">🟢 Low Risk</option>
+          </select>
+
           {/* Sorting Field */}
           <div className="flex items-center gap-2">
             <select
@@ -316,15 +359,18 @@ export default function Employees() {
               <thead className="bg-slate-950/80 text-xs font-mono font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
                 <tr>
                   <th className="px-6 py-4">Employee</th>
-                  <th className="px-6 py-4">Department & Role</th>
+                  <th className="px-6 py-4">Department &amp; Role</th>
                   <th className="px-6 py-4">Contact</th>
                   <th className="px-6 py-4">Joining Date</th>
                   <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">AI Risk</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
-                {employees.map((emp) => {
+                {employees
+                  .filter(emp => !riskFilter || emp.latestPrediction?.riskLevel === riskFilter)
+                  .map((emp) => {
                   const empId = emp._id || emp.id;
                   const dept = emp.departmentId;
 
@@ -380,6 +426,10 @@ export default function Employees() {
                         </span>
                       </td>
 
+                      <td className="px-6 py-4">
+                        <RiskBadge riskLevel={emp.latestPrediction?.riskLevel} probability={emp.latestPrediction?.riskScore} />
+                      </td>
+
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
@@ -398,10 +448,7 @@ export default function Employees() {
                               {!emp.isDeleted ? (
                                 <>
                                   <button
-                                    onClick={() => {
-                                      setSelectedEmployee(emp);
-                                      setIsFormModalOpen(true);
-                                    }}
+                                    onClick={() => { setSelectedEmployee(emp); setIsFormModalOpen(true); }}
                                     title="Edit Employee"
                                     className="p-2 text-slate-400 hover:text-indigo-300 bg-slate-800/60 hover:bg-slate-800 rounded-xl transition-colors"
                                   >

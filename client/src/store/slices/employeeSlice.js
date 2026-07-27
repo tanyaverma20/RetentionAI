@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import employeeService from '../../services/employeeService';
+import aiService from '../../services/aiService';
 
 export const fetchEmployees = createAsyncThunk(
   'employee/fetchEmployees',
@@ -8,6 +9,28 @@ export const fetchEmployees = createAsyncThunk(
       return await employeeService.listEmployees(params);
     } catch (error) {
       return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch employees.');
+    }
+  },
+);
+
+export const predictEmployee = createAsyncThunk(
+  'employee/predictEmployee',
+  async (id, { rejectWithValue }) => {
+    try {
+      return await aiService.predictSingle(id);
+    } catch (error) {
+      return rejectWithValue(error?.response?.data?.error?.message || error.message || 'Failed to run prediction.');
+    }
+  },
+);
+
+export const predictBatchEmployees = createAsyncThunk(
+  'employee/predictBatchEmployees',
+  async (payload, { rejectWithValue }) => {
+    try {
+      return await aiService.predictBatch(payload);
+    } catch (error) {
+      return rejectWithValue(error?.response?.data?.error?.message || error.message || 'Failed to run batch prediction.');
     }
   },
 );
@@ -147,6 +170,8 @@ const employeeSlice = createSlice({
     error: null,
     successMessage: null,
     importSummary: null,
+    aiPredictionResult: null,
+    batchPredictionStatus: null,
   },
   reducers: {
     setFilter: (state, action) => {
@@ -344,6 +369,34 @@ const employeeSlice = createSlice({
         state.successMessage = 'Profile picture uploaded successfully!';
       })
       .addCase(uploadEmployeeAvatar.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // predictEmployee
+      .addCase(predictEmployee.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(predictEmployee.fulfilled, (state, action) => {
+        state.loading = false;
+        state.aiPredictionResult = action.payload;
+        state.successMessage = 'Prediction generated successfully!';
+      })
+      .addCase(predictEmployee.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // predictBatchEmployees
+      .addCase(predictBatchEmployees.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(predictBatchEmployees.fulfilled, (state, action) => {
+        state.loading = false;
+        state.batchPredictionStatus = action.payload;
+        state.successMessage = `Batch prediction completed. Success: ${action.payload.successCount}, Failed: ${action.payload.failedCount}`;
+      })
+      .addCase(predictBatchEmployees.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

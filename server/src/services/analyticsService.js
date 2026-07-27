@@ -49,12 +49,13 @@ function applyRbacScope(authContext, filter = {}) {
 export async function getDashboardSummary(authContext, filter = {}) {
   const scopedFilter = applyRbacScope(authContext, filter);
 
-  const [kpis, departmentStats, demographics, monthlyTrends, insights] = await Promise.all([
+  const [kpis, departmentStats, demographics, monthlyTrends, insights, advancedCharts] = await Promise.all([
     analyticsRepo.getKpiSummary(scopedFilter),
     analyticsRepo.getDepartmentAnalytics(scopedFilter),
     analyticsRepo.getDemographicDistributions(scopedFilter),
     analyticsRepo.getMonthlyTrends(scopedFilter),
     analyticsRepo.getEmployeeInsights(scopedFilter),
+    analyticsRepo.getAdvancedCharts(scopedFilter),
   ]);
 
   return {
@@ -63,6 +64,7 @@ export async function getDashboardSummary(authContext, filter = {}) {
     demographics,
     monthlyTrends,
     insights,
+    advancedCharts,
     userScope: {
       role: authContext.role,
       departmentId: authContext.departmentId || null,

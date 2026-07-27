@@ -41,6 +41,10 @@ export const surveyCreateSchema = z.object({
   stressLevel: z.number().min(1).max(5),
   careerGrowthScore: z.number().min(1).max(5),
   managerRelationshipScore: z.number().min(1).max(5),
+  learningOpportunities: z.number().min(1).max(5),
+  recognition: z.number().min(1).max(5),
+  compensationSatisfaction: z.number().min(1).max(5),
+  overallHappiness: z.number().min(1).max(5),
   surveyComments: z.string().trim().optional(),
 });
 

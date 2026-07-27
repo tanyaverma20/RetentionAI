@@ -188,3 +188,92 @@ export function ExperienceDistributionChart({ data = [] }) {
     </div>
   );
 }
+
+export function PerformanceDistributionChart({ data = [] }) {
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Performance Distribution</h3>
+        <p className="text-xs text-slate-400">Employee performance rating breakdown</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="rating" stroke="#64748b" tick={{ fontSize: 10 }} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="count" name="Count" fill="#eab308" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function AgeDistributionChart({ data = [] }) {
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Age Distribution</h3>
+        <p className="text-xs text-slate-400">Generational diversity breakdown</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="range" stroke="#64748b" tick={{ fontSize: 10 }} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="count" name="Count" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function LeaveStatisticsChart({ data = [] }) {
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Leave Statistics</h3>
+        <p className="text-xs text-slate-400">Breakdown of leave types</p>
+      </div>
+      <div className="h-64 w-full flex items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={data} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={5} dataKey="count" nameKey="type">
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={DEPT_COLORS[index % DEPT_COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function AdvancedTrendsChart({ data = [] }) {
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">HR Operations Trend</h3>
+        <p className="text-xs text-slate-400">Attendance, Training, and Promotion correlation over time</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="monthLabel" stroke="#64748b" tick={{ fontSize: 10 }} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Line type="monotone" dataKey="avgAttendanceHours" name="Avg Attendance Hrs" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="trainingCompletions" name="Training Completions" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="promotions" name="Promotions" stroke="#f59e0b" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}

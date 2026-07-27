@@ -16,6 +16,7 @@ import { Performance } from '../models/Performance.js';
 import { Survey } from '../models/Survey.js';
 import { TrainingHistory } from '../models/TrainingHistory.js';
 import { PromotionHistory } from '../models/PromotionHistory.js';
+import { EmployeeFeedback } from '../models/EmployeeFeedback.js';
 
 
 /**
@@ -90,7 +91,7 @@ export async function getKpiSummary(filter = {}) {
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
-  const [attendanceTodayCount, avgPerfResult, promotionDueCount, trainingCompletionResult] = await Promise.all([
+  const [attendanceTodayCount, avgPerfResult, promotionDueCount, trainingCompletionResult, employeesOnLeave, avgSatResult, totalFeedbackCount] = await Promise.all([
     // Attendance today: count of PRESENT records for today
     Attendance.countDocuments({
       attendanceDate: { $gte: todayStart, $lte: todayEnd },
@@ -107,6 +108,14 @@ export async function getKpiSummary(filter = {}) {
       { $group: { _id: '$employeeId' } },
       { $count: 'trainedEmployees' },
     ]),
+    // Employees on leave
+    Employee.countDocuments({ ...match, status: 'ON_LEAVE' }),
+    // Average satisfaction
+    Survey.aggregate([
+      { $group: { _id: null, avg: { $avg: '$jobSatisfaction' } } },
+    ]),
+    // Total feedback
+    EmployeeFeedback.countDocuments(),
   ]);
 
   const avgPerformance = avgPerfResult[0]?.avg
@@ -115,6 +124,9 @@ export async function getKpiSummary(filter = {}) {
   const trainedEmployees = trainingCompletionResult[0]?.trainedEmployees || 0;
   const trainingCompletion = activeEmployees > 0
     ? Number(((trainedEmployees / activeEmployees) * 100).toFixed(0))
+    : 0;
+  const avgSatisfactionResult = avgSatResult[0]?.avg
+    ? Number(avgSatResult[0].avg.toFixed(1))
     : 0;
 
   return {
@@ -126,6 +138,9 @@ export async function getKpiSummary(filter = {}) {
     avgPerformance,
     promotionDue: promotionDueCount,
     trainingCompletion,
+    employeesOnLeave,
+    avgSatisfaction: avgSatisfactionResult,
+    totalFeedback: totalFeedbackCount,
     attritionRate: {
       value: calculatedAttritionRate,
       unit: '%',
@@ -222,7 +237,7 @@ export async function getDepartmentAnalytics(filter = {}) {
 export async function getDemographicDistributions(filter = {}) {
   const match = buildMatchFilter(filter);
 
-  const [byDepartment, byGender, byEmploymentType, experienceFacet] = await Promise.all([
+  const [byDepartment, byGender, byEmploymentType, experienceFacet, ageFacet] = await Promise.all([
     // Employees by Department
     Employee.aggregate([
       { $match: match },
@@ -282,6 +297,29 @@ export async function getDemographicDistributions(filter = {}) {
         },
       },
     ]),
+
+    // Age Distribution
+    Employee.aggregate([
+      { $match: match },
+      {
+        $project: {
+          age: {
+            $divide: [
+              { $subtract: [new Date(), { $ifNull: ['$dateOfBirth', new Date()] }] },
+              1000 * 60 * 60 * 24 * 365.25,
+            ],
+          },
+        },
+      },
+      {
+        $bucket: {
+          groupBy: '$age',
+          boundaries: [18, 25, 35, 45, 55, 65, 100],
+          default: 'Unknown',
+          output: { count: { $sum: 1 } },
+        },
+      },
+    ]),
   ]);
 
   // Format experience ranges for UI charts
@@ -293,11 +331,22 @@ export async function getDemographicDistributions(filter = {}) {
     { range: '10+ Years', count: experienceFacet.find((b) => b._id === 10)?.count || 0 },
   ];
 
+  // Format age distribution
+  const ageDistribution = [
+    { range: '18-24', count: ageFacet.find((b) => b._id === 18)?.count || 0 },
+    { range: '25-34', count: ageFacet.find((b) => b._id === 25)?.count || 0 },
+    { range: '35-44', count: ageFacet.find((b) => b._id === 35)?.count || 0 },
+    { range: '45-54', count: ageFacet.find((b) => b._id === 45)?.count || 0 },
+    { range: '55-64', count: ageFacet.find((b) => b._id === 55)?.count || 0 },
+    { range: '65+', count: ageFacet.find((b) => b._id === 65)?.count || 0 },
+  ];
+
   return {
     byDepartment,
     byGender,
     byEmploymentType,
     experienceDistribution,
+    ageDistribution,
   };
 }
 
@@ -483,6 +532,105 @@ export async function getHrMetrics(filter = {}) {
     surveys: surveyAgg[0] || { avgSatisfaction: 0, avgEngagement: 0, count: 0 },
     training: trainingAgg[0] || { totalHours: 0, certificationsCount: 0, count: 0 },
     promotions: promotionAgg[0] || { avgSalaryIncrease: 0, count: 0 }
+  };
+}
+
+/**
+ * Aggregates advanced charts for the dashboard: Attendance Trend, Performance Distribution,
+ * Leave Statistics, Training Completion trend, and Promotion History.
+ */
+export async function getAdvancedCharts(filter = {}) {
+  const match = buildMatchFilter(filter);
+  
+  // Performance Distribution (1-5 scale)
+  const performanceDistribution = await Performance.aggregate([
+    {
+      $group: {
+        _id: '$performanceScore',
+        count: { $sum: 1 },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  // Transform performance dist for UI
+  const formattedPerfDist = [1, 2, 3, 4, 5].map((score) => {
+    const found = performanceDistribution.find((p) => p._id === score);
+    return { rating: `Rating ${score}`, count: found ? found.count : 0 };
+  });
+
+  // Leave Statistics
+  const leaveStatistics = await Attendance.aggregate([
+    { $match: { attendanceStatus: 'ON_LEAVE', leaveType: { $ne: 'NONE' } } },
+    { $group: { _id: '$leaveType', count: { $sum: 1 } } },
+  ]);
+
+  const formattedLeaveStats = leaveStatistics.map((l) => ({
+    type: l._id,
+    count: l.count,
+  }));
+
+  // For monthly trends (Attendance, Training, Promotions), we group by year/month
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+  twelveMonthsAgo.setDate(1);
+
+  const attendanceAgg = await Attendance.aggregate([
+    { $match: { attendanceDate: { $gte: twelveMonthsAgo } } },
+    {
+      $group: {
+        _id: { year: { $year: '$attendanceDate' }, month: { $month: '$attendanceDate' } },
+        avgHours: { $avg: '$totalHoursWorked' },
+        totalPresent: { $sum: { $cond: [{ $eq: ['$attendanceStatus', 'PRESENT'] }, 1, 0] } },
+      },
+    },
+  ]);
+
+  const trainingAgg = await TrainingHistory.aggregate([
+    { $match: { completionDate: { $gte: twelveMonthsAgo } } },
+    {
+      $group: {
+        _id: { year: { $year: '$completionDate' }, month: { $month: '$completionDate' } },
+        completions: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const promotionAgg = await PromotionHistory.aggregate([
+    { $match: { promotionDate: { $gte: twelveMonthsAgo } } },
+    {
+      $group: {
+        _id: { year: { $year: '$promotionDate' }, month: { $month: '$promotionDate' } },
+        promotions: { $sum: 1 },
+      },
+    },
+  ]);
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const advancedTrends = [];
+
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(twelveMonthsAgo.getFullYear(), twelveMonthsAgo.getMonth() + i, 1);
+    const yr = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const label = `${monthNames[d.getMonth()]} ${yr}`;
+
+    const att = attendanceAgg.find((r) => r._id.year === yr && r._id.month === m);
+    const trn = trainingAgg.find((r) => r._id.year === yr && r._id.month === m);
+    const prm = promotionAgg.find((r) => r._id.year === yr && r._id.month === m);
+
+    advancedTrends.push({
+      monthLabel: label,
+      avgAttendanceHours: att ? Number(att.avgHours.toFixed(1)) : 0,
+      trainingCompletions: trn ? trn.completions : 0,
+      promotions: prm ? prm.promotions : 0,
+    });
+  }
+
+  return {
+    performanceDistribution: formattedPerfDist,
+    leaveStatistics: formattedLeaveStats,
+    advancedTrends,
   };
 }
 

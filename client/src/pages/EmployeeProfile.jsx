@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { fetchDepartments } from '../store/slices/departmentSlice';
-import { fetchEmployee360, fetchEmployeeExplanation, fetchEmployeeTimeline, updateEmployee, uploadEmployeeAvatar } from '../store/slices/employeeSlice';
+import { fetchEmployee360, fetchEmployeeExplanation, fetchEmployeeTimeline, predictEmployee, updateEmployee, uploadEmployeeAvatar } from '../store/slices/employeeSlice';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
@@ -343,79 +343,95 @@ function TabNotes({ records }) {
 }
 
 // ─── AI Insights Tab ────────────────────────────────────────────────────────
-function TabAIInsights({ explanation }) {
-  if (!explanation)
-    return <p className="text-sm text-slate-500 text-center py-8">No AI insights available.</p>;
+const RISK_COLORS = {
+  HIGH: { bg: 'bg-rose-500/10', border: 'border-rose-500/20', text: 'text-rose-400', glow: 'shadow-rose-500/20' },
+  MEDIUM: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', glow: 'shadow-amber-500/20' },
+  LOW: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', glow: 'shadow-emerald-500/20' },
+};
 
+function TabAIInsights({ prediction, onGenerate, aiLoading, canEdit }) {
+  const rc = prediction ? (RISK_COLORS[prediction.riskLevel] || RISK_COLORS.LOW) : null;
   return (
     <div className="space-y-6 animate-fade-in">
-      <SectionCard title="Attrition Risk Summary" icon="🧠">
-        <p className="text-sm text-slate-300 leading-relaxed mb-4">{explanation.narrative}</p>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Risk Score</div>
-            <div className={`text-2xl font-black ${explanation.riskLevel === 'HIGH' ? 'text-rose-400' : explanation.riskLevel === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'}`}>
-              {(explanation.riskScore * 100).toFixed(1)}%
+      {/* 1. AI Attrition Prediction Card */}
+      {prediction ? (
+        <SectionCard title="AI Attrition Prediction" icon="🧠" className={`${rc.border}`}>
+          <div className={`flex items-center gap-6 p-5 rounded-2xl ${rc.bg} border ${rc.border} mb-5`}>
+            <div className="text-center">
+              <div className={`text-5xl font-black ${rc.text} drop-shadow-lg`}>
+                {(prediction.riskScore * 100).toFixed(0)}%
+              </div>
+              <div className="text-xs text-slate-400 mt-1 uppercase tracking-wider">Probability</div>
+            </div>
+            <div className="flex-1 space-y-1">
+              <span className={`inline-block px-3 py-1 text-sm font-black uppercase tracking-widest rounded-full border ${rc.bg} ${rc.border} ${rc.text}`}>
+                {prediction.riskLevel} RISK
+              </span>
+              <div className="text-xs text-slate-400 mt-1">Confidence: <span className="font-bold text-slate-200">{(prediction.confidence * 100).toFixed(1)}%</span></div>
             </div>
           </div>
-          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Risk Level</div>
-            <div className={`text-xl font-black mt-1 ${explanation.riskLevel === 'HIGH' ? 'text-rose-400' : explanation.riskLevel === 'MEDIUM' ? 'text-amber-400' : 'text-emerald-400'}`}>
-              {explanation.riskLevel}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Model</div>
+              <div className="text-sm font-bold text-indigo-300">{prediction.modelVersion}</div>
+            </div>
+            <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Prediction Date</div>
+              <div className="text-sm font-bold text-slate-200">{new Date(prediction.predictedAt).toLocaleDateString()}</div>
+            </div>
+            <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Status</div>
+              <div className="text-sm font-bold text-emerald-400">{prediction.status}</div>
             </div>
           </div>
-          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Confidence</div>
-            <div className="text-xl font-black text-indigo-400 mt-1">
-              {(explanation.confidence * 100).toFixed(1)}%
+          {canEdit && (
+            <div className="flex justify-end pt-4 border-t border-slate-800">
+              <button onClick={onGenerate} disabled={aiLoading}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 rounded-xl transition-all disabled:opacity-50">
+                <svg className={`w-4 h-4 ${aiLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                {aiLoading ? 'Refreshing…' : 'Refresh Prediction'}
+              </button>
             </div>
+          )}
+        </SectionCard>
+      ) : (
+        <SectionCard title="AI Attrition Prediction" icon="🧠" className="border-indigo-500/20">
+          <div className="text-center py-8">
+            <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4 text-3xl">🤖</div>
+            <p className="text-slate-400 text-sm mb-5">No prediction generated for this employee yet.</p>
+            {canEdit && (
+              <button onClick={onGenerate} disabled={aiLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl shadow-lg shadow-violet-600/25 transition-all disabled:opacity-50">
+                <svg className={`w-4 h-4 ${aiLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
+                {aiLoading ? 'Generating…' : 'Generate Prediction'}
+              </button>
+            )}
           </div>
-          <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
-            <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Base Value</div>
-            <div className="text-xl font-black text-slate-400 mt-1">
-              {(explanation.baseValue * 100).toFixed(1)}%
-            </div>
-          </div>
+        </SectionCard>
+      )}
+
+      {/* 2. Why? (SHAP) — Sprint 4 Placeholder */}
+      <SectionCard title="Why? — SHAP Explainability (Sprint 4)" icon="⚖️" className="border-amber-500/20 bg-amber-500/5 opacity-80 border-dashed">
+        <p className="text-sm text-slate-400 italic">SHAP values will explain which features drove this prediction. Awaiting Sprint 4.</p>
+        <div className="h-20 mt-3 bg-slate-950/50 rounded-xl border border-slate-800 flex items-center justify-center blur-[2px]">
+          <span className="text-slate-600 font-bold uppercase tracking-widest text-xs">SHAP Force Plot</span>
         </div>
       </SectionCard>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <SectionCard title="Top Risk Factors (Increases Risk)" icon="⚠️" className="border-rose-500/20">
-          {explanation.topPositiveContributors.length === 0 ? (
-            <p className="text-sm text-slate-500">None identified.</p>
-          ) : (
-            <div className="space-y-3">
-              {explanation.topPositiveContributors.map((c) => (
-                <div key={c.featureKey} className="flex justify-between items-center p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-200">{c.displayName}</div>
-                    <div className="text-xs text-slate-400">{c.formattedValue}</div>
-                  </div>
-                  <div className="text-sm font-black text-rose-400">+{c.shapValue.toFixed(3)}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-        
-        <SectionCard title="Top Protective Factors (Reduces Risk)" icon="🛡️" className="border-emerald-500/20">
-          {explanation.topNegativeContributors.length === 0 ? (
-            <p className="text-sm text-slate-500">None identified.</p>
-          ) : (
-            <div className="space-y-3">
-              {explanation.topNegativeContributors.map((c) => (
-                <div key={c.featureKey} className="flex justify-between items-center p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl">
-                  <div>
-                    <div className="text-sm font-semibold text-slate-200">{c.displayName}</div>
-                    <div className="text-xs text-slate-400">{c.formattedValue}</div>
-                  </div>
-                  <div className="text-sm font-black text-emerald-400">{c.shapValue.toFixed(3)}</div>
-                </div>
-              ))}
-            </div>
-          )}
-        </SectionCard>
-      </div>
+      {/* 3. Employee Emotion (NLP) — Sprint 4 Placeholder */}
+      <SectionCard title="Employee Sentiment — NLP (Sprint 4)" icon="🎭" className="border-rose-500/20 bg-rose-500/5 opacity-80 border-dashed">
+        <p className="text-sm text-slate-400 italic">NLP-based sentiment analysis on surveys & feedback. Awaiting Sprint 4.</p>
+      </SectionCard>
+
+      {/* 4. Company Policy (RAG) — Sprint 4 Placeholder */}
+      <SectionCard title="Relevant Policies — RAG (Sprint 4)" icon="📚" className="border-emerald-500/20 bg-emerald-500/5 opacity-80 border-dashed">
+        <p className="text-sm text-slate-400 italic">Policy retrieval via RAG will surface relevant HR documents. Awaiting Sprint 4.</p>
+      </SectionCard>
+
+      {/* 5. Recommendation (Agentic AI) — Sprint 4 Placeholder */}
+      <SectionCard title="HR Recommendations — Agentic AI (Sprint 4)" icon="🤖" className="border-violet-500/20 bg-violet-500/5 opacity-80 border-dashed">
+        <p className="text-sm text-slate-400 italic">Agentic AI will generate actionable HR interventions. Awaiting Sprint 4.</p>
+      </SectionCard>
     </div>
   );
 }
@@ -430,18 +446,24 @@ export default function EmployeeProfile() {
 
   const { user } = useSelector((state) => state.auth);
   const { departments } = useSelector((state) => state.department);
-  const { employee360, employeeExplanation, employeeTimeline, currentEmployee, loading, error } = useSelector((state) => state.employee);
+  const { employee360, employeeTimeline, currentEmployee, loading, error, aiPredictionResult } = useSelector((state) => state.employee);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchEmployee360(id));
-      dispatch(fetchEmployeeExplanation(id));
       dispatch(fetchEmployeeTimeline(id));
       dispatch(fetchDepartments());
     }
   }, [dispatch, id]);
+
+  const handleGeneratePrediction = async () => {
+    setAiLoading(true);
+    await dispatch(predictEmployee(id));
+    setAiLoading(false);
+  };
 
   const handleUpdate = async (formData) => {
     await dispatch(updateEmployee({ id, data: formData }));
@@ -486,16 +508,17 @@ export default function EmployeeProfile() {
   const dept = emp.departmentId;
   const { attendance = [], performance = [], surveys = [], feedback = [], managerNotes = [] } = employee360 || {};
 
-  // Use real ML risk from explanation if available
-  const riskLevel = employeeExplanation?.riskLevel || 'Pending';
-  const riskScore = employeeExplanation?.riskScore;
+  // Use real ML risk from prediction results
+  const prediction = aiPredictionResult?.employeeId === id ? aiPredictionResult : null;
+  const riskLevel = prediction?.riskLevel || 'UNKNOWN';
+  const riskScore = prediction?.riskScore;
   const riskStyles = {
     HIGH: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     MEDIUM: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
     LOW: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-    Pending: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+    UNKNOWN: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
   };
-  const rs = riskStyles[riskLevel] || riskStyles.Pending;
+  const rs = riskStyles[riskLevel] || riskStyles.UNKNOWN;
 
   const avgPerf = performance.length ? performance.reduce((s, r) => s + r.performanceScore, 0) / performance.length : null;
   const avgEngagement = surveys.length ? surveys.reduce((s, r) => s + r.engagementScore, 0) / surveys.length : null;
@@ -503,7 +526,7 @@ export default function EmployeeProfile() {
   const tabContent = {
     Overview: <TabOverview emp={emp} />,
     Timeline: <TabTimeline timeline={employeeTimeline} />,
-    'AI Insights': <TabAIInsights explanation={employeeExplanation} />,
+    'AI Insights': <TabAIInsights prediction={prediction} onGenerate={handleGeneratePrediction} aiLoading={aiLoading} canEdit={canEdit} />,
     Attendance: <TabAttendance records={attendance} />,
     Performance: <TabPerformance records={performance} />,
     Surveys: <TabSurveys records={surveys} />,

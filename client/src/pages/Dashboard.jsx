@@ -9,6 +9,10 @@ import {
   MonthlyHiringTrendChart,
   MonthlyAttritionTrendChart,
   ExperienceDistributionChart,
+  PerformanceDistributionChart,
+  AgeDistributionChart,
+  LeaveStatisticsChart,
+  AdvancedTrendsChart,
 } from '../components/analytics/AnalyticsCharts';
 import DepartmentAnalyticsTable from '../components/analytics/DepartmentAnalyticsTable';
 import EmployeeInsightsCard from '../components/analytics/EmployeeInsightsCard';
@@ -16,6 +20,8 @@ import AnalyticsFilterBar from '../components/analytics/AnalyticsFilterBar';
 
 import { fetchDashboardSummary, setAnalyticsFilter, resetAnalyticsFilters } from '../store/slices/analyticsSlice';
 import { fetchDepartments } from '../store/slices/departmentSlice';
+import { useState } from 'react';
+import aiService from '../services/aiService';
 
 // KPI icon helpers
 function UsersIcon() {
@@ -90,6 +96,20 @@ function SparklesIcon() {
     </svg>
   );
 }
+function LogoutIcon() {
+  return (
+    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    </svg>
+  );
+}
+function MailIcon() {
+  return (
+    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    </svg>
+  );
+}
 
 function KpiSkeleton() {
   return (
@@ -124,6 +144,7 @@ export default function Dashboard() {
     demographics,
     monthlyTrends,
     insights,
+    advancedCharts,
     filters,
     loading,
     error,
@@ -138,6 +159,14 @@ export default function Dashboard() {
     dispatch(fetchDashboardSummary(activeFilters));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
+
+  // AI risk counts (loaded separately from the Node backend → FastAPI predictions)
+  const [riskCounts, setRiskCounts] = useState(null);
+  useEffect(() => {
+    aiService.getDashboardAnalytics()
+      .then(data => setRiskCounts(data?.riskCounts))
+      .catch(() => {}); // Silently fail if AI service not yet running
+  }, []);
 
   const handleFilterChange = (key, value) => {
     const updated = { ...filters, [key]: value };
@@ -238,26 +267,9 @@ export default function Dashboard() {
                   <KpiCard title="Avg Performance" value={kpis?.avgPerformance} unit="/ 5" color="indigo" icon={<StarIcon />} label="Company-wide average rating" />
                   <KpiCard title="Promotions Due" value={kpis?.promotionDue} color="amber" icon={<SparklesIcon />} label="Recommended for promotion" />
                   <KpiCard title="Trained Staff" value={kpis?.trainingCompletion} unit="%" color="sky" icon={<AcademicCapIcon />} label="Completed at least 1 training" />
-                  <KpiCard
-                    title="Attrition Benchmark"
-                    value={kpis?.attritionRate?.value}
-                    unit={kpis?.attritionRate?.unit}
-                    trend={kpis?.attritionRate?.trend}
-                    isPlaceholder={kpis?.attritionRate?.isPlaceholder}
-                    label="Monthly rate across org"
-                    color="rose"
-                    icon={<ChartIcon />}
-                  />
-                  <KpiCard
-                    title="Employee Satisfaction"
-                    value={kpis?.employeeSatisfaction?.value}
-                    unit={kpis?.employeeSatisfaction?.unit}
-                    trend={kpis?.employeeSatisfaction?.trend}
-                    isPlaceholder={kpis?.employeeSatisfaction?.isPlaceholder}
-                    label={kpis?.employeeSatisfaction?.label}
-                    color="emerald"
-                    icon={<SmileIcon />}
-                  />
+                  <KpiCard title="Employees on Leave" value={kpis?.employeesOnLeave} color="rose" icon={<LogoutIcon />} label="Currently on approved leave" />
+                  <KpiCard title="Avg Satisfaction" value={kpis?.avgSatisfaction} unit="/ 5" color="emerald" icon={<SmileIcon />} label="Average job satisfaction" />
+                  <KpiCard title="Total Feedback" value={kpis?.totalFeedback} color="violet" icon={<MailIcon />} label="Employee feedback submitted" />
                 </>
               )}
             </div>
@@ -284,8 +296,12 @@ export default function Dashboard() {
                   </div>
                   <MonthlyAttritionTrendChart data={monthlyTrends || []} />
                   <div className="md:col-span-2 xl:col-span-3">
-                    <ExperienceDistributionChart data={demographics?.experienceDistribution || []} />
+                    <AdvancedTrendsChart data={advancedCharts?.advancedTrends || []} />
                   </div>
+                  <PerformanceDistributionChart data={advancedCharts?.performanceDistribution || []} />
+                  <ExperienceDistributionChart data={demographics?.experienceDistribution || []} />
+                  <AgeDistributionChart data={demographics?.ageDistribution || []} />
+                  <LeaveStatisticsChart data={advancedCharts?.leaveStatistics || []} />
                 </>
               )}
             </div>
@@ -304,6 +320,36 @@ export default function Dashboard() {
               </div>
             ) : (
               <DepartmentAnalyticsTable departmentStats={departmentStats || []} />
+            )}
+          </section>
+
+          {/* ── AI Attrition Risk ── */}
+          <section>
+            <div className="mb-4">
+              <h2 className="text-lg font-bold text-slate-100">🧠 AI Attrition Risk Overview</h2>
+              <p className="text-xs text-slate-400">ML-predicted risk distribution across your workforce</p>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              {[
+                { label: 'High Risk', count: riskCounts?.HIGH ?? '–', color: 'rose', desc: 'Likely to leave soon' },
+                { label: 'Medium Risk', count: riskCounts?.MEDIUM ?? '–', color: 'amber', desc: 'Monitor closely' },
+                { label: 'Low Risk', count: riskCounts?.LOW ?? '–', color: 'emerald', desc: 'Stable & engaged' },
+              ].map(({ label, count, color, desc }) => (
+                <div key={label} className={`p-5 bg-slate-900 border border-${color}-500/20 rounded-3xl flex items-center gap-4 shadow-xl`}>
+                  <div className={`w-12 h-12 rounded-2xl bg-${color}-500/10 flex items-center justify-center text-2xl font-black text-${color}-400`}>
+                    {count}
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-slate-200">{label}</div>
+                    <div className="text-xs text-slate-500">{desc}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {(!riskCounts) && (
+              <div className="text-center py-6 text-xs text-slate-500 italic">
+                No predictions available yet. Run <strong>"Run AI Prediction"</strong> on the Employees page to generate risk scores.
+              </div>
             )}
           </section>
 

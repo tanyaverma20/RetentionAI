@@ -84,6 +84,11 @@ const analyticsSlice = createSlice({
       upcomingAnniversaries: [],
       upcomingBirthdays: [],
     },
+    advancedCharts: {
+      performanceDistribution: [],
+      leaveStatistics: [],
+      advancedTrends: [],
+    },
     userScope: null,
     filters: {
       departmentId: '',
@@ -129,6 +134,7 @@ const analyticsSlice = createSlice({
         state.demographics = action.payload.demographics;
         state.monthlyTrends = action.payload.monthlyTrends;
         state.insights = action.payload.insights;
+        state.advancedCharts = action.payload.advancedCharts;
         state.userScope = action.payload.userScope;
       })
       .addCase(fetchDashboardSummary.rejected, (state, action) => {
