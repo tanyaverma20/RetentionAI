@@ -1,18 +1,17 @@
+import React from 'react';
 import { Outlet } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 export default function BaseLayout() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col px-6 py-10">
-        <header className="border-b border-slate-800 pb-6">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">
-            RetentionAI
-          </p>
-        </header>
-        <section className="flex flex-1 items-center py-12">
-          <Outlet />
-        </section>
-      </div>
-    </main>
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+      <Navbar />
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+        <Outlet />
+      </main>
+      <footer className="border-t border-slate-900 bg-slate-950/50 py-6 text-center text-xs text-slate-500">
+        RetentionAI Platform &copy; 2026 &bull; Secure Authentication & Authorization Engine
+      </footer>
+    </div>
   );
 }

@@ -10,6 +10,9 @@ export default [
       sourceType: 'module',
       globals: globals.node,
     },
-    rules: js.configs.recommended.rules,
+    rules: {
+      ...js.configs.recommended.rules,
+      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    },
   },
 ];

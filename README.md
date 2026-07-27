@@ -88,3 +88,5 @@ git checkout -b develop
 5. Do not commit secrets, real employee data, uploads, model binaries, or provider credentials.
 
 See [Repository Development Blueprint](docs/Repository-Development-Blueprint.md), [SRS](docs/SRS.md), [SDD](docs/SDD.md), [Database Design](docs/Database-Design.md), and [Backend API Design](docs/Backend-API-Design.md).
+
+Authentication module details are documented in the [Authentication Guide](docs/guides/authentication.md).
