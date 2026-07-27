@@ -23,6 +23,20 @@ const employeeFormSchema = z.object({
   salary: z.coerce.number().min(0, 'Salary must be a positive number.').default(0),
   workLocation: z.string().trim().max(100).optional(),
   status: z.enum(['ACTIVE', 'INACTIVE', 'TERMINATED', 'ON_LEAVE']).default('ACTIVE'),
+  address: z.object({
+    street: z.string().trim().max(200).optional(),
+    city: z.string().trim().max(100).optional(),
+    state: z.string().trim().max(100).optional(),
+    country: z.string().trim().max(100).optional(),
+    zip: z.string().trim().max(20).optional(),
+  }).optional(),
+  emergencyContact: z.object({
+    name: z.string().trim().max(100).optional(),
+    phone: z.string().trim().max(30).optional(),
+    relation: z.string().trim().max(50).optional(),
+  }).optional(),
+  skills: z.string().trim().optional(), // Will split into array on submit
+  profileNotes: z.string().trim().max(2000).optional(),
 });
 
 export default function EmployeeFormModal({
@@ -59,6 +73,10 @@ export default function EmployeeFormModal({
       salary: 0,
       workLocation: 'Office',
       status: 'ACTIVE',
+      address: { street: '', city: '', state: '', country: '', zip: '' },
+      emergencyContact: { name: '', phone: '', relation: '' },
+      skills: '',
+      profileNotes: '',
     },
   });
 
@@ -82,6 +100,20 @@ export default function EmployeeFormModal({
         salary: employee.salary || 0,
         workLocation: employee.workLocation || 'Office',
         status: employee.status || 'ACTIVE',
+        address: {
+          street: employee.address?.street || '',
+          city: employee.address?.city || '',
+          state: employee.address?.state || '',
+          country: employee.address?.country || '',
+          zip: employee.address?.zip || '',
+        },
+        emergencyContact: {
+          name: employee.emergencyContact?.name || '',
+          phone: employee.emergencyContact?.phone || '',
+          relation: employee.emergencyContact?.relation || '',
+        },
+        skills: employee.skills ? employee.skills.join(', ') : '',
+        profileNotes: employee.profileNotes || '',
       });
     } else {
       reset({
@@ -100,6 +132,10 @@ export default function EmployeeFormModal({
         salary: 0,
         workLocation: 'Office',
         status: 'ACTIVE',
+        address: { street: '', city: '', state: '', country: '', zip: '' },
+        emergencyContact: { name: '', phone: '', relation: '' },
+        skills: '',
+        profileNotes: '',
       });
     }
   }, [employee, reset, isOpen, departments]);
@@ -126,7 +162,15 @@ export default function EmployeeFormModal({
         </div>
 
         {/* Form Body */}
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+        <form onSubmit={handleSubmit((data) => {
+          const finalData = { ...data };
+          if (finalData.skills) {
+            finalData.skills = finalData.skills.split(',').map(s => s.trim()).filter(Boolean);
+          } else {
+            finalData.skills = [];
+          }
+          onSubmit(finalData);
+        })} className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
           {/* Row 1: Code & Email */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -364,6 +408,44 @@ export default function EmployeeFormModal({
                     </option>
                   ))}
               </select>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 pt-6 mt-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">Address Details</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-3">
+                <input placeholder="Street Address" {...register('address.street')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              </div>
+              <input placeholder="City" {...register('address.city')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              <input placeholder="State / Province" {...register('address.state')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              <div className="grid grid-cols-2 gap-4">
+                <input placeholder="Country" {...register('address.country')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+                <input placeholder="ZIP Code" {...register('address.zip')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 pt-6 mt-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">Emergency Contact</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <input placeholder="Full Name" {...register('emergencyContact.name')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              <input placeholder="Phone Number" {...register('emergencyContact.phone')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              <input placeholder="Relationship (e.g. Spouse)" {...register('emergencyContact.relation')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+            </div>
+          </div>
+
+          <div className="border-t border-slate-800 pt-6 mt-6">
+            <h3 className="text-lg font-bold text-slate-100 mb-4">Additional Info</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Skills (comma separated)</label>
+                <input placeholder="e.g. React, Node.js, Project Management" {...register('skills')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Profile Notes / HR Comments</label>
+                <textarea rows={3} placeholder="Add any private notes here..." {...register('profileNotes')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm"></textarea>
+              </div>
             </div>
           </div>
 

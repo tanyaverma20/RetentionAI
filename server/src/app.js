@@ -1,6 +1,8 @@
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { env } from './config/env.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { requestId } from './middlewares/requestId.js';
@@ -29,6 +31,12 @@ app.use(
 );
 app.use(express.json({ limit: '1mb' }));
 app.use(sanitizeInput);
+
+// Static file serving for uploads (profile pictures, etc.)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
+
 app.use(healthRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);

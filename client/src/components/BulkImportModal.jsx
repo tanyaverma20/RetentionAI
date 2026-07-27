@@ -1,12 +1,31 @@
 import React, { useState } from 'react';
 
-const SAMPLE_CSV = `employeeCode,firstName,lastName,email,department,designation,joiningDate,salary
-EMP-101,Sarah,Connor,sarah.c@company.com,ENG,Lead Engineer,2024-01-10,135000
-EMP-102,David,Miller,david.m@company.com,HR,HR Specialist,2024-02-15,85000`;
+const TEMPLATES = {
+  employees: `employeeCode,firstName,lastName,email,department,designation,joiningDate,salary\nEMP-101,Sarah,Connor,sarah.c@company.com,ENG,Lead Engineer,2024-01-10,135000\nEMP-102,David,Miller,david.m@company.com,HR,HR Specialist,2024-02-15,85000`,
+  attendance: `employeeId,attendanceDate,attendanceStatus,totalHoursWorked,overtimeHours,workMode\nEMP-101,2024-03-01,PRESENT,8,2,OFFICE\nEMP-102,2024-03-01,ABSENT,0,0,REMOTE`,
+  performance: `employeeId,reviewPeriod,performanceScore,goalAchievement,promotionRecommendation\nEMP-101,2024-Q1,4.5,95,true\nEMP-102,2024-Q1,3.8,80,false`,
+  training: `employeeId,courseName,provider,completionDate,durationHours,certificationEarned,score\nEMP-101,Advanced React,Coursera,2024-03-15,40,true,92\nEMP-102,HR Compliance,Internal,2024-03-10,4,false,`,
+  promotions: `employeeId,previousRole,newRole,promotionDate,salaryIncreasePercentage,reason\nEMP-101,Senior Engineer,Lead Engineer,2024-04-01,15,Exceptional performance\n`,
+  surveys: `employeeId,surveyDate,engagementScore,jobSatisfaction,workLifeBalance,careerGrowthScore,managerRelationshipScore,stressLevel\nEMP-101,2024-01-15,4,5,3,4,5,2\nEMP-102,2024-01-15,3,3,4,3,3,4`,
+  feedback: `employeeId,feedbackDate,category,feedbackText\nEMP-101,2024-02-10,WORK_ENVIRONMENT,Need better office chairs\n`,
+  managerNotes: `employeeId,noteDate,observation,recommendation,performanceConcern,promotionDiscussion,followUpRequired\nEMP-101,2024-03-20,Great leadership skills,Consider for management,false,true,false\n`,
+};
 
-export default function BulkImportModal({ isOpen, onClose, onImport, loading = false, importSummary = null }) {
+const COLLECTION_OPTIONS = [
+  { value: 'employees', label: 'Employees' },
+  { value: 'attendance', label: 'Attendance' },
+  { value: 'performance', label: 'Performance Reviews' },
+  { value: 'training', label: 'Training Records' },
+  { value: 'promotions', label: 'Promotions' },
+  { value: 'surveys', label: 'Surveys' },
+  { value: 'feedback', label: 'Feedback' },
+  { value: 'managerNotes', label: 'Manager Notes' },
+];
+
+export default function BulkImportModal({ isOpen, onClose, onImport, loading = false, importSummary = null, defaultCollection = 'employees' }) {
   const [csvText, setCsvText] = useState('');
   const [activeTab, setActiveTab] = useState('text'); // 'text' | 'file'
+  const [collection, setCollection] = useState(defaultCollection);
 
   if (!isOpen) return null;
 
@@ -27,15 +46,15 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!csvText.trim()) return;
-    onImport({ csvText });
+    onImport({ csvText, collection });
   };
 
   const handleDownloadSample = () => {
-    const blob = new Blob([SAMPLE_CSV], { type: 'text/csv' });
+    const blob = new Blob([TEMPLATES[collection]], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'employee_import_template.csv';
+    a.download = `${collection}_import_template.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -52,8 +71,8 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-100">Bulk Import Employees</h2>
-              <p className="text-xs text-slate-400">Import employee records using CSV text or file upload</p>
+              <h2 className="text-xl font-bold text-slate-100">Universal Data Import</h2>
+              <p className="text-xs text-slate-400">Import HR data records using CSV text or file upload</p>
             </div>
           </div>
           <button
@@ -106,6 +125,21 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="mb-4">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+              Select Data Collection
+            </label>
+            <select
+              value={collection}
+              onChange={(e) => { setCollection(e.target.value); setCsvText(''); }}
+              className="w-full sm:w-1/2 px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-sm outline-none"
+            >
+              {COLLECTION_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
           {activeTab === 'text' ? (
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
@@ -115,7 +149,7 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
                 rows={8}
                 value={csvText}
                 onChange={(e) => setCsvText(e.target.value)}
-                placeholder={SAMPLE_CSV}
+                placeholder={TEMPLATES[collection]}
                 className="w-full p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 placeholder-slate-600 font-mono text-xs focus:outline-none transition-colors resize-none"
               />
             </div>

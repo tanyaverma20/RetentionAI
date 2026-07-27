@@ -17,6 +17,8 @@ import { Performance } from '../models/Performance.js';
 import { Survey } from '../models/Survey.js';
 import { EmployeeFeedback } from '../models/EmployeeFeedback.js';
 import { ManagerNote } from '../models/ManagerNote.js';
+import { TrainingHistory } from '../models/TrainingHistory.js';
+import { PromotionHistory } from '../models/PromotionHistory.js';
 
 /**
  * Fetch a complete 360° profile aggregating all HR sub-collections.
@@ -202,12 +204,25 @@ export async function updateEmployee(employeeId, updates) {
     'workLocation',
     'status',
     'userId',
+    'profilePicture',
+    'profileNotes',
   ];
 
   for (const field of updatableFields) {
     if (updates[field] !== undefined) {
       employee[field] = updates[field];
     }
+  }
+
+  // Handle nested object fields
+  if (updates.address) {
+    employee.address = { ...(employee.address || {}), ...updates.address };
+  }
+  if (updates.emergencyContact) {
+    employee.emergencyContact = { ...(employee.emergencyContact || {}), ...updates.emergencyContact };
+  }
+  if (updates.skills !== undefined) {
+    employee.skills = updates.skills;
   }
 
   return employeeRepository.updateEmployee(employee);
@@ -394,4 +409,77 @@ export async function bulkImportEmployees(rows) {
     errors,
     items: importedItems,
   };
+}
+
+/**
+ * Get a chronological timeline of all events for an employee.
+ * Aggregates: join date, attendance highlights, performance reviews, trainings, promotions.
+ * @param {string} employeeId
+ * @param {object} authContext
+ * @returns {Promise<Array<{date: string, type: string, title: string, description: string}>>}
+ */
+export async function getEmployeeTimeline(employeeId, authContext) {
+  const employee = await getEmployeeProfile(employeeId, authContext);
+  const events = [];
+
+  // Joining event
+  events.push({
+    date: employee.joiningDate,
+    type: 'JOINED',
+    title: 'Joined Company',
+    description: `Joined as ${employee.designation} in ${employee.departmentId?.name || 'Unknown'} department.`,
+  });
+
+  // Attendance milestones (recent 30)
+  const attendanceRecords = await Attendance.find({ employeeId })
+    .sort({ attendanceDate: -1 })
+    .limit(30)
+    .lean();
+  for (const a of attendanceRecords) {
+    if (a.attendanceStatus !== 'PRESENT') {
+      events.push({
+        date: a.attendanceDate,
+        type: 'ATTENDANCE',
+        title: `Attendance: ${a.attendanceStatus.replace('_', ' ')}`,
+        description: a.leaveType !== 'NONE' ? `Leave type: ${a.leaveType}` : (a.remarks || ''),
+      });
+    }
+  }
+
+  // Performance reviews
+  const reviews = await Performance.find({ employeeId }).sort({ createdAt: -1 }).lean();
+  for (const r of reviews) {
+    events.push({
+      date: r.createdAt,
+      type: 'PERFORMANCE',
+      title: `Performance Review: ${r.reviewPeriod}`,
+      description: `Score: ${r.performanceScore}/5. ${r.promotionRecommendation ? '⭐ Promotion recommended.' : ''}`,
+    });
+  }
+
+  // Trainings
+  const trainings = await TrainingHistory.find({ employeeId }).sort({ completionDate: -1 }).lean();
+  for (const t of trainings) {
+    events.push({
+      date: t.completionDate,
+      type: 'TRAINING',
+      title: `Training: ${t.courseName}`,
+      description: `Provider: ${t.provider}. Duration: ${t.durationHours}h.${t.certificationEarned ? ' 🎓 Certified.' : ''}`,
+    });
+  }
+
+  // Promotions
+  const promotions = await PromotionHistory.find({ employeeId }).sort({ promotionDate: -1 }).lean();
+  for (const p of promotions) {
+    events.push({
+      date: p.promotionDate,
+      type: 'PROMOTION',
+      title: `Promoted: ${p.previousRole} → ${p.newRole}`,
+      description: `Salary increase: ${p.salaryIncreasePercentage}%.${p.reason ? ` Reason: ${p.reason}` : ''}`,
+    });
+  }
+
+  // Sort all events by date descending
+  events.sort((a, b) => new Date(b.date) - new Date(a.date));
+  return events;
 }

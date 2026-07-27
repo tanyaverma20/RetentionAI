@@ -100,6 +100,28 @@ export const fetchEmployeeExplanation = createAsyncThunk(
   },
 );
 
+export const fetchEmployeeTimeline = createAsyncThunk(
+  'employee/fetchEmployeeTimeline',
+  async (id, { rejectWithValue }) => {
+    try {
+      return await employeeService.getEmployeeTimeline(id);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to fetch employee timeline.');
+    }
+  },
+);
+
+export const uploadEmployeeAvatar = createAsyncThunk(
+  'employee/uploadEmployeeAvatar',
+  async ({ id, file }, { rejectWithValue }) => {
+    try {
+      return await employeeService.uploadAvatar(id, file);
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to upload profile picture.');
+    }
+  },
+);
+
 const employeeSlice = createSlice({
   name: 'employee',
   initialState: {
@@ -111,6 +133,7 @@ const employeeSlice = createSlice({
     currentEmployee: null,
     employee360: null,
     employeeExplanation: null,
+    employeeTimeline: [],
     filters: {
       search: '',
       departmentId: '',
@@ -287,6 +310,40 @@ const employeeSlice = createSlice({
         state.employeeExplanation = action.payload;
       })
       .addCase(fetchEmployeeExplanation.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // fetchEmployeeTimeline
+      .addCase(fetchEmployeeTimeline.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+        state.employeeTimeline = [];
+      })
+      .addCase(fetchEmployeeTimeline.fulfilled, (state, action) => {
+        state.loading = false;
+        state.employeeTimeline = action.payload;
+      })
+      .addCase(fetchEmployeeTimeline.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // uploadEmployeeAvatar
+      .addCase(uploadEmployeeAvatar.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(uploadEmployeeAvatar.fulfilled, (state, action) => {
+        state.loading = false;
+        const index = state.employees.findIndex((e) => (e._id || e.id) === (action.payload.employee?._id || action.payload.employee?.id));
+        if (index !== -1) {
+          state.employees[index] = action.payload.employee;
+        }
+        if (state.currentEmployee && (state.currentEmployee._id || state.currentEmployee.id) === (action.payload.employee?._id || action.payload.employee?.id)) {
+          state.currentEmployee = action.payload.employee;
+        }
+        state.successMessage = 'Profile picture uploaded successfully!';
+      })
+      .addCase(uploadEmployeeAvatar.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

@@ -79,3 +79,49 @@ export async function listRecords(req, res, next) {
     next(error);
   }
 }
+
+export async function bulkImportRecords(req, res, next) {
+  try {
+    const orgId = extractOrgId(req);
+    const { csvText } = req.body;
+    if (!csvText) throw new AppError(400, 'BAD_REQUEST', 'csvText is required for bulk import');
+
+    const lines = csvText.split('\n').filter(l => l.trim() !== '');
+    if (lines.length < 2) throw new AppError(400, 'BAD_REQUEST', 'CSV must have at least a header and one data row');
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    const records = [];
+    
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const record = {};
+      headers.forEach((h, idx) => {
+        let val = values[idx];
+        if (val === 'true') val = true;
+        if (val === 'false') val = false;
+        if (val !== undefined && val !== '') {
+           record[h] = val;
+        }
+      });
+      records.push(record);
+    }
+
+    let importedCount = 0;
+    let failedCount = 0;
+    const errors = [];
+
+    for (let i = 0; i < records.length; i++) {
+      try {
+        await hrService.createRecord(req.params.collection, orgId, req.auth, records[i]);
+        importedCount++;
+      } catch (err) {
+        failedCount++;
+        errors.push({ row: i + 2, error: err.message });
+      }
+    }
+
+    res.json({ success: true, data: { importedCount, failedCount, errors } });
+  } catch (error) {
+    next(error);
+  }
+}

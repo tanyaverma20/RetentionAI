@@ -3,11 +3,11 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { fetchDepartments } from '../store/slices/departmentSlice';
-import { fetchEmployee360, fetchEmployeeExplanation, updateEmployee } from '../store/slices/employeeSlice';
+import { fetchEmployee360, fetchEmployeeExplanation, fetchEmployeeTimeline, updateEmployee, uploadEmployeeAvatar } from '../store/slices/employeeSlice';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
-const TABS = ['Overview', 'AI Insights', 'Attendance', 'Performance', 'Surveys', 'Feedback', 'Notes'];
+const TABS = ['Overview', 'Timeline', 'AI Insights', 'Attendance', 'Performance', 'Surveys', 'Feedback', 'Notes'];
 
 function ScoreBar({ label, value, max = 5, color = 'indigo' }) {
   const pct = Math.round((value / max) * 100);
@@ -57,21 +57,112 @@ function TabOverview({ emp }) {
   const dept = emp.departmentId;
   const mgr = emp.managerId;
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-      <SectionCard title="Personal Information" icon="👤">
-        <InfoRow label="Email" value={emp.email} />
-        <InfoRow label="Phone" value={emp.phone} />
-        <InfoRow label="Gender" value={emp.gender?.replace('_', ' ')} />
-        <InfoRow label="Date of Birth" value={fmt(emp.dateOfBirth)} />
-      </SectionCard>
-      <SectionCard title="Organizational Placement" icon="🏢">
-        <InfoRow label="Department" value={dept ? `${dept.name} (${dept.code})` : 'Unassigned'} />
-        <InfoRow label="Direct Manager" value={mgr ? `${mgr.firstName} ${mgr.lastName}` : 'None'} />
-        <InfoRow label="Joining Date" value={fmt(emp.joiningDate)} />
-        <InfoRow label="Employment Type" value={emp.employmentType?.replace('_', ' ')} />
-        <InfoRow label="Work Location" value={emp.workLocation} />
-        <InfoRow label="Linked Account" value={emp.userId?.email} />
-      </SectionCard>
+    <div className="space-y-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <SectionCard title="Personal Information" icon="👤">
+          <InfoRow label="Email" value={emp.email} />
+          <InfoRow label="Phone" value={emp.phone} />
+          <InfoRow label="Gender" value={emp.gender?.replace('_', ' ')} />
+          <InfoRow label="Date of Birth" value={fmt(emp.dateOfBirth)} />
+        </SectionCard>
+        <SectionCard title="Organizational Placement" icon="🏢">
+          <InfoRow label="Department" value={dept ? `${dept.name} (${dept.code})` : 'Unassigned'} />
+          <InfoRow label="Direct Manager" value={mgr ? `${mgr.firstName} ${mgr.lastName}` : 'None'} />
+          <InfoRow label="Joining Date" value={fmt(emp.joiningDate)} />
+          <InfoRow label="Employment Type" value={emp.employmentType?.replace('_', ' ')} />
+          <InfoRow label="Work Location" value={emp.workLocation} />
+          <InfoRow label="Linked Account" value={emp.userId?.email} />
+        </SectionCard>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <SectionCard title="Address & Emergency" icon="📍">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Home Address</h3>
+          <div className="text-sm text-slate-300 mb-4 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+            {emp.address?.street ? (
+              <>
+                <div>{emp.address.street}</div>
+                <div>{emp.address.city}, {emp.address.state} {emp.address.zip}</div>
+                <div>{emp.address.country}</div>
+              </>
+            ) : (
+              <span className="text-slate-500 italic">No address provided.</span>
+            )}
+          </div>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Emergency Contact</h3>
+          <div className="text-sm text-slate-300 bg-slate-950/50 p-3 rounded-xl border border-slate-800">
+            {emp.emergencyContact?.name ? (
+              <>
+                <div className="font-bold text-slate-200">{emp.emergencyContact.name} ({emp.emergencyContact.relation})</div>
+                <div className="text-emerald-400 mt-1">📞 {emp.emergencyContact.phone}</div>
+              </>
+            ) : (
+              <span className="text-slate-500 italic">No emergency contact provided.</span>
+            )}
+          </div>
+        </SectionCard>
+        
+        <SectionCard title="Skills & Notes" icon="🎯">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Key Skills</h3>
+          {emp.skills?.length > 0 ? (
+            <div className="flex flex-wrap gap-2 mb-4">
+              {emp.skills.map((s, i) => (
+                <span key={i} className="px-2.5 py-1 text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-full">{s}</span>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-slate-500 italic mb-4">No skills listed.</div>
+          )}
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Profile Notes</h3>
+          <div className="text-sm text-slate-300 bg-slate-950/50 p-3 rounded-xl border border-slate-800 min-h-[80px]">
+            {emp.profileNotes || <span className="text-slate-500 italic">No notes.</span>}
+          </div>
+        </SectionCard>
+      </div>
+    </div>
+  );
+}
+
+function TabTimeline({ timeline }) {
+  if (!timeline?.length) return <p className="text-sm text-slate-500 text-center py-8">No timeline events found.</p>;
+
+  const icons = {
+    JOINED: '🎉',
+    ATTENDANCE: '📅',
+    PERFORMANCE: '📈',
+    TRAINING: '🎓',
+    PROMOTION: '⭐',
+  };
+
+  const colors = {
+    JOINED: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    ATTENDANCE: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    PERFORMANCE: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    TRAINING: 'bg-sky-500/10 text-sky-400 border-sky-500/20',
+    PROMOTION: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  };
+
+  return (
+    <div className="space-y-4 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-800 before:to-transparent">
+      {timeline.map((event, i) => (
+        <div key={i} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+          {/* Marker */}
+          <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-slate-950 bg-slate-900 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-xl z-10">
+            <span className="text-lg">{icons[event.type] || '📌'}</span>
+          </div>
+          {/* Card */}
+          <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
+            <div className="flex items-center justify-between mb-1">
+              <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${colors[event.type] || 'bg-slate-800 text-slate-400'}`}>
+                {event.type}
+              </span>
+              <span className="text-xs font-mono text-slate-500">{fmt(event.date)}</span>
+            </div>
+            <h3 className="text-sm font-bold text-slate-200">{event.title}</h3>
+            {event.description && <p className="text-sm text-slate-400 mt-1 leading-relaxed">{event.description}</p>}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -87,12 +178,12 @@ function TabAttendance({ records }) {
       {/* Summary KPIs */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: 'Avg Days Present', value: avg('totalHoursWorked') / 8, color: 'emerald' },
-          { label: 'Avg Overtime Hrs', value: avg('overtimeHours'), color: 'amber' },
-          { label: 'Records (6mo)', value: records.length, color: 'indigo' },
+          { label: 'Avg Days Present', value: avg('totalHoursWorked') / 8, color: 'text-emerald-400' },
+          { label: 'Avg Overtime Hrs', value: avg('overtimeHours'), color: 'text-amber-400' },
+          { label: 'Records (6mo)', value: records.length, color: 'text-indigo-400' },
         ].map(({ label, value, color }) => (
           <div key={label} className="p-4 bg-slate-900 border border-slate-800 rounded-2xl text-center">
-            <div className={`text-2xl font-black text-${color}-400`}>{Math.round(value)}</div>
+            <div className={`text-2xl font-black ${color}`}>{Math.round(value)}</div>
             <div className="text-xs text-slate-500 mt-1">{label}</div>
           </div>
         ))}
@@ -202,15 +293,21 @@ function TabFeedback({ records }) {
   if (!records?.length)
     return <p className="text-sm text-slate-500 text-center py-8">No feedback records found.</p>;
 
-  const catColors = { MANAGEMENT: 'amber', WORK_ENVIRONMENT: 'indigo', COMPENSATION: 'emerald', BENEFITS: 'violet', OTHER: 'slate' };
+  const catStyles = {
+    MANAGEMENT: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    WORK_ENVIRONMENT: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    COMPENSATION: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    BENEFITS: 'bg-violet-500/10 text-violet-400 border-violet-500/20',
+    OTHER: 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+  };
   return (
     <div className="space-y-3">
       {records.map((f) => {
-        const color = catColors[f.category] || 'slate';
+        const style = catStyles[f.category] || catStyles.OTHER;
         return (
           <div key={f._id} className="p-5 bg-slate-900 border border-slate-800 rounded-2xl space-y-2">
             <div className="flex items-center justify-between">
-              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full bg-${color}-500/10 text-${color}-400 border border-${color}-500/20`}>{f.category?.replace('_', ' ')}</span>
+              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${style}`}>{f.category?.replace('_', ' ')}</span>
               <span className="text-xs text-slate-500 font-mono">{fmt(f.feedbackDate)}</span>
             </div>
             <p className="text-sm text-slate-300 leading-relaxed">{f.feedbackText}</p>
@@ -333,7 +430,7 @@ export default function EmployeeProfile() {
 
   const { user } = useSelector((state) => state.auth);
   const { departments } = useSelector((state) => state.department);
-  const { employee360, employeeExplanation, currentEmployee, loading, error } = useSelector((state) => state.employee);
+  const { employee360, employeeExplanation, employeeTimeline, currentEmployee, loading, error } = useSelector((state) => state.employee);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
 
@@ -341,6 +438,7 @@ export default function EmployeeProfile() {
     if (id) {
       dispatch(fetchEmployee360(id));
       dispatch(fetchEmployeeExplanation(id));
+      dispatch(fetchEmployeeTimeline(id));
       dispatch(fetchDepartments());
     }
   }, [dispatch, id]);
@@ -349,6 +447,14 @@ export default function EmployeeProfile() {
     await dispatch(updateEmployee({ id, data: formData }));
     setIsEditModalOpen(false);
     dispatch(fetchEmployee360(id));
+  };
+
+  const handleAvatarUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      await dispatch(uploadEmployeeAvatar({ id, file }));
+      dispatch(fetchEmployee360(id));
+    }
   };
 
   if (loading) {
@@ -383,14 +489,20 @@ export default function EmployeeProfile() {
   // Use real ML risk from explanation if available
   const riskLevel = employeeExplanation?.riskLevel || 'Pending';
   const riskScore = employeeExplanation?.riskScore;
-  const riskColors = { HIGH: 'rose', MEDIUM: 'amber', LOW: 'emerald', Pending: 'slate' };
-  const rc = riskColors[riskLevel];
+  const riskStyles = {
+    HIGH: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+    MEDIUM: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+    LOW: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
+    Pending: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  };
+  const rs = riskStyles[riskLevel] || riskStyles.Pending;
 
   const avgPerf = performance.length ? performance.reduce((s, r) => s + r.performanceScore, 0) / performance.length : null;
   const avgEngagement = surveys.length ? surveys.reduce((s, r) => s + r.engagementScore, 0) / surveys.length : null;
 
   const tabContent = {
     Overview: <TabOverview emp={emp} />,
+    Timeline: <TabTimeline timeline={employeeTimeline} />,
     'AI Insights': <TabAIInsights explanation={employeeExplanation} />,
     Attendance: <TabAttendance records={attendance} />,
     Performance: <TabPerformance records={performance} />,
@@ -429,9 +541,20 @@ export default function EmployeeProfile() {
         <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-center gap-6">
             {/* Avatar */}
-            <div className="relative shrink-0">
-              <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-indigo-600 to-violet-600 border-2 border-indigo-400/30 flex items-center justify-center text-4xl font-black text-white shadow-2xl shadow-indigo-600/30">
-                {emp.firstName?.[0]}{emp.lastName?.[0]}
+            <div className="relative shrink-0 group">
+              <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-indigo-600 to-violet-600 border-2 border-indigo-400/30 flex items-center justify-center text-4xl font-black text-white shadow-2xl shadow-indigo-600/30 overflow-hidden relative">
+                {emp.profilePicture ? (
+                  <img src={`http://localhost:5000${emp.profilePicture}`} alt="Profile" className="w-full h-full object-cover" />
+                ) : (
+                  emp.firstName?.[0]{emp.lastName?.[0]}
+                )}
+                {canEdit && (
+                  <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <svg className="w-6 h-6 text-white mb-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wider">Upload</span>
+                    <input type="file" className="hidden" accept="image/jpeg, image/png, image/webp" onChange={handleAvatarUpload} />
+                  </label>
+                )}
               </div>
               <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-slate-900 ${emp.status === 'ACTIVE' ? 'bg-emerald-500' : 'bg-slate-600'}`} />
             </div>
@@ -443,10 +566,10 @@ export default function EmployeeProfile() {
               </div>
               <p className="text-base font-semibold text-slate-300">{emp.designation} · <span className="text-indigo-400">{dept?.name || 'No Dept'}</span></p>
               <div className="flex flex-wrap gap-2 mt-2">
-                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border bg-${rc}-500/10 text-${rc}-400 border-${rc}-500/20`}>
+                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${rs}`}>
                   {riskScore !== undefined ? `${(riskScore * 100).toFixed(0)}% Risk` : 'ML Loading...'}
                 </span>
-                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border bg-${rc}-500/10 text-${rc}-400 border-${rc}-500/20`}>
+                <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${rs}`}>
                   {riskLevel}
                 </span>
                 <span className="px-2.5 py-0.5 text-xs font-mono bg-slate-800 text-slate-400 border border-slate-700 rounded-full">{emp.status}</span>

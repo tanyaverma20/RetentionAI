@@ -21,6 +21,11 @@ export const employeeService = {
     return response.data.data;
   },
 
+  async getEmployeeTimeline(id) {
+    const response = await api.get(`/employees/${id}/timeline`);
+    return response.data.data;
+  },
+
   async createEmployee(data) {
     const response = await api.post('/employees', data);
     return response.data.data;
@@ -43,6 +48,17 @@ export const employeeService = {
 
   async bulkImport(payload) {
     const response = await api.post('/employees/bulk-import', payload);
+    return response.data.data;
+  },
+
+  async uploadAvatar(id, file) {
+    const formData = new FormData();
+    formData.append('profilePicture', file);
+    const response = await api.post(`/employees/${id}/avatar`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return response.data.data;
   },
 };

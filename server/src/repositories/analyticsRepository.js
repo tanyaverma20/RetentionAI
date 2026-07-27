@@ -84,11 +84,48 @@ export async function getKpiSummary(filter = {}) {
     ? Number(((terminatedCount / totalEmployees) * 100).toFixed(1))
     : 3.5;
 
+  // ── New HRMS KPIs ──
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(now);
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [attendanceTodayCount, avgPerfResult, promotionDueCount, trainingCompletionResult] = await Promise.all([
+    // Attendance today: count of PRESENT records for today
+    Attendance.countDocuments({
+      attendanceDate: { $gte: todayStart, $lte: todayEnd },
+      attendanceStatus: 'PRESENT',
+    }),
+    // Average performance score across all reviews
+    Performance.aggregate([
+      { $group: { _id: null, avg: { $avg: '$performanceScore' } } },
+    ]),
+    // Promotion due: employees with promotionRecommendation = true
+    Performance.countDocuments({ promotionRecommendation: true }),
+    // Training completion: count of distinct employees who completed at least 1 training
+    TrainingHistory.aggregate([
+      { $group: { _id: '$employeeId' } },
+      { $count: 'trainedEmployees' },
+    ]),
+  ]);
+
+  const avgPerformance = avgPerfResult[0]?.avg
+    ? Number(avgPerfResult[0].avg.toFixed(1))
+    : 0;
+  const trainedEmployees = trainingCompletionResult[0]?.trainedEmployees || 0;
+  const trainingCompletion = activeEmployees > 0
+    ? Number(((trainedEmployees / activeEmployees) * 100).toFixed(0))
+    : 0;
+
   return {
     totalEmployees,
     activeEmployees,
     departmentCount,
     newHires30Days: newHiresCount,
+    attendanceToday: attendanceTodayCount,
+    avgPerformance,
+    promotionDue: promotionDueCount,
+    trainingCompletion,
     attritionRate: {
       value: calculatedAttritionRate,
       unit: '%',

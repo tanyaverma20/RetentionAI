@@ -17,6 +17,7 @@ import {
   softDeleteEmployee,
   updateEmployee,
 } from '../store/slices/employeeSlice';
+import { bulkImportHrRecords } from '../store/slices/hrSlice';
 
 export default function Employees() {
   const dispatch = useDispatch();
@@ -108,18 +109,14 @@ export default function Employees() {
   };
 
   const handleBulkImportSubmit = async (payload) => {
-    await dispatch(bulkImportEmployees(payload));
-    dispatch(
-      fetchEmployees({
-        page: 1,
-        limit,
-        search: '',
-        departmentId: '',
-        designation: '',
-        status: '',
-        includeDeleted: false,
-      }),
-    );
+    if (payload.collection === 'employees') {
+      await dispatch(bulkImportEmployees({ csvText: payload.csvText }));
+      dispatch(fetchEmployees({
+        page: 1, limit, search: '', departmentId: '', designation: '', status: '', includeDeleted: false,
+      }));
+    } else {
+      await dispatch(bulkImportHrRecords({ collection: payload.collection, csvText: payload.csvText }));
+    }
   };
 
   const getStatusBadge = (status, isDeleted) => {

@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticate);
 
 // Collection param is one of: attendance, performance, surveys, feedback, notes
+router.post('/:collection/bulk-import', hrController.bulkImportRecords);
 router.post('/:collection', hrController.createRecord);
 router.get('/:collection', hrController.listRecords);
 router.get('/:collection/:id', hrController.getRecord);

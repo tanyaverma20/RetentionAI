@@ -10,6 +10,10 @@ import AiAnalytics from './pages/AiAnalytics';
 import Departments from './pages/Departments';
 import EmployeeProfile from './pages/EmployeeProfile';
 import Employees from './pages/Employees';
+import AttendancePage from './pages/AttendancePage';
+import PerformancePage from './pages/PerformancePage';
+import TrainingPage from './pages/TrainingPage';
+import PromotionsPage from './pages/PromotionsPage';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -50,6 +54,10 @@ export default function App() {
             <Route path="/departments" element={<Departments />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/employees/:id" element={<EmployeeProfile />} />
+            <Route path="/hr/attendance" element={<AttendancePage />} />
+            <Route path="/hr/performance" element={<PerformancePage />} />
+            <Route path="/hr/training" element={<TrainingPage />} />
+            <Route path="/hr/promotions" element={<PromotionsPage />} />
           </Route>
         </Route>
 
