@@ -26,7 +26,8 @@ import numpy as np
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header, status, Query
 
-from app.api.explain_schemas import ExplainRequest
+from app.api.explain_schemas import ExplainRequest, ExplainBatchRequest
+from app.preprocessing.enrichment import enrich_employee_doc
 from app.explainability.shap_explainer import shap_cache
 from app.explainability.local_explainer import explain_employee
 from app.explainability.global_explainer import compute_global_importance
@@ -119,6 +120,11 @@ async def explain_employee_by_id(employeeId: str):
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"Employee {employeeId} not found")
 
     serialized = _serialize(emp)
+    # Same real Attendance/Performance/PromotionHistory/TrainingHistory/Survey/
+    # NLP enrichment predict_single() applies — without it, SHAP would explain
+    # a different (mostly-default) feature vector than what the model
+    # actually saw for this employee's real prediction.
+    serialized = await enrich_employee_doc(serialized, db)
 
     try:
         explanation = explain_employee(serialized)
@@ -160,6 +166,70 @@ async def explain_adhoc(request: ExplainRequest):
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, str(exc))
 
     return {"success": True, "data": explanation}
+
+
+# ---------------------------------------------------------------------------
+# POST /explain/batch
+# ---------------------------------------------------------------------------
+
+@router.post(
+    "/explain/batch",
+    response_model=dict,
+    summary="Local SHAP explanations for a batch of employees (DB lookup)",
+    dependencies=[Depends(verify_auth_token)],
+)
+async def explain_batch(request: ExplainBatchRequest):
+    """
+    Explains either an explicit list of employees, all employees of one
+    department, or (when neither filter is given) every ACTIVE employee.
+    Mirrors the filtering behaviour of POST /predict/batch in routes.py.
+
+    Individual failures do not abort the batch — they are counted and skipped
+    so one bad record can't block explanations for the rest of the workforce.
+    """
+    if not shap_cache.is_ready:
+        _shap_not_ready()
+
+    db = get_db()
+    if db is None:
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Database unavailable")
+
+    query: dict = {"isDeleted": {"$ne": True}}
+    if request.employeeIds:
+        try:
+            query["_id"] = {"$in": [ObjectId(eid) for eid in request.employeeIds]}
+        except Exception:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "One or more employee IDs are invalid ObjectIds")
+    elif request.departmentId:
+        try:
+            query["departmentId"] = ObjectId(request.departmentId)
+        except Exception:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Invalid departmentId format: {request.departmentId}")
+    else:
+        query["status"] = "ACTIVE"
+
+    employees = [emp async for emp in db["employees"].find(query)]
+
+    explanations = []
+    failed_count = 0
+    for emp in employees:
+        try:
+            serialized = _serialize(emp)
+            serialized = await enrich_employee_doc(serialized, db)
+            explanations.append(explain_employee(serialized))
+        except Exception as exc:
+            print(f"Failed to explain employee {emp.get('_id')}: {exc}")
+            failed_count += 1
+
+    return {
+        "success": True,
+        "data": {
+            "explanations": explanations,
+            "totalCount": len(employees),
+            "successCount": len(explanations),
+            "failedCount": failed_count,
+        },
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -270,6 +340,7 @@ async def get_local_plots(employeeId: str):
 
     import pandas as pd
     serialized = _serialize(emp)
+    serialized = await enrich_employee_doc(serialized, db)
     df = pd.DataFrame([serialized])
     X = transform_inference(df, bundle["scaler"], bundle["encoders"])
     shap_vals_1d = shap_cache.compute_shap_values(X)[0]

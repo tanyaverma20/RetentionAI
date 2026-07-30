@@ -1,13 +1,44 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import EmployeeFormModal from '../components/EmployeeFormModal';
 import { fetchDepartments } from '../store/slices/departmentSlice';
-import { fetchEmployee360, fetchEmployeeExplanation, fetchEmployeeTimeline, predictEmployee, updateEmployee, uploadEmployeeAvatar } from '../store/slices/employeeSlice';
+import { fetchEmployee360, fetchEmployeeTimeline, updateEmployee, uploadEmployeeAvatar } from '../store/slices/employeeSlice';
+import { aiService } from '../services/aiService';
+import { knowledgeService } from '../services/knowledgeService';
+import { decisionService } from '../services/decisionService';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
 const TABS = ['Overview', 'Timeline', 'AI Insights', 'Attendance', 'Performance', 'Surveys', 'Feedback', 'Notes'];
+
+const RECOMMENDATION_TYPE_LABELS = {
+  RETENTION_PLAN: 'Retention Plan',
+  PROMOTION_REVIEW: 'Promotion Review',
+  COMPENSATION_REVIEW: 'Compensation Review',
+  TRAINING_RECOMMENDATION: 'Training Recommendation',
+  MENTORSHIP_ASSIGNMENT: 'Mentorship Assignment',
+  MANAGER_INTERVENTION: 'Manager Intervention',
+  CAREER_DEVELOPMENT: 'Career Development',
+  RECOGNITION_PROGRAM: 'Recognition Program',
+  WORKLOAD_ADJUSTMENT: 'Workload Adjustment',
+  WELLBEING_SUPPORT: 'Well-being Support',
+  ROLE_CHANGE_SUGGESTION: 'Role Change Suggestion',
+  NO_ACTION_REQUIRED: 'No Action Required',
+};
+
+const PRIORITY_STYLES = {
+  HIGH: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+  MEDIUM: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  LOW: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+};
+
+const STATUS_STYLES = {
+  PENDING: 'bg-slate-700/30 text-slate-400 border-slate-600/40',
+  ACCEPTED: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  DISMISSED: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+  UNDER_REVIEW: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+};
 
 function ScoreBar({ label, value, max = 5, color = 'indigo' }) {
   const pct = Math.round((value / max) * 100);
@@ -342,17 +373,51 @@ function TabNotes({ records }) {
   );
 }
 
+// ─── SHAP Bar Chart ─────────────────────────────────────────────────────────
+function ShapBar({ label, value, isPositive }) {
+  const pct = Math.min(Math.abs(value) * 400, 100); // scale shap values visually
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-36 text-xs text-slate-400 truncate text-right shrink-0">{label}</div>
+      <div className="flex-1 h-5 bg-slate-950 rounded-full overflow-hidden relative">
+        <div
+          className={`h-full rounded-full transition-all duration-700 ${isPositive ? 'bg-rose-500' : 'bg-emerald-500'}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className={`text-xs font-bold w-16 text-right ${isPositive ? 'text-rose-400' : 'text-emerald-400'}`}>
+        {isPositive ? '+' : ''}{value.toFixed(4)}
+      </div>
+    </div>
+  );
+}
+
 // ─── AI Insights Tab ────────────────────────────────────────────────────────
 const RISK_COLORS = {
-  HIGH: { bg: 'bg-rose-500/10', border: 'border-rose-500/20', text: 'text-rose-400', glow: 'shadow-rose-500/20' },
-  MEDIUM: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400', glow: 'shadow-amber-500/20' },
-  LOW: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400', glow: 'shadow-emerald-500/20' },
+  HIGH: { bg: 'bg-rose-500/10', border: 'border-rose-500/20', text: 'text-rose-400' },
+  MEDIUM: { bg: 'bg-amber-500/10', border: 'border-amber-500/20', text: 'text-amber-400' },
+  LOW: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', text: 'text-emerald-400' },
 };
 
-function TabAIInsights({ prediction, onGenerate, aiLoading, canEdit }) {
+function TabAIInsights({
+  prediction, explanation, intelligence, knowledgeInsights, decision,
+  onGenerate, onExplain, onGenerateIntelligence, onLoadKnowledgeInsights, onGenerateDecision, onUpdateDecisionStatus,
+  aiLoading, explainLoading, intelligenceLoading, knowledgeLoading, decisionLoading, decisionActionLoading,
+  aiError, explainError, intelligenceError, knowledgeError, decisionError,
+  canEdit,
+}) {
   const rc = prediction ? (RISK_COLORS[prediction.riskLevel] || RISK_COLORS.LOW) : null;
+  const allFactors = [
+    ...(explanation?.topPositiveFactors || []).map(f => ({ ...f, isPositive: true })),
+    ...(explanation?.topNegativeFactors || []).map(f => ({ ...f, isPositive: false })),
+  ].sort((a, b) => Math.abs(b.shapValue) - Math.abs(a.shapValue));
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {aiError && (
+        <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">{aiError}</div>
+      )}
+
       {/* 1. AI Attrition Prediction Card */}
       {prediction ? (
         <SectionCard title="AI Attrition Prediction" icon="🧠" className={`${rc.border}`}>
@@ -368,13 +433,10 @@ function TabAIInsights({ prediction, onGenerate, aiLoading, canEdit }) {
                 {prediction.riskLevel} RISK
               </span>
               <div className="text-xs text-slate-400 mt-1">Confidence: <span className="font-bold text-slate-200">{(prediction.confidence * 100).toFixed(1)}%</span></div>
+              <div className="text-xs text-slate-400">Model: <span className="font-mono text-indigo-300">{prediction.modelVersion}</span></div>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
-              <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Model</div>
-              <div className="text-sm font-bold text-indigo-300">{prediction.modelVersion}</div>
-            </div>
+          <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
               <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Prediction Date</div>
               <div className="text-sm font-bold text-slate-200">{new Date(prediction.predictedAt).toLocaleDateString()}</div>
@@ -410,31 +472,312 @@ function TabAIInsights({ prediction, onGenerate, aiLoading, canEdit }) {
         </SectionCard>
       )}
 
-      {/* 2. Why? (SHAP) — Sprint 4 Placeholder */}
-      <SectionCard title="Why? — SHAP Explainability (Sprint 4)" icon="⚖️" className="border-amber-500/20 bg-amber-500/5 opacity-80 border-dashed">
-        <p className="text-sm text-slate-400 italic">SHAP values will explain which features drove this prediction. Awaiting Sprint 4.</p>
-        <div className="h-20 mt-3 bg-slate-950/50 rounded-xl border border-slate-800 flex items-center justify-center blur-[2px]">
-          <span className="text-slate-600 font-bold uppercase tracking-widest text-xs">SHAP Force Plot</span>
-        </div>
+      {/* 2. SHAP Explanation Card */}
+      <SectionCard title="Why is this employee at risk?" icon="⚖️" className="border-amber-500/20">
+        {explainError && (
+          <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">{explainError}</div>
+        )}
+        {explanation ? (
+          <div className="space-y-5">
+            {/* Natural language summary */}
+            <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl text-sm text-amber-100 leading-relaxed">
+              {explanation.summary}
+            </div>
+
+            {/* Positive factors (risk drivers) */}
+            {explanation.topPositiveFactors?.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-rose-400 uppercase tracking-widest mb-3">🔺 Risk Drivers</h3>
+                <div className="space-y-2">
+                  {explanation.topPositiveFactors.map((f, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-rose-500/5 border border-rose-500/15 rounded-xl">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-200">{f.displayName}</div>
+                        <div className="text-xs text-slate-500">{f.formattedValue}</div>
+                      </div>
+                      <div className="text-xs font-bold text-rose-400 bg-rose-500/10 px-2 py-1 rounded-lg">+{(f.shapValue * 100).toFixed(1)}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Negative factors (protective) */}
+            {explanation.topNegativeFactors?.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-3">🔻 Protective Factors</h3>
+                <div className="space-y-2">
+                  {explanation.topNegativeFactors.map((f, i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-emerald-500/5 border border-emerald-500/15 rounded-xl">
+                      <div>
+                        <div className="text-sm font-semibold text-slate-200">{f.displayName}</div>
+                        <div className="text-xs text-slate-500">{f.formattedValue}</div>
+                      </div>
+                      <div className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-1 rounded-lg">{(f.shapValue * 100).toFixed(1)}%</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* SHAP Importance Bar Chart */}
+            {allFactors.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">📊 Feature Importance (SHAP)</h3>
+                <div className="space-y-2 p-4 bg-slate-950/60 rounded-2xl border border-slate-800">
+                  {allFactors.slice(0, 8).map((f, i) => (
+                    <ShapBar key={i} label={f.displayName} value={f.shapValue} isPositive={f.isPositive} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Refresh explanation */}
+            {canEdit && (
+              <div className="flex justify-end pt-2 border-t border-slate-800">
+                <button onClick={onExplain} disabled={explainLoading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-all disabled:opacity-50">
+                  <svg className={`w-4 h-4 ${explainLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                  {explainLoading ? 'Refreshing…' : 'Refresh Explanation'}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">⚖️</div>
+            <p className="text-slate-400 text-sm mb-4">No SHAP explanation generated yet.</p>
+            {canEdit && (
+              <button onClick={onExplain} disabled={explainLoading || !prediction}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 rounded-xl shadow-lg transition-all disabled:opacity-50">
+                {explainLoading ? 'Generating…' : '⚖️ Explain This Prediction'}
+              </button>
+            )}
+            {!prediction && <p className="text-xs text-slate-600 mt-2">Generate a prediction first.</p>}
+          </div>
+        )}
       </SectionCard>
 
-      {/* 3. Employee Emotion (NLP) — Sprint 4 Placeholder */}
-      <SectionCard title="Employee Sentiment — NLP (Sprint 4)" icon="🎭" className="border-rose-500/20 bg-rose-500/5 opacity-80 border-dashed">
-        <p className="text-sm text-slate-400 italic">NLP-based sentiment analysis on surveys & feedback. Awaiting Sprint 4.</p>
+      {/* 3. Employee Intelligence (NLP) Card */}
+      <SectionCard title="Employee Intelligence" icon="🎭" className="border-violet-500/20">
+        {intelligenceError && (
+          <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">{intelligenceError}</div>
+        )}
+        {intelligence ? (
+          <div className="space-y-5">
+            <div className="p-4 bg-violet-500/5 border border-violet-500/20 rounded-2xl text-sm text-violet-100 leading-relaxed">
+              {intelligence.summary}
+            </div>
+
+            {intelligence.dataPoints === 0 ? (
+              <p className="text-xs text-slate-500 italic">No feedback, survey, or manager-note text found for this employee yet.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="p-3 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+                  <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Sentiment</div>
+                  <div className={`text-sm font-bold ${intelligence.sentiment === 'Positive' ? 'text-emerald-400' : intelligence.sentiment === 'Negative' ? 'text-rose-400' : 'text-slate-300'}`}>
+                    {intelligence.sentiment}
+                  </div>
+                </div>
+                <div className="p-3 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+                  <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Dominant Emotion</div>
+                  <div className="text-sm font-bold text-slate-200">{intelligence.emotion}</div>
+                </div>
+                <div className="p-3 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+                  <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Burnout Risk</div>
+                  <div className={`text-sm font-bold ${intelligence.burnoutRisk === 'High' ? 'text-rose-400' : intelligence.burnoutRisk === 'Medium' ? 'text-amber-400' : 'text-emerald-400'}`}>
+                    {intelligence.burnoutRisk}
+                  </div>
+                </div>
+                <div className="p-3 bg-slate-950/50 rounded-2xl border border-slate-800 text-center">
+                  <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Confidence</div>
+                  <div className="text-sm font-bold text-slate-200">{((intelligence.confidence || 0) * 100).toFixed(0)}%</div>
+                </div>
+              </div>
+            )}
+
+            {intelligence.topics?.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-violet-400 uppercase tracking-widest mb-3">Top Topics</h3>
+                <div className="flex flex-wrap gap-2">
+                  {intelligence.topics.map((topic, i) => (
+                    <span key={i} className="px-2.5 py-1 text-xs font-semibold text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-full">{topic}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {intelligence.keywords?.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Frequently Mentioned Keywords</h3>
+                <div className="flex flex-wrap gap-2">
+                  {intelligence.keywords.map((kw, i) => (
+                    <span key={i} className="px-2.5 py-1 text-xs font-mono text-slate-300 bg-slate-800/60 border border-slate-700 rounded-full">{kw}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {canEdit && (
+              <div className="flex justify-end pt-2 border-t border-slate-800">
+                <button onClick={() => onGenerateIntelligence(true)} disabled={intelligenceLoading}
+                  className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-violet-300 bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 rounded-xl transition-all disabled:opacity-50">
+                  {intelligenceLoading ? 'Refreshing…' : 'Refresh Employee Intelligence'}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🎭</div>
+            <p className="text-slate-400 text-sm mb-4">No Employee Intelligence profile generated yet.</p>
+            {canEdit && (
+              <button onClick={() => onGenerateIntelligence(false)} disabled={intelligenceLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 rounded-xl shadow-lg transition-all disabled:opacity-50">
+                {intelligenceLoading ? 'Analyzing…' : '🎭 Analyze Employee Sentiment'}
+              </button>
+            )}
+          </div>
+        )}
       </SectionCard>
 
-      {/* 4. Company Policy (RAG) — Sprint 4 Placeholder */}
-      <SectionCard title="Relevant Policies — RAG (Sprint 4)" icon="📚" className="border-emerald-500/20 bg-emerald-500/5 opacity-80 border-dashed">
-        <p className="text-sm text-slate-400 italic">Policy retrieval via RAG will surface relevant HR documents. Awaiting Sprint 4.</p>
+      {/* 4. Knowledge Insights (RAG) Card */}
+      <SectionCard title="Knowledge Insights" icon="📚" className="border-sky-500/20">
+        {knowledgeError && (
+          <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">{knowledgeError}</div>
+        )}
+        {knowledgeInsights ? (
+          <div className="space-y-4">
+            {knowledgeInsights.insights.map((insight) => (
+              <div key={insight.key} className="p-4 bg-sky-500/5 border border-sky-500/20 rounded-2xl">
+                <h3 className="text-xs font-bold text-sky-400 uppercase tracking-widest mb-2">{insight.label}</h3>
+                <p className="text-sm text-slate-200 leading-relaxed mb-3">{insight.answer}</p>
+                {insight.sourceDocuments?.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {insight.sourceDocuments.map((s, i) => (
+                      <span key={i} className="px-2.5 py-1 text-[10px] font-mono text-sky-300 bg-sky-500/10 border border-sky-500/20 rounded-full" title={s.content}>
+                        📄 {s.documentName}{s.pageNumber != null ? ` (p.${s.pageNumber})` : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            <div className="flex justify-end pt-2 border-t border-slate-800">
+              <button onClick={onLoadKnowledgeInsights} disabled={knowledgeLoading}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-sky-300 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/20 rounded-xl transition-all disabled:opacity-50">
+                {knowledgeLoading ? 'Refreshing…' : 'Refresh Knowledge Insights'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">📚</div>
+            <p className="text-slate-400 text-sm mb-4">No knowledge lookups run yet for this employee's role.</p>
+            <button onClick={onLoadKnowledgeInsights} disabled={knowledgeLoading}
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-xl shadow-lg transition-all disabled:opacity-50">
+              {knowledgeLoading ? 'Looking up…' : '📚 Load Knowledge Insights'}
+            </button>
+          </div>
+        )}
       </SectionCard>
 
-      {/* 5. Recommendation (Agentic AI) — Sprint 4 Placeholder */}
-      <SectionCard title="HR Recommendations — Agentic AI (Sprint 4)" icon="🤖" className="border-violet-500/20 bg-violet-500/5 opacity-80 border-dashed">
-        <p className="text-sm text-slate-400 italic">Agentic AI will generate actionable HR interventions. Awaiting Sprint 4.</p>
+      {/* 5. AI Recommendations (Decision Engine) Card */}
+      <SectionCard title="AI Recommendations" icon="🎯" className="border-fuchsia-500/20">
+        {decisionError && (
+          <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">{decisionError}</div>
+        )}
+        {decision ? (
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-3 p-4 bg-fuchsia-500/5 border border-fuchsia-500/20 rounded-2xl">
+              <span className="px-3 py-1.5 text-sm font-black uppercase tracking-widest rounded-full border bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30">
+                {RECOMMENDATION_TYPE_LABELS[decision.recommendationType] || decision.recommendationType}
+              </span>
+              <span className={`px-2.5 py-1 text-xs font-bold uppercase rounded-full border ${PRIORITY_STYLES[decision.priority] || ''}`}>
+                {decision.priority} Priority
+              </span>
+              <span className="px-2.5 py-1 text-xs font-mono text-slate-400 bg-slate-800/60 border border-slate-700 rounded-full">
+                {((decision.confidence || 0) * 100).toFixed(0)}% confidence
+              </span>
+              <span className={`px-2.5 py-1 text-xs font-bold uppercase rounded-full border ${STATUS_STYLES[decision.status] || ''}`}>
+                {decision.status}
+              </span>
+            </div>
+
+            <p className="text-sm text-slate-200 leading-relaxed">{decision.reasoning}</p>
+
+            {decision.affectedFactors?.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-fuchsia-400 uppercase tracking-widest mb-2">Supporting Factors</h3>
+                <div className="flex flex-wrap gap-2">
+                  {decision.affectedFactors.map((f, i) => (
+                    <span key={i} className="px-2.5 py-1 text-xs text-slate-300 bg-slate-800/60 border border-slate-700 rounded-full">{f}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {decision.relatedPolicies?.length > 0 && (
+              <div>
+                <h3 className="text-xs font-bold text-fuchsia-400 uppercase tracking-widest mb-2">Related Policies</h3>
+                <div className="flex flex-wrap gap-2">
+                  {decision.relatedPolicies.map((p, i) => (
+                    <span key={i} className="px-2.5 py-1 text-[10px] font-mono text-sky-300 bg-sky-500/10 border border-sky-500/20 rounded-full">📄 {p}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {decision.expectedOutcome && (
+              <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-xl">
+                <h3 className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">Expected Benefit</h3>
+                <p className="text-sm text-slate-300">{decision.expectedOutcome}</p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800 text-xs text-slate-500">
+              <span>Review by {decision.reviewDate ? new Date(decision.reviewDate).toLocaleDateString() : '—'}</span>
+              <span>Generated {new Date(decision.generatedAt).toLocaleString()}</span>
+            </div>
+
+            {canEdit && (
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button onClick={() => onUpdateDecisionStatus('UNDER_REVIEW')} disabled={decisionActionLoading}
+                  className="px-3 py-2 text-xs font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl disabled:opacity-50">
+                  Mark Under Review
+                </button>
+                <button onClick={() => onUpdateDecisionStatus('DISMISSED')} disabled={decisionActionLoading}
+                  className="px-3 py-2 text-xs font-semibold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl disabled:opacity-50">
+                  Dismiss
+                </button>
+                <button onClick={() => onUpdateDecisionStatus('ACCEPTED')} disabled={decisionActionLoading}
+                  className="px-3 py-2 text-xs font-semibold text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl disabled:opacity-50">
+                  Accept
+                </button>
+                <button onClick={() => onGenerateDecision(true)} disabled={decisionLoading}
+                  className="px-4 py-2 text-xs font-semibold text-fuchsia-300 bg-fuchsia-500/10 hover:bg-fuchsia-500/20 border border-fuchsia-500/20 rounded-xl transition-all disabled:opacity-50">
+                  {decisionLoading ? 'Refreshing…' : 'Refresh Recommendation'}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <div className="w-14 h-14 rounded-2xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">🎯</div>
+            <p className="text-slate-400 text-sm mb-4">No AI recommendation generated yet for this employee.</p>
+            {canEdit && (
+              <button onClick={() => onGenerateDecision(false)} disabled={decisionLoading}
+                className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-fuchsia-600 hover:bg-fuchsia-500 rounded-xl shadow-lg transition-all disabled:opacity-50">
+                {decisionLoading ? 'Generating…' : '🎯 Generate Recommendation'}
+              </button>
+            )}
+          </div>
+        )}
       </SectionCard>
     </div>
   );
 }
+
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function EmployeeProfile() {
@@ -443,27 +786,115 @@ export default function EmployeeProfile() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [prediction, setPrediction] = useState(null);
+  const [explanation, setExplanation] = useState(null);
+  const [intelligence, setIntelligence] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [explainLoading, setExplainLoading] = useState(false);
+  const [intelligenceLoading, setIntelligenceLoading] = useState(false);
+  const [knowledgeInsights, setKnowledgeInsights] = useState(null);
+  const [knowledgeLoading, setKnowledgeLoading] = useState(false);
+  const [decision, setDecision] = useState(null);
+  const [decisionLoading, setDecisionLoading] = useState(false);
+  const [decisionActionLoading, setDecisionActionLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
+  const [explainError, setExplainError] = useState('');
+  const [intelligenceError, setIntelligenceError] = useState('');
+  const [knowledgeError, setKnowledgeError] = useState('');
+  const [decisionError, setDecisionError] = useState('');
 
   const { user } = useSelector((state) => state.auth);
   const { departments } = useSelector((state) => state.department);
-  const { employee360, employeeTimeline, currentEmployee, loading, error, aiPredictionResult } = useSelector((state) => state.employee);
+  const { employee360, employeeTimeline, currentEmployee, loading, error } = useSelector((state) => state.employee);
 
   const canEdit = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
-  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (id) {
       dispatch(fetchEmployee360(id));
       dispatch(fetchEmployeeTimeline(id));
       dispatch(fetchDepartments());
+      // Single merged AI request (Decision Intelligence sprint requirement:
+      // "Employee Profile should require only one AI request") instead of
+      // separately fetching prediction/explanation/intelligence/decision.
+      aiService.getEmployeeAiInsights(id)
+        .then((data) => {
+          setPrediction(data?.prediction || null);
+          setExplanation(data?.explanation || null);
+          setIntelligence(data?.intelligence || null);
+          setDecision(data?.decision || null);
+        })
+        .catch(() => {});
     }
   }, [dispatch, id]);
 
-  const handleGeneratePrediction = async () => {
-    setAiLoading(true);
-    await dispatch(predictEmployee(id));
-    setAiLoading(false);
-  };
+  const handleGenerate = useCallback(async () => {
+    try {
+      setAiLoading(true);
+      setAiError('');
+      const result = await aiService.explainSingle(id, false);
+      // explainSingle calls predict+explain internally via FastAPI
+      await aiService.predictSingle(id).then(setPrediction).catch(() => {});
+      setExplanation(result);
+    } catch (e) {
+      setAiError(e?.response?.data?.error?.message || e?.message || 'Failed to generate a prediction. The AI service may be unavailable.');
+    } finally { setAiLoading(false); }
+  }, [id]);
+
+  const handleExplain = useCallback(async (forceRefresh = false) => {
+    try {
+      setExplainLoading(true);
+      setExplainError('');
+      const result = await aiService.explainSingle(id, forceRefresh);
+      setExplanation(result);
+    } catch (e) {
+      setExplainError(e?.response?.data?.error?.message || e?.message || 'Failed to generate an explanation. The AI service may be unavailable.');
+    } finally { setExplainLoading(false); }
+  }, [id]);
+  const handleGenerateIntelligence = useCallback(async (forceRefresh = false) => {
+    try {
+      setIntelligenceLoading(true);
+      setIntelligenceError('');
+      const result = await aiService.generateEmployeeIntelligence(id, forceRefresh);
+      setIntelligence(result);
+    } catch (e) {
+      setIntelligenceError(e?.response?.data?.error?.message || e?.message || 'Failed to analyze employee sentiment. The AI service may be unavailable.');
+    } finally { setIntelligenceLoading(false); }
+  }, [id]);
+
+  const handleLoadKnowledgeInsights = useCallback(async () => {
+    try {
+      setKnowledgeLoading(true);
+      setKnowledgeError('');
+      const result = await knowledgeService.getEmployeeKnowledgeInsights(id);
+      setKnowledgeInsights(result);
+    } catch (e) {
+      setKnowledgeError(e?.response?.data?.error?.message || e?.message || 'Failed to load knowledge insights. The knowledge base may be empty or unavailable.');
+    } finally { setKnowledgeLoading(false); }
+  }, [id]);
+
+  const handleGenerateDecision = useCallback(async (forceRefresh = false) => {
+    try {
+      setDecisionLoading(true);
+      setDecisionError('');
+      const result = await decisionService.generateForEmployee(id, forceRefresh);
+      setDecision(result);
+    } catch (e) {
+      setDecisionError(e?.response?.data?.error?.message || e?.message || 'Failed to generate a recommendation. The Decision Engine may be unavailable.');
+    } finally { setDecisionLoading(false); }
+  }, [id]);
+
+  const handleUpdateDecisionStatus = useCallback(async (status) => {
+    if (!decision?._id) return;
+    try {
+      setDecisionActionLoading(true);
+      setDecisionError('');
+      const result = await decisionService.updateStatus(decision._id, status);
+      setDecision(result);
+    } catch (e) {
+      setDecisionError(e?.response?.data?.error?.message || e?.message || 'Failed to update recommendation status.');
+    } finally { setDecisionActionLoading(false); }
+  }, [decision]);
 
   const handleUpdate = async (formData) => {
     await dispatch(updateEmployee({ id, data: formData }));
@@ -508,10 +939,7 @@ export default function EmployeeProfile() {
   const dept = emp.departmentId;
   const { attendance = [], performance = [], surveys = [], feedback = [], managerNotes = [] } = employee360 || {};
 
-  // Use real ML risk from prediction results
-  const prediction = aiPredictionResult?.employeeId === id ? aiPredictionResult : null;
   const riskLevel = prediction?.riskLevel || 'UNKNOWN';
-  const riskScore = prediction?.riskScore;
   const riskStyles = {
     HIGH: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
     MEDIUM: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
@@ -526,7 +954,33 @@ export default function EmployeeProfile() {
   const tabContent = {
     Overview: <TabOverview emp={emp} />,
     Timeline: <TabTimeline timeline={employeeTimeline} />,
-    'AI Insights': <TabAIInsights prediction={prediction} onGenerate={handleGeneratePrediction} aiLoading={aiLoading} canEdit={canEdit} />,
+    'AI Insights': (
+      <TabAIInsights
+        prediction={prediction}
+        explanation={explanation}
+        intelligence={intelligence}
+        knowledgeInsights={knowledgeInsights}
+        decision={decision}
+        onGenerate={handleGenerate}
+        onExplain={() => handleExplain(true)}
+        onGenerateIntelligence={handleGenerateIntelligence}
+        onLoadKnowledgeInsights={handleLoadKnowledgeInsights}
+        onGenerateDecision={handleGenerateDecision}
+        onUpdateDecisionStatus={handleUpdateDecisionStatus}
+        aiLoading={aiLoading}
+        explainLoading={explainLoading}
+        intelligenceLoading={intelligenceLoading}
+        knowledgeLoading={knowledgeLoading}
+        decisionLoading={decisionLoading}
+        decisionActionLoading={decisionActionLoading}
+        aiError={aiError}
+        explainError={explainError}
+        intelligenceError={intelligenceError}
+        knowledgeError={knowledgeError}
+        decisionError={decisionError}
+        canEdit={canEdit}
+      />
+    ),
     Attendance: <TabAttendance records={attendance} />,
     Performance: <TabPerformance records={performance} />,
     Surveys: <TabSurveys records={surveys} />,
@@ -569,7 +1023,7 @@ export default function EmployeeProfile() {
                 {emp.profilePicture ? (
                   <img src={`http://localhost:5000${emp.profilePicture}`} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  emp.firstName?.[0]{emp.lastName?.[0]}
+                  `${emp.firstName?.[0] || ''}${emp.lastName?.[0] || ''}`
                 )}
                 {canEdit && (
                   <label className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -590,7 +1044,7 @@ export default function EmployeeProfile() {
               <p className="text-base font-semibold text-slate-300">{emp.designation} · <span className="text-indigo-400">{dept?.name || 'No Dept'}</span></p>
               <div className="flex flex-wrap gap-2 mt-2">
                 <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${rs}`}>
-                  {riskScore !== undefined ? `${(riskScore * 100).toFixed(0)}% Risk` : 'ML Loading...'}
+                  {prediction?.riskScore !== undefined ? `${(prediction.riskScore * 100).toFixed(0)}% Risk` : 'ML Loading...'}
                 </span>
                 <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${rs}`}>
                   {riskLevel}

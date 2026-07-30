@@ -64,6 +64,7 @@ export async function authenticate(request, _response, next) {
       role: user.roleId.name,
       permissions: user.roleId.permissions,
       departmentId: user.departmentId?.toString(),
+      employeeId: user.employeeId?.toString(),
     };
 
     return next();

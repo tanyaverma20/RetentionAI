@@ -11,8 +11,10 @@ Endpoints:
   GET  /agent/statistics         - Dashboard statistics
 """
 
-from fastapi import APIRouter, HTTPException
-from typing import List, Dict, Any
+import os
+from typing import List, Dict, Any, Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 
 from app.agent.schemas import (
     AgentRecommendRequest,
@@ -33,6 +35,22 @@ from app.agent.services.agent_service import (
 )
 
 router = APIRouter(prefix="/agent", tags=["Agentic AI"])
+
+
+# Mirrors verify_auth_token in routes.py / explain_routes.py / rag_routes.py —
+# this router previously had NO authentication at all.
+async def verify_auth_token(authorization: Optional[str] = Header(None)):
+    expected = os.getenv("AI_SERVICE_TOKEN")
+    if not expected or expected == "replace-with-a-service-token":
+        return True
+    if not authorization:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing Authorization header")
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid Authorization header format")
+    if parts[1] != expected:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
+    return True
 
 
 def _map_to_response(result: Dict[str, Any]) -> AgentRecommendationResponse:
@@ -79,7 +97,7 @@ def _map_to_response(result: Dict[str, Any]) -> AgentRecommendationResponse:
     )
 
 
-@router.post("/recommend", response_model=AgentRecommendationResponse)
+@router.post("/recommend", response_model=AgentRecommendationResponse, dependencies=[Depends(verify_auth_token)])
 async def recommend_single(request: AgentRecommendRequest):
     """
     Generates an evidence-based, policy-grounded retention recommendation
@@ -101,7 +119,7 @@ async def recommend_single(request: AgentRecommendRequest):
         raise HTTPException(status_code=500, detail=f"Agent orchestration failed: {str(e)}")
 
 
-@router.post("/recommend/batch", response_model=AgentBatchResponse)
+@router.post("/recommend/batch", response_model=AgentBatchResponse, dependencies=[Depends(verify_auth_token)])
 async def recommend_batch(request: AgentBatchRecommendRequest):
     """
     Generates retention recommendations for a batch of employees.
@@ -131,7 +149,7 @@ async def recommend_batch(request: AgentBatchRecommendRequest):
         raise HTTPException(status_code=500, detail=f"Batch orchestration failed: {str(e)}")
 
 
-@router.get("/history", response_model=List[Dict[str, Any]])
+@router.get("/history", response_model=List[Dict[str, Any]], dependencies=[Depends(verify_auth_token)])
 async def get_history():
     """
     Returns the 50 most recent agent recommendations from MongoDB.
@@ -142,7 +160,7 @@ async def get_history():
         raise HTTPException(status_code=500, detail=f"Failed to fetch history: {str(e)}")
 
 
-@router.get("/employee/{employeeId}", response_model=List[Dict[str, Any]])
+@router.get("/employee/{employeeId}", response_model=List[Dict[str, Any]], dependencies=[Depends(verify_auth_token)])
 async def get_employee_history(employeeId: str):
     """
     Returns all recommendation history for a specific employee.
@@ -153,7 +171,7 @@ async def get_employee_history(employeeId: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch employee history: {str(e)}")
 
 
-@router.get("/statistics", response_model=AgentStatisticsResponse)
+@router.get("/statistics", response_model=AgentStatisticsResponse, dependencies=[Depends(verify_auth_token)])
 async def get_statistics():
     """
     Returns aggregated statistics for the HR dashboard:

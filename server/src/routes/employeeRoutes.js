@@ -53,6 +53,9 @@ employeeRouter.get('/:employeeId/360', validateEmployeeIdParam, employeeControll
 // AI Explainability — fetch SHAP insights for attrition risk
 employeeRouter.get('/:employeeId/explain', validateEmployeeIdParam, employeeController.explainEmployeeRisk);
 
+// Merged AI surface — Prediction + Explanation + Employee Intelligence in one response
+employeeRouter.get('/:employeeId/ai-insights', validateEmployeeIdParam, employeeController.getEmployeeAiInsights);
+
 // View employee profile (scope checked inside service layer)
 employeeRouter.get('/:employeeId', validateEmployeeIdParam, employeeController.getEmployeeProfile);
 

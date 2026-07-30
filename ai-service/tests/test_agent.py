@@ -7,7 +7,7 @@ Uses FastAPI TestClient to hit the /agent endpoints.
 
 import asyncio
 import pytest
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from fastapi import FastAPI
 from app.main import app as fastapi_app
 
@@ -18,7 +18,11 @@ def anyio_backend():
 
 @pytest.fixture(scope="module")
 async def async_client():
-    async with AsyncClient(app=fastapi_app, base_url="http://testserver") as client:
+    # httpx >=0.28 removed the AsyncClient(app=...) shortcut — an explicit
+    # ASGITransport is required now to route requests into the app in-process
+    # instead of over the network.
+    transport = ASGITransport(app=fastapi_app)
+    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
         yield client
 
 # Helper to create a minimal employee document for testing

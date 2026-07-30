@@ -1,47 +1,79 @@
 import os
 import datetime
-from bson import ObjectId
-from pymongo import MongoClient
 from dotenv import load_dotenv
 
-from app.preprocessing.pipeline import load_data_from_db, generate_synthetic_data, fit_transform_pipeline
-from app.training.trainer import train_and_select_best_model, save_model_bundle
-
+# Loaded before any app.* import — some modules (e.g. app.training.reports)
+# resolve MODEL_ARTIFACT_PATH-based paths at import time, so .env must be
+# loaded first or they'll silently fall back to a wrong default path.
 load_dotenv()
+
+import pandas as pd
+from bson import ObjectId
+from pymongo import MongoClient
+
+from app.preprocessing.pipeline import (
+    load_data_from_db,
+    load_ibm_attrition_csv,
+    generate_synthetic_data,
+    fit_transform_pipeline,
+)
+from app.training.trainer import train_and_select_best_model, save_model_bundle
+from app.training.reports import generate_all_reports
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "retentionai")
 MODEL_ARTIFACT_PATH = os.getenv("MODEL_ARTIFACT_PATH", "../models/active")
+# Optional: path to the public IBM HR Analytics Employee Attrition & Performance
+# CSV (e.g. WA_Fn-UseC_-HR-Employee-Attrition.csv). When set and the file exists,
+# training uses it instead of MongoDB/synthetic data.
+IBM_DATASET_CSV_PATH = os.getenv("IBM_DATASET_CSV_PATH")
 
 def train_model():
     print("=" * 50)
     print("Starting Model Training Pipeline")
     print("=" * 50)
-    
-    # 1. Load data
-    print(f"Connecting to MongoDB: {MONGODB_URI}...")
-    df = load_data_from_db(MONGODB_URI, MONGODB_DB_NAME)
-    
-    if df.empty or len(df) < 20:
-        print("WARNING: Insufficient or no employee data found in MongoDB.")
-        print("Falling back to generating 1,000 synthetic employee records for training...")
-        df = generate_synthetic_data(1000)
+
+    # 1. Load data — priority: IBM CSV dataset > MongoDB > synthetic fallback
+    df = pd.DataFrame()
+    if IBM_DATASET_CSV_PATH and os.path.exists(IBM_DATASET_CSV_PATH):
+        print(f"Loading IBM HR Attrition dataset from: {IBM_DATASET_CSV_PATH}...")
+        df = load_ibm_attrition_csv(IBM_DATASET_CSV_PATH)
+        print(f"Loaded {len(df)} records from IBM HR Attrition dataset.")
     else:
-        print(f"Loaded {len(df)} employee records from MongoDB.")
+        if IBM_DATASET_CSV_PATH:
+            print(f"WARNING: IBM_DATASET_CSV_PATH is set but file not found: {IBM_DATASET_CSV_PATH}")
+        print(f"Connecting to MongoDB: {MONGODB_URI}...")
+        df = load_data_from_db(MONGODB_URI, MONGODB_DB_NAME)
+
+        if df.empty or len(df) < 20:
+            print("WARNING: Insufficient or no employee data found in MongoDB.")
+            print("Falling back to generating 5,000 synthetic employee records for training...")
+            df = generate_synthetic_data(5000)
+        else:
+            print(f"Loaded {len(df)} employee records from MongoDB.")
         
-    # 2. Run Preprocessing Pipeline
+    # 2. Run Preprocessing Pipeline (split happens before scaler/encoder fitting
+    # — see pipeline.py's fit_transform_pipeline for why)
     print("Preprocessing and engineering features...")
-    X, y, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
-    
-    # 3. Train & Select Best Model
-    print("Training models (Logistic Regression, Random Forest, XGBoost) and selecting the best...")
-    bundle = train_and_select_best_model(X, y, scaler, encoders, feature_metadata)
-    
+    X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
+
+    # 3. Benchmark 5 model families, tune the winner, calibrate, optimize threshold
+    print("Benchmarking Logistic Regression, Random Forest, XGBoost, LightGBM, and CatBoost...")
+    bundle = train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
+
     # 4. Save model bundle locally
     os.makedirs(MODEL_ARTIFACT_PATH, exist_ok=True)
     target_filepath = os.path.join(MODEL_ARTIFACT_PATH, "attrition_model.joblib")
     save_model_bundle(bundle, target_filepath)
-    
+
+    # 4b. Generate benchmark/calibration/threshold/feature-importance reports
+    # and confusion matrix / ROC / PR / calibration curve plots.
+    try:
+        report_paths = generate_all_reports(bundle, X_test, y_test)
+        print(f"Training reports generated: {report_paths}")
+    except Exception as e:
+        print(f"Failed to generate training reports: {e}")
+
     # 5. Save model metadata to MongoDB modelMetadata collection
     try:
         client = MongoClient(MONGODB_URI)
@@ -62,9 +94,12 @@ def train_model():
                 "f1": bundle["metrics"]["f1"],
                 "recall": bundle["metrics"]["recall"],
                 "rocAuc": bundle["metrics"]["rocAuc"],
+                "prAuc": bundle["metrics"]["prAuc"],
                 "accuracy": bundle["metrics"]["accuracy"],
                 "precision": bundle["metrics"]["precision"]
             },
+            "threshold": bundle["threshold"],
+            "calibrationMethod": bundle["calibration_method"],
             "artifactUri": "models/active/attrition_model.joblib",
             "status": "APPROVED",
             "trainedAt": datetime.datetime.now(),

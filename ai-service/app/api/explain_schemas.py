@@ -31,6 +31,16 @@ class ExplainRequest(BaseModel):
     status:         Optional[str]   = Field(None, description="ACTIVE | TERMINATED | INACTIVE")
 
 
+class ExplainBatchRequest(BaseModel):
+    """
+    Body for POST /explain/batch — mirrors BatchPredictionRequest (schemas.py).
+    Explains either an explicit list of employees, all of one department, or
+    (when neither is given) every ACTIVE employee.
+    """
+    departmentId: Optional[str] = Field(None, description="Department ID to explain all department employees")
+    employeeIds:  Optional[List[str]] = Field(None, description="Explicit list of employee IDs to explain")
+
+
 # ---------------------------------------------------------------------------
 # Shared sub-models
 # ---------------------------------------------------------------------------

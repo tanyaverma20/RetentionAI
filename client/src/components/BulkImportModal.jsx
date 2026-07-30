@@ -22,10 +22,15 @@ const COLLECTION_OPTIONS = [
   { value: 'managerNotes', label: 'Manager Notes' },
 ];
 
+import { useDispatch } from 'react-redux';
+import { predictBatchEmployees } from '../store/slices/employeeSlice';
+
 export default function BulkImportModal({ isOpen, onClose, onImport, loading = false, importSummary = null, defaultCollection = 'employees' }) {
   const [csvText, setCsvText] = useState('');
   const [activeTab, setActiveTab] = useState('text'); // 'text' | 'file'
   const [collection, setCollection] = useState(defaultCollection);
+  const [isPredicting, setIsPredicting] = useState(false);
+  const dispatch = useDispatch();
 
   if (!isOpen) return null;
 
@@ -57,6 +62,17 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
     a.download = `${collection}_import_template.csv`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const handlePredictBatch = async () => {
+    try {
+      setIsPredicting(true);
+      await dispatch(predictBatchEmployees()).unwrap();
+      setIsPredicting(false);
+      onClose(); // Close modal on success
+    } catch (err) {
+      setIsPredicting(false);
+    }
   };
 
   return (
@@ -198,6 +214,20 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
                       Row {err.row}: {err.error}
                     </div>
                   ))}
+                </div>
+              )}
+
+              {collection === 'employees' && importSummary.importedCount > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-800">
+                  <p className="text-xs text-slate-400 mb-2">New employees added. Would you like to generate AI attrition predictions for the workforce?</p>
+                  <button
+                    type="button"
+                    onClick={handlePredictBatch}
+                    disabled={isPredicting}
+                    className="w-full py-2 flex items-center justify-center gap-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-all"
+                  >
+                    {isPredicting ? 'Generating...' : '🧠 Generate AI Predictions'}
+                  </button>
                 </div>
               )}
             </div>

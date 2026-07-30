@@ -6,6 +6,11 @@ export const analyticsService = {
     return response.data.data;
   },
 
+  async getOverview(params = {}) {
+    const response = await api.get('/dashboard/overview', { params });
+    return response.data.data;
+  },
+
   async getKpis(params = {}) {
     const response = await api.get('/analytics/kpis', { params });
     return response.data.data;

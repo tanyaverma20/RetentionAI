@@ -97,4 +97,11 @@ def run_reasoning_chain(evidence: Dict[str, Any]) -> Dict[str, Any]:
             "reasoningSummary": raw_text[:500]  # Store partial LLM output for review
         }
 
+    # The prompt tells the LLM to write `else null` for an absent policy
+    # reference, but that lands inside a JSON string, so the model sometimes
+    # emits the literal string "null" instead of the JSON literal null.
+    for action in parsed.get("recommendedActions", []) or []:
+        if isinstance(action, dict) and str(action.get("policyReference")).strip().lower() in ("null", "none", ""):
+            action["policyReference"] = None
+
     return parsed

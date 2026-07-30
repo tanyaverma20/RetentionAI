@@ -165,6 +165,9 @@ const employeeSlice = createSlice({
       includeDeleted: false,
       sortBy: 'createdAt',
       sortOrder: 'desc',
+      sentiment: '',
+      burnoutRisk: '',
+      emotion: '',
     },
     loading: false,
     error: null,
@@ -187,6 +190,9 @@ const employeeSlice = createSlice({
         includeDeleted: false,
         sortBy: 'createdAt',
         sortOrder: 'desc',
+        sentiment: '',
+        burnoutRisk: '',
+        emotion: '',
       };
       state.page = 1;
     },

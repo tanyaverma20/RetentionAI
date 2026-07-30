@@ -1,6 +1,17 @@
 import api from './api';
 
 export const aiService = {
+  async trainModel() {
+    const response = await api.post('/ai/train');
+    return response.data;
+  },
+
+  /** Fetch the existing stored prediction for an employee (read-only, does not trigger inference). */
+  async getPrediction(id) {
+    const response = await api.get(`/ai/predict/${id}`);
+    return response.data.data;
+  },
+
   async predictSingle(id) {
     const response = await api.post(`/ai/predict/${id}`);
     return response.data.data;
@@ -25,6 +36,77 @@ export const aiService = {
     const response = await api.get('/ai/dashboard');
     return response.data.data;
   },
+
+  // ── Explainability (SHAP) ──────────────────────────────────────────────────
+
+  /** Fetch cached SHAP explanation for an employee (GET). */
+  async getExplanation(employeeId) {
+    const response = await api.get(`/explain/${employeeId}`);
+    return response.data.data;
+  },
+
+  /** Generate or refresh a SHAP explanation for a single employee (POST). */
+  async explainSingle(employeeId, forceRefresh = false) {
+    const response = await api.post(
+      `/explain/${employeeId}${forceRefresh ? '?refresh=true' : ''}`
+    );
+    return response.data.data;
+  },
+
+  /** Generate SHAP explanations for the whole workforce (or a subset). */
+  async explainBatch(employeeIds = null) {
+    const payload = employeeIds ? { employeeIds } : {};
+    const response = await api.post('/explain/batch', payload);
+    return response.data.data;
+  },
+
+  /** Fetch global feature importance from the AI service. */
+  async getGlobalFeatureImportance() {
+    const response = await api.get('/explain/global/feature-importance');
+    return response.data.data;
+  },
+
+  /** Fetch the top attrition-risk driver per department (from stored explanations). */
+  async getDepartmentRiskDrivers() {
+    const response = await api.get('/explain/global/department-drivers');
+    return response.data.data;
+  },
+
+  // ── Employee Intelligence (NLP) ────────────────────────────────────────────
+
+  /** Fetch cached Employee Intelligence profile for an employee (GET). */
+  async getEmployeeIntelligence(employeeId) {
+    const response = await api.get(`/employee-intelligence/${employeeId}`);
+    return response.data.data;
+  },
+
+  /** Generate Employee Intelligence profiles for many employees at once (or the whole workforce). */
+  async generateEmployeeIntelligenceBatch(employeeIds = null) {
+    const payload = employeeIds ? { employeeIds } : {};
+    const response = await api.post('/employee-intelligence/batch', payload);
+    return response.data.data;
+  },
+
+  /** Generate or refresh the Employee Intelligence profile for an employee (POST). */
+  async generateEmployeeIntelligence(employeeId, forceRefresh = false) {
+    const response = await api.post(
+      `/employee-intelligence/${employeeId}${forceRefresh ? '?refresh=true' : ''}`
+    );
+    return response.data.data;
+  },
+
+  /** Fetch workforce-wide Employee Intelligence dashboard aggregation. */
+  async getEmployeeIntelligenceDashboard() {
+    const response = await api.get('/employee-intelligence/dashboard/summary');
+    return response.data.data;
+  },
+
+  /** Fetch the merged Prediction + Explanation + Employee Intelligence view for one employee. */
+  async getEmployeeAiInsights(employeeId) {
+    const response = await api.get(`/employees/${employeeId}/ai-insights`);
+    return response.data.data;
+  },
 };
 
 export default aiService;
+

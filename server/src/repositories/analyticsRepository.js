@@ -35,6 +35,8 @@ function buildMatchFilter(filter = {}) {
     match.employmentType = filter.employmentType;
   }
 
+  if (filter.designation) match.designation = new RegExp(filter.designation, 'i');
+
   if (filter.status) {
     match.status = filter.status;
   }
@@ -57,6 +59,42 @@ function buildMatchFilter(filter = {}) {
   }
 
   return match;
+}
+
+/** Dashboard drill-down datasets. Kept here so all dashboard aggregates remain
+ * in the data layer and can be reused by reports or future AI features. */
+export async function getPerformanceAnalytics(filter = {}) {
+  const match = buildMatchFilter(filter);
+  const employees = await Employee.find(match).select('_id').lean();
+  const employeeIds = employees.map((employee) => employee._id);
+  return Performance.aggregate([
+    { $match: { employeeId: { $in: employeeIds } } },
+    { $group: { _id: '$performanceScore', employees: { $addToSet: '$employeeId' }, reviews: { $sum: 1 } } },
+    { $project: { _id: 0, score: '$_id', reviewCount: '$reviews', employeeCount: { $size: '$employees' } } },
+    { $sort: { score: 1 } },
+  ]);
+}
+
+export async function getAttendanceAnalytics(filter = {}) {
+  const match = buildMatchFilter(filter);
+  const employees = await Employee.find(match).select('_id').lean();
+  return Attendance.aggregate([
+    { $match: { employeeId: { $in: employees.map((employee) => employee._id) } } },
+    { $group: { _id: '$attendanceStatus', records: { $sum: 1 }, averageHours: { $avg: '$totalHoursWorked' } } },
+    { $project: { _id: 0, status: '$_id', records: 1, averageHours: { $round: ['$averageHours', 1] } } },
+    { $sort: { records: -1 } },
+  ]);
+}
+
+export async function getTrainingAnalytics(filter = {}) {
+  const match = buildMatchFilter(filter);
+  const employees = await Employee.find(match).select('_id').lean();
+  return TrainingHistory.aggregate([
+    { $match: { employeeId: { $in: employees.map((employee) => employee._id) } } },
+    { $group: { _id: '$employeeId', completedCourses: { $sum: 1 }, hours: { $sum: '$durationHours' }, certifications: { $sum: { $cond: ['$certificationEarned', 1, 0] } } } },
+    { $group: { _id: null, trainedEmployees: { $sum: 1 }, completedCourses: { $sum: '$completedCourses' }, totalHours: { $sum: '$hours' }, certifications: { $sum: '$certifications' } } },
+    { $project: { _id: 0, trainedEmployees: 1, completedCourses: 1, totalHours: 1, certifications: 1 } },
+  ]);
 }
 
 /**
@@ -633,4 +671,3 @@ export async function getAdvancedCharts(filter = {}) {
     advancedTrends,
   };
 }
-

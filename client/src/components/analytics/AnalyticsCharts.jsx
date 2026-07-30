@@ -115,6 +115,28 @@ export function EmployeesByEmploymentTypeChart({ data = [] }) {
   );
 }
 
+export function GlobalFeatureImportanceChart({ data = [] }) {
+  const sorted = [...data].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)).slice(0, 10);
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Top Attrition Drivers</h3>
+        <p className="text-xs text-slate-400">Most influential features ranked by mean |SHAP| across the workforce</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={sorted} layout="vertical" margin={{ top: 10, right: 16, left: 20, bottom: 0 }}>
+            <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11 }} />
+            <YAxis dataKey="displayName" type="category" width={130} stroke="#64748b" tick={{ fontSize: 11 }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="meanAbsShap" name="Mean |SHAP|" fill="#f59e0b" radius={[0, 6, 6, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
 export function MonthlyHiringTrendChart({ data = [] }) {
   return (
     <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
@@ -277,3 +299,202 @@ export function AdvancedTrendsChart({ data = [] }) {
     </div>
   );
 }
+
+// ─── Employee Intelligence (NLP) charts ────────────────────────────────────
+
+const SENTIMENT_COLORS = { Positive: '#10b981', Neutral: '#94a3b8', Negative: '#f43f5e' };
+const BURNOUT_COLORS = { Low: '#10b981', Medium: '#f59e0b', High: '#f43f5e' };
+const EMOTION_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#a855f7', '#64748b'];
+
+export function SentimentDistributionChart({ data = {} }) {
+  const chartData = Object.entries(data).map(([label, count]) => ({ label, count }));
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Sentiment Distribution</h3>
+        <p className="text-xs text-slate-400">Employee feedback/survey sentiment across the workforce</p>
+      </div>
+      <div className="h-64 w-full flex items-center justify-center">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie data={chartData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={5} dataKey="count" nameKey="label">
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={SENTIMENT_COLORS[entry.label] || '#64748b'} />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend verticalAlign="bottom" height={36} wrapperStyle={{ fontSize: '11px', color: '#94a3b8' }} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function BurnoutDistributionChart({ data = {} }) {
+  const chartData = ['Low', 'Medium', 'High'].map((label) => ({ label, count: data[label] || 0 }));
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Burnout Distribution</h3>
+        <p className="text-xs text-slate-400">Employees by burnout-risk category</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="label" stroke="#64748b" tick={{ fontSize: 11 }} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="count" name="Employees" radius={[6, 6, 0, 0]}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={BURNOUT_COLORS[entry.label]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function EmotionDistributionChart({ data = {} }) {
+  const chartData = Object.entries(data)
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Emotion Distribution</h3>
+        <p className="text-xs text-slate-400">Dominant emotion across analyzed employees</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="label" stroke="#64748b" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={50} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="count" name="Employees" radius={[6, 6, 0, 0]}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={EMOTION_COLORS[index % EMOTION_COLORS.length]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function TopicFrequencyChart({ data = [], title = 'Top Employee Concerns', subtitle = 'Most frequently mentioned topics' }) {
+  const sorted = [...data].sort((a, b) => b.count - a.count).slice(0, 8);
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">{title}</h3>
+        <p className="text-xs text-slate-400">{subtitle}</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={sorted} layout="vertical" margin={{ top: 10, right: 16, left: 20, bottom: 0 }}>
+            <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11 }} allowDecimals={false} />
+            <YAxis dataKey="topic" type="category" width={110} stroke="#64748b" tick={{ fontSize: 11 }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="count" name="Mentions" fill="#a855f7" radius={[0, 6, 6, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function SentimentBurnoutTrendChart({ data = [] }) {
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Sentiment &amp; Burnout Trend</h3>
+        <p className="text-xs text-slate-400">Monthly average sentiment score and burnout score over time</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="period" stroke="#64748b" tick={{ fontSize: 10 }} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} domain={[0, 1]} />
+            <Tooltip content={<CustomTooltip />} />
+            <Line type="monotone" dataKey="avgSentimentScore" name="Avg Sentiment" stroke="#10b981" strokeWidth={2} dot={{ r: 3 }} />
+            <Line type="monotone" dataKey="avgBurnoutScore" name="Avg Burnout" stroke="#f43f5e" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+// ─── Decision Intelligence (AI Recommendations) charts ─────────────────────
+
+const RECOMMENDATION_TYPE_LABELS = {
+  RETENTION_PLAN: 'Retention Plan',
+  PROMOTION_REVIEW: 'Promotion Review',
+  COMPENSATION_REVIEW: 'Compensation Review',
+  TRAINING_RECOMMENDATION: 'Training Recommendation',
+  MENTORSHIP_ASSIGNMENT: 'Mentorship Assignment',
+  MANAGER_INTERVENTION: 'Manager Intervention',
+  CAREER_DEVELOPMENT: 'Career Development',
+  RECOGNITION_PROGRAM: 'Recognition Program',
+  WORKLOAD_ADJUSTMENT: 'Workload Adjustment',
+  WELLBEING_SUPPORT: 'Well-being Support',
+  ROLE_CHANGE_SUGGESTION: 'Role Change Suggestion',
+  NO_ACTION_REQUIRED: 'No Action Required',
+};
+
+const RECOMMENDATION_COLORS = ['#d946ef', '#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#0ea5e9', '#a855f7', '#84cc16', '#64748b'];
+
+export function RecommendationDistributionChart({ data = {} }) {
+  const chartData = Object.entries(data)
+    .map(([type, count]) => ({ type: RECOMMENDATION_TYPE_LABELS[type] || type, count }))
+    .sort((a, b) => b.count - a.count);
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Recommendation Distribution</h3>
+        <p className="text-xs text-slate-400">Current AI recommendations by category (latest per employee)</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} layout="vertical" margin={{ top: 10, right: 16, left: 20, bottom: 0 }}>
+            <XAxis type="number" stroke="#64748b" tick={{ fontSize: 11 }} allowDecimals={false} />
+            <YAxis dataKey="type" type="category" width={140} stroke="#64748b" tick={{ fontSize: 10 }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="count" name="Employees" radius={[0, 6, 6, 0]}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={RECOMMENDATION_COLORS[index % RECOMMENDATION_COLORS.length]} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export function RecommendationTrendsChart({ data = [] }) {
+  return (
+    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+      <div className="mb-4">
+        <h3 className="text-base font-bold text-slate-100">Recommendation Trends</h3>
+        <p className="text-xs text-slate-400">Decisions generated per month</p>
+      </div>
+      <div className="h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="period" stroke="#64748b" tick={{ fontSize: 10 }} />
+            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} allowDecimals={false} />
+            <Tooltip content={<CustomTooltip />} />
+            <Line type="monotone" dataKey="count" name="Decisions" stroke="#d946ef" strokeWidth={2} dot={{ r: 3 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+export { RECOMMENDATION_TYPE_LABELS };

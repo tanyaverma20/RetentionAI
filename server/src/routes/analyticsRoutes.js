@@ -24,7 +24,13 @@ analyticsRouter.get('/demographics', analyticsController.getDemographics);
 analyticsRouter.get('/employees', analyticsController.getEmployeeInsights);
 analyticsRouter.get('/hr-metrics', analyticsController.getHrMetrics);
 
+// Sprint 2 workforce intelligence contract. These aliases are also mounted at
+// /api/v1/dashboard so clients can use the concise dashboard endpoints.
+analyticsRouter.get('/overview', analyticsController.getDashboardSummary);
+analyticsRouter.get('/performance', analyticsController.getPerformanceAnalytics);
+analyticsRouter.get('/attendance', analyticsController.getAttendanceAnalytics);
+analyticsRouter.get('/training', analyticsController.getTrainingAnalytics);
+
 // AI Global Analytics Routes
 analyticsRouter.get('/ai/feature-importance', analyticsController.getAiFeatureImportance);
 analyticsRouter.get('/ai/plots/global/:plotType', analyticsController.getAiGlobalPlot);
-

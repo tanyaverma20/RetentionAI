@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
 import KpiCard from '../components/analytics/KpiCard';
@@ -13,6 +13,15 @@ import {
   AgeDistributionChart,
   LeaveStatisticsChart,
   AdvancedTrendsChart,
+  GlobalFeatureImportanceChart,
+  SentimentDistributionChart,
+  BurnoutDistributionChart,
+  EmotionDistributionChart,
+  TopicFrequencyChart,
+  SentimentBurnoutTrendChart,
+  RecommendationDistributionChart,
+  RecommendationTrendsChart,
+  RECOMMENDATION_TYPE_LABELS,
 } from '../components/analytics/AnalyticsCharts';
 import DepartmentAnalyticsTable from '../components/analytics/DepartmentAnalyticsTable';
 import EmployeeInsightsCard from '../components/analytics/EmployeeInsightsCard';
@@ -20,8 +29,9 @@ import AnalyticsFilterBar from '../components/analytics/AnalyticsFilterBar';
 
 import { fetchDashboardSummary, setAnalyticsFilter, resetAnalyticsFilters } from '../store/slices/analyticsSlice';
 import { fetchDepartments } from '../store/slices/departmentSlice';
-import { useState } from 'react';
-import aiService from '../services/aiService';
+import { aiService } from '../services/aiService';
+import { knowledgeService } from '../services/knowledgeService';
+import { decisionService } from '../services/decisionService';
 
 // KPI icon helpers
 function UsersIcon() {
@@ -160,13 +170,114 @@ export default function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
-  // AI risk counts (loaded separately from the Node backend → FastAPI predictions)
+  // AI risk counts, top high risk, and global feature importance
   const [riskCounts, setRiskCounts] = useState(null);
-  useEffect(() => {
+  const [topHighRisk, setTopHighRisk] = useState(null);
+  const [isTraining, setIsTraining] = useState(false);
+  const [trainMessage, setTrainMessage] = useState('');
+  const [globalImportance, setGlobalImportance] = useState(null);
+  const [departmentDrivers, setDepartmentDrivers] = useState(null);
+  const [aiOverviewError, setAiOverviewError] = useState('');
+  const [isGeneratingExplanations, setIsGeneratingExplanations] = useState(false);
+  const [explainMessage, setExplainMessage] = useState('');
+  const [intelligenceStats, setIntelligenceStats] = useState(null);
+  const [intelligenceError, setIntelligenceError] = useState('');
+  const [isGeneratingIntelligence, setIsGeneratingIntelligence] = useState(false);
+  const [intelligenceMessage, setIntelligenceMessage] = useState('');
+  const [knowledgeStats, setKnowledgeStats] = useState(null);
+  const [knowledgeStatsError, setKnowledgeStatsError] = useState('');
+  const [decisionStats, setDecisionStats] = useState(null);
+  const [decisionStatsError, setDecisionStatsError] = useState('');
+  const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
+  const [decisionMessage, setDecisionMessage] = useState('');
+
+  const extractErrorMessage = (err, fallback) =>
+    err?.response?.data?.error?.message || err?.message || fallback;
+
+  const loadExplainabilityWidgets = useCallback(() => {
     aiService.getDashboardAnalytics()
-      .then(data => setRiskCounts(data?.riskCounts))
-      .catch(() => {}); // Silently fail if AI service not yet running
+      .then(data => {
+        setRiskCounts(data?.riskCounts);
+        setTopHighRisk(data?.topHighRisk);
+      })
+      .catch((err) => setAiOverviewError(extractErrorMessage(err, 'Unable to load AI risk overview.')));
+    aiService.getGlobalFeatureImportance()
+      .then(data => setGlobalImportance(data?.features || data))
+      .catch(() => {}); // Expected until a model has been trained — no model = no chart, not an error state.
+    aiService.getDepartmentRiskDrivers()
+      .then(setDepartmentDrivers)
+      .catch(() => {}); // Expected until explanations have been generated at least once.
+    aiService.getEmployeeIntelligenceDashboard()
+      .then((data) => { setIntelligenceStats(data); setIntelligenceError(''); })
+      .catch((err) => setIntelligenceError(extractErrorMessage(err, 'Unable to load Employee Intelligence overview.')));
+    knowledgeService.getStatistics()
+      .then((data) => { setKnowledgeStats(data); setKnowledgeStatsError(''); })
+      .catch((err) => setKnowledgeStatsError(extractErrorMessage(err, 'Unable to load Knowledge Base statistics.')));
+    decisionService.getDashboardSummary()
+      .then((data) => { setDecisionStats(data); setDecisionStatsError(''); })
+      .catch((err) => setDecisionStatsError(extractErrorMessage(err, 'Unable to load AI Recommendations overview.')));
   }, []);
+
+  useEffect(() => {
+    loadExplainabilityWidgets();
+  }, [loadExplainabilityWidgets]);
+
+  const handleTrainModel = async () => {
+    try {
+      setIsTraining(true);
+      setTrainMessage('');
+      const res = await aiService.trainModel();
+      setTrainMessage(res.message || 'Training started.');
+    } catch (err) {
+      setTrainMessage(extractErrorMessage(err, 'Failed to start training.'));
+    } finally {
+      setIsTraining(false);
+    }
+  };
+
+  const handleGenerateExplanations = async () => {
+    try {
+      setIsGeneratingExplanations(true);
+      setExplainMessage('');
+      const res = await aiService.explainBatch();
+      setExplainMessage(`Generated explanations for ${res?.processed ?? 0} employees.`);
+      loadExplainabilityWidgets();
+    } catch (err) {
+      setExplainMessage(extractErrorMessage(err, 'Failed to generate explanations.'));
+    } finally {
+      setIsGeneratingExplanations(false);
+    }
+  };
+
+  const handleGenerateIntelligenceBatch = async () => {
+    try {
+      setIsGeneratingIntelligence(true);
+      setIntelligenceMessage('');
+      const res = await aiService.generateEmployeeIntelligenceBatch();
+      setIntelligenceMessage(`Analyzed ${res?.processed ?? 0} employees.`);
+      loadExplainabilityWidgets();
+    } catch (err) {
+      setIntelligenceMessage(extractErrorMessage(err, 'Failed to generate Employee Intelligence.'));
+    } finally {
+      setIsGeneratingIntelligence(false);
+    }
+  };
+
+  const handleGenerateDecisionsBatch = async () => {
+    try {
+      setIsGeneratingDecisions(true);
+      setDecisionMessage('');
+      const res = await decisionService.generateBatch();
+      setDecisionMessage(`Generated ${res?.processed ?? 0} recommendation(s).`);
+      decisionService.getDashboardSummary()
+        .then((data) => { setDecisionStats(data); setDecisionStatsError(''); })
+        .catch((err) => setDecisionStatsError(extractErrorMessage(err, 'Unable to load AI Recommendations overview.')));
+    } catch (err) {
+      setDecisionMessage(extractErrorMessage(err, 'Failed to generate recommendations.'));
+    } finally {
+      setIsGeneratingDecisions(false);
+    }
+  };
 
   const handleFilterChange = (key, value) => {
     const updated = { ...filters, [key]: value };
@@ -325,10 +436,29 @@ export default function Dashboard() {
 
           {/* ── AI Attrition Risk ── */}
           <section>
-            <div className="mb-4">
-              <h2 className="text-lg font-bold text-slate-100">🧠 AI Attrition Risk Overview</h2>
-              <p className="text-xs text-slate-400">ML-predicted risk distribution across your workforce</p>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-100">🧠 AI Attrition Risk Overview</h2>
+                <p className="text-xs text-slate-400">ML-predicted risk distribution across your workforce</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {trainMessage && <span className="text-xs text-indigo-400">{trainMessage}</span>}
+                <button
+                  onClick={handleTrainModel}
+                  disabled={isTraining}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
+                >
+                  {isTraining ? 'Training...' : 'Train Model'}
+                </button>
+              </div>
             </div>
+
+            {aiOverviewError && (
+              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
+                {aiOverviewError}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               {[
                 { label: 'High Risk', count: riskCounts?.HIGH ?? '–', color: 'rose', desc: 'Likely to leave soon' },
@@ -346,10 +476,445 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
+
             {(!riskCounts) && (
               <div className="text-center py-6 text-xs text-slate-500 italic">
                 No predictions available yet. Run <strong>"Run AI Prediction"</strong> on the Employees page to generate risk scores.
               </div>
+            )}
+
+            {/* Top 10 High Risk Employees Table */}
+            {topHighRisk && topHighRisk.length > 0 && (
+              <div className="mt-6 p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                <h3 className="text-md font-bold text-slate-200 mb-4">Top 10 High Risk Employees</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-xs uppercase tracking-wider text-slate-500">
+                        <th className="py-3 px-4 font-semibold">Employee</th>
+                        <th className="py-3 px-4 font-semibold">Department</th>
+                        <th className="py-3 px-4 font-semibold">Risk Score</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm">
+                      {topHighRisk.map((prediction) => {
+                        const emp = prediction.employeeId;
+                        if (!emp) return null;
+                        return (
+                          <tr key={prediction._id} className="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors">
+                            <td className="py-3 px-4">
+                              <Link to={`/employees/${emp._id}`} className="flex items-center gap-3 group">
+                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
+                                  {emp.firstName.charAt(0)}{emp.lastName.charAt(0)}
+                                </div>
+                                <div>
+                                  <div className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
+                                    {emp.firstName} {emp.lastName}
+                                  </div>
+                                  <div className="text-xs text-slate-500">{emp.designation}</div>
+                                </div>
+                              </Link>
+                            </td>
+                            <td className="py-3 px-4 text-slate-400">
+                              {emp.departmentId?.name || 'Unknown'}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                                {(prediction.riskScore * 100).toFixed(0)}%
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ── Explainability (SHAP) ── */}
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-100">⚖️ Explainability</h2>
+                <p className="text-xs text-slate-400">Why the model predicts what it predicts, workforce-wide</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {explainMessage && <span className="text-xs text-amber-400">{explainMessage}</span>}
+                <button
+                  onClick={handleGenerateExplanations}
+                  disabled={isGeneratingExplanations}
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
+                >
+                  {isGeneratingExplanations ? 'Generating…' : 'Generate Explanations'}
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              {globalImportance?.length > 0 ? (
+                <GlobalFeatureImportanceChart data={globalImportance} />
+              ) : (
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex items-center justify-center text-center text-xs text-slate-500 italic h-full min-h-[16rem]">
+                  No global feature importance yet. Train a model first, then reload this page.
+                </div>
+              )}
+
+              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                <div className="mb-4">
+                  <h3 className="text-base font-bold text-slate-100">Department Risk Drivers</h3>
+                  <p className="text-xs text-slate-400">Top attrition-risk factor per department, from generated explanations</p>
+                </div>
+                {departmentDrivers?.length > 0 ? (
+                  <div className="space-y-2">
+                    {departmentDrivers.map((d) => (
+                      <div key={d.departmentId || d.departmentName} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl">
+                        <div>
+                          <div className="text-sm font-semibold text-slate-200">{d.departmentName}</div>
+                          <div className="text-xs text-slate-500">{d.sampleSize} explanation(s) sampled</div>
+                        </div>
+                        <div className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg">
+                          {d.topFeature}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center text-xs text-slate-500 italic py-8">
+                    No department drivers yet — click <strong>"Generate Explanations"</strong> above to populate this from the current workforce.
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ── Employee Intelligence (NLP) ── */}
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-100">🎭 Employee Intelligence</h2>
+                <p className="text-xs text-slate-400">How the workforce feels — sentiment, emotion, burnout, and concerns from feedback, surveys, and manager notes</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {intelligenceMessage && <span className="text-xs text-violet-400">{intelligenceMessage}</span>}
+                <button
+                  onClick={handleGenerateIntelligenceBatch}
+                  disabled={isGeneratingIntelligence}
+                  className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
+                >
+                  {isGeneratingIntelligence ? 'Analyzing…' : 'Generate Employee Intelligence'}
+                </button>
+              </div>
+            </div>
+
+            {intelligenceError && (
+              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
+                {intelligenceError}
+              </div>
+            )}
+
+            {intelligenceStats && intelligenceStats.totalEmployeesAnalyzed === 0 ? (
+              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl text-center text-xs text-slate-500 italic">
+                No Employee Intelligence profiles generated yet. Open an employee's profile and click <strong>"Analyze Employee Sentiment"</strong> to populate these widgets.
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <SentimentDistributionChart data={intelligenceStats?.sentimentDistribution || {}} />
+                <BurnoutDistributionChart data={intelligenceStats?.burnoutDistribution || {}} />
+                <EmotionDistributionChart data={intelligenceStats?.emotionDistribution || {}} />
+                <TopicFrequencyChart
+                  data={intelligenceStats?.topConcerns || []}
+                  title="Top Employee Concerns"
+                  subtitle="Most frequently mentioned topics workforce-wide"
+                />
+                <TopicFrequencyChart
+                  data={intelligenceStats?.topConcerns || []}
+                  title="Trending Topics"
+                  subtitle="What's coming up most often right now"
+                />
+                <div className="md:col-span-2 xl:col-span-1">
+                  <SentimentBurnoutTrendChart data={intelligenceStats?.trendOverTime || []} />
+                </div>
+
+                {/* Department Sentiment */}
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl md:col-span-2 xl:col-span-1">
+                  <h3 className="text-base font-bold text-slate-100 mb-4">Department Sentiment</h3>
+                  <div className="space-y-2">
+                    {(intelligenceStats?.departmentBreakdown || []).map((d) => (
+                      <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+                        <span className="font-semibold text-slate-200">{d.departmentName}</span>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="text-emerald-400">+{d.sentimentCounts.Positive}</span>
+                          <span className="text-slate-500">•{d.sentimentCounts.Neutral}</span>
+                          <span className="text-rose-400">-{d.sentimentCounts.Negative}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {!(intelligenceStats?.departmentBreakdown?.length) && (
+                      <p className="text-center text-xs text-slate-500 italic py-6">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Department Burnout */}
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                  <h3 className="text-base font-bold text-slate-100 mb-4">Department Burnout</h3>
+                  <div className="space-y-2">
+                    {(intelligenceStats?.departmentBreakdown || []).map((d) => (
+                      <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+                        <span className="font-semibold text-slate-200">{d.departmentName}</span>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="text-emerald-400">L:{d.burnoutCounts.Low}</span>
+                          <span className="text-amber-400">M:{d.burnoutCounts.Medium}</span>
+                          <span className="text-rose-400">H:{d.burnoutCounts.High}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {!(intelligenceStats?.departmentBreakdown?.length) && (
+                      <p className="text-center text-xs text-slate-500 italic py-6">No data yet.</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* ── Knowledge Base Statistics (RAG) ── */}
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-100">📚 Knowledge Base</h2>
+                <p className="text-xs text-slate-400">What organizational knowledge is indexed and how it's being used</p>
+              </div>
+              <Link to="/knowledge" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+                Manage Knowledge Base →
+              </Link>
+            </div>
+
+            {knowledgeStatsError && (
+              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
+                {knowledgeStatsError}
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+              <KpiCard
+                title="Documents Indexed"
+                value={knowledgeStats?.documentsIndexedCount ?? 0}
+                color="sky"
+                icon={<AcademicCapIcon />}
+                label="Policies, handbooks & SOPs"
+              />
+              <KpiCard
+                title="Indexed Chunks"
+                value={knowledgeStats?.totalChunks ?? 0}
+                color="indigo"
+                icon={<ChartIcon />}
+                label="Vector-store passages"
+              />
+              <KpiCard
+                title="Queries (recent)"
+                value={knowledgeStats?.recentQueryCount ?? 0}
+                color="violet"
+                icon={<SparklesIcon />}
+                label="Knowledge lookups logged"
+              />
+              <KpiCard
+                title="Query Success Rate"
+                value={knowledgeStats?.querySuccessRate != null ? Math.round(knowledgeStats.querySuccessRate * 100) : 0}
+                unit="%"
+                color="emerald"
+                icon={<UserCheckIcon />}
+                label="Grounded (non-fallback) answers"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                <h3 className="text-base font-bold text-slate-100 mb-4">Most Queried Policies</h3>
+                {knowledgeStats?.mostSearchedPolicies?.length > 0 ? (
+                  <div className="space-y-2">
+                    {knowledgeStats.mostSearchedPolicies.map((name, i) => (
+                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-sm">
+                        <span className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                        <span className="text-slate-200">{name}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-xs text-slate-500 italic py-8">No queries logged yet.</p>
+                )}
+              </div>
+
+              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                <h3 className="text-base font-bold text-slate-100 mb-4">Recent Uploads</h3>
+                {knowledgeStats?.recentUploads?.length > 0 ? (
+                  <div className="space-y-2">
+                    {knowledgeStats.recentUploads.map((doc) => (
+                      <div key={doc._id} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+                        <div>
+                          <div className="font-semibold text-slate-200">{doc.filename}</div>
+                          <div className="text-slate-500">{doc.documentType?.replace(/_/g, ' ')} • {doc.uploadedBy?.name || 'Unknown'}</div>
+                        </div>
+                        <span className="font-mono text-slate-500">{new Date(doc.uploadDate).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-xs text-slate-500 italic py-8">No documents uploaded yet.</p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* ── AI Recommendations (Decision Intelligence) ── */}
+          <section>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-100">🎯 AI Recommendations</h2>
+                <p className="text-xs text-slate-400">What HR should do next — combining prediction, SHAP, sentiment, and policy evidence</p>
+              </div>
+              <div className="flex items-center gap-3">
+                {decisionMessage && <span className="text-xs text-fuchsia-400">{decisionMessage}</span>}
+                <button
+                  onClick={handleGenerateDecisionsBatch}
+                  disabled={isGeneratingDecisions}
+                  className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
+                >
+                  {isGeneratingDecisions ? 'Generating…' : 'Generate Recommendations'}
+                </button>
+              </div>
+            </div>
+
+            {decisionStatsError && (
+              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">{decisionStatsError}</div>
+            )}
+
+            {decisionStats && decisionStats.totalEmployeesWithDecisions === 0 ? (
+              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl text-center text-xs text-slate-500 italic">
+                No recommendations generated yet. Click &quot;Generate Recommendations&quot; above to populate this from the current workforce.
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+                  <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Employees with Recommendations</div>
+                    <div className="text-2xl font-black text-slate-100">{decisionStats?.totalEmployeesWithDecisions ?? 0}</div>
+                  </div>
+                  <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Recommendation Acceptance Rate</div>
+                    <div className="text-2xl font-black text-emerald-400">
+                      {decisionStats?.acceptanceRate != null ? `${Math.round(decisionStats.acceptanceRate * 100)}%` : '—'}
+                    </div>
+                  </div>
+                  <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl">
+                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">HR Action Queue</div>
+                    <div className="text-2xl font-black text-amber-400">{decisionStats?.hrActionQueue?.length ?? 0}</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <RecommendationDistributionChart data={decisionStats?.recommendationDistribution || {}} />
+                  <RecommendationTrendsChart data={decisionStats?.recommendationTrends || []} />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {/* Critical Employees */}
+                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                    <h3 className="text-base font-bold text-slate-100 mb-4">Critical Employees</h3>
+                    <div className="space-y-2">
+                      {(decisionStats?.criticalEmployees || []).length === 0 && (
+                        <p className="text-center text-xs text-slate-500 italic py-6">No critical (high-priority) employees right now.</p>
+                      )}
+                      {(decisionStats?.criticalEmployees || []).map((e) => (
+                        <Link key={e.employeeId} to={`/employees/${e.employeeId}`} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 hover:border-fuchsia-500/30 rounded-xl text-xs transition-colors">
+                          <div>
+                            <div className="font-semibold text-slate-200">{e.employeeName}</div>
+                            <div className="text-slate-500">{e.departmentName} • {RECOMMENDATION_TYPE_LABELS[e.recommendationType] || e.recommendationType}</div>
+                          </div>
+                          <span className="font-mono text-rose-400">{((e.confidence || 0) * 100).toFixed(0)}%</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* High Priority Actions */}
+                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                    <h3 className="text-base font-bold text-slate-100 mb-4">High Priority Actions</h3>
+                    <div className="space-y-2">
+                      {(decisionStats?.highPriorityActions || []).length === 0 && (
+                        <p className="text-center text-xs text-slate-500 italic py-6">No pending high-priority actions.</p>
+                      )}
+                      {(decisionStats?.highPriorityActions || []).map((e) => (
+                        <Link key={e.decisionId} to={`/employees/${e.employeeId}`} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 hover:border-fuchsia-500/30 rounded-xl text-xs transition-colors">
+                          <span className="font-semibold text-slate-200">{e.employeeName}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase">{RECOMMENDATION_TYPE_LABELS[e.recommendationType] || e.recommendationType}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  {/* Department Recommendations */}
+                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                    <h3 className="text-base font-bold text-slate-100 mb-4">Department Recommendations</h3>
+                    <div className="space-y-2">
+                      {(decisionStats?.departmentBreakdown || []).map((d) => (
+                        <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+                          <span className="font-semibold text-slate-200">{d.departmentName}</span>
+                          <div className="flex items-center gap-2 font-mono">
+                            <span className="text-rose-400">H:{d.high}</span>
+                            <span className="text-amber-400">M:{d.medium}</span>
+                            <span className="text-emerald-400">L:{d.low}</span>
+                          </div>
+                        </div>
+                      ))}
+                      {!(decisionStats?.departmentBreakdown?.length) && (
+                        <p className="text-center text-xs text-slate-500 italic py-6">No data yet.</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* HR Action Queue */}
+                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                    <h3 className="text-base font-bold text-slate-100 mb-4">HR Action Queue</h3>
+                    <div className="space-y-2">
+                      {(decisionStats?.hrActionQueue || []).length === 0 && (
+                        <p className="text-center text-xs text-slate-500 italic py-6">Queue is empty — no pending decisions.</p>
+                      )}
+                      {(decisionStats?.hrActionQueue || []).map((q) => (
+                        <Link key={q.decisionId} to={`/employees/${q.employeeId}`} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 hover:border-fuchsia-500/30 rounded-xl text-xs transition-colors">
+                          <span className="font-semibold text-slate-200">{q.employeeName}</span>
+                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase ${q.priority === 'HIGH' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : q.priority === 'MEDIUM' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                            {RECOMMENDATION_TYPE_LABELS[q.recommendationType] || q.recommendationType}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Decision History */}
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+                  <h3 className="text-base font-bold text-slate-100 mb-4">Decision History</h3>
+                  <div className="space-y-2">
+                    {(decisionStats?.decisionHistory || []).length === 0 && (
+                      <p className="text-center text-xs text-slate-500 italic py-6">No decisions generated yet.</p>
+                    )}
+                    {(decisionStats?.decisionHistory || []).map((d) => (
+                      <div key={d._id} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+                        <div>
+                          <span className="font-semibold text-slate-200">{d.employeeId?.firstName} {d.employeeId?.lastName}</span>
+                          <span className="text-slate-500 ml-2">{RECOMMENDATION_TYPE_LABELS[d.recommendationType] || d.recommendationType}</span>
+                        </div>
+                        <span className="font-mono text-slate-500">{new Date(d.generatedAt).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
             )}
           </section>
 

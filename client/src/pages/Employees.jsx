@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 import BulkImportModal from '../components/BulkImportModal';
 import EmployeeFormModal from '../components/EmployeeFormModal';
+import WhyExplanationModal from '../components/WhyExplanationModal';
 import { fetchDepartments } from '../store/slices/departmentSlice';
 import {
   bulkImportEmployees,
@@ -41,6 +42,25 @@ function RiskBadge({ riskLevel, probability }) {
   );
 }
 
+const SENTIMENT_EMOJI = { Positive: '😊', Neutral: '😐', Negative: '😟' };
+const BURNOUT_STYLES = {
+  Low: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  Medium: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  High: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+};
+
+function MoodBadge({ intelligence }) {
+  if (!intelligence) return <span className="text-xs text-slate-600 italic">No Data</span>;
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-xs text-slate-300">{SENTIMENT_EMOJI[intelligence.sentiment] || ''} {intelligence.sentiment}</span>
+      <span className={`inline-block w-fit px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${BURNOUT_STYLES[intelligence.burnoutRisk] || 'bg-slate-700/30 text-slate-500'}`}>
+        {intelligence.burnoutRisk} Burnout
+      </span>
+    </div>
+  );
+}
+
 export default function Employees() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -65,6 +85,7 @@ export default function Employees() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [deleteConfirmEmp, setDeleteConfirmEmp] = useState(null);
   const [riskFilter, setRiskFilter] = useState('');
+  const [whyEmployee, setWhyEmployee] = useState(null);
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
 
@@ -84,6 +105,9 @@ export default function Employees() {
         includeDeleted: filters.includeDeleted,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
+        sentiment: filters.sentiment,
+        burnoutRisk: filters.burnoutRisk,
+        emotion: filters.emotion,
       }),
     );
   }, [dispatch, page, limit, filters]);
@@ -115,6 +139,9 @@ export default function Employees() {
         includeDeleted: filters.includeDeleted,
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
+        sentiment: filters.sentiment,
+        burnoutRisk: filters.burnoutRisk,
+        emotion: filters.emotion,
       }),
     );
   };
@@ -291,6 +318,45 @@ export default function Employees() {
             <option value="LOW">🟢 Low Risk</option>
           </select>
 
+          {/* Sentiment Filter */}
+          <select
+            value={filters.sentiment}
+            onChange={(e) => handleFilterChange('sentiment', e.target.value)}
+            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+          >
+            <option value="">All Sentiments</option>
+            <option value="Positive">😊 Positive</option>
+            <option value="Neutral">😐 Neutral</option>
+            <option value="Negative">😟 Negative</option>
+          </select>
+
+          {/* Burnout Risk Filter */}
+          <select
+            value={filters.burnoutRisk}
+            onChange={(e) => handleFilterChange('burnoutRisk', e.target.value)}
+            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+          >
+            <option value="">All Burnout Levels</option>
+            <option value="Low">🟢 Low Burnout</option>
+            <option value="Medium">🟡 Medium Burnout</option>
+            <option value="High">🔴 High Burnout</option>
+          </select>
+
+          {/* Emotion Filter */}
+          <select
+            value={filters.emotion}
+            onChange={(e) => handleFilterChange('emotion', e.target.value)}
+            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+          >
+            <option value="">All Emotions</option>
+            <option value="Happy">Happy</option>
+            <option value="Satisfied">Satisfied</option>
+            <option value="Frustrated">Frustrated</option>
+            <option value="Stressed">Stressed</option>
+            <option value="Burned Out">Burned Out</option>
+            <option value="Demotivated">Demotivated</option>
+          </select>
+
           {/* Sorting Field */}
           <div className="flex items-center gap-2">
             <select
@@ -304,6 +370,10 @@ export default function Employees() {
               <option value="lastName">Last Name</option>
               <option value="salary">Salary</option>
               <option value="employeeCode">Employee Code</option>
+              <option value="riskScore">AI Risk Score</option>
+              <option value="burnoutScore">Burnout Score</option>
+              <option value="sentiment">Sentiment</option>
+              <option value="emotion">Emotion</option>
             </select>
             <button
               onClick={() => handleFilterChange('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')}
@@ -364,6 +434,7 @@ export default function Employees() {
                   <th className="px-6 py-4">Joining Date</th>
                   <th className="px-6 py-4">Status</th>
                   <th className="px-6 py-4">AI Risk</th>
+                  <th className="px-6 py-4">Mood</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
@@ -430,6 +501,10 @@ export default function Employees() {
                         <RiskBadge riskLevel={emp.latestPrediction?.riskLevel} probability={emp.latestPrediction?.riskScore} />
                       </td>
 
+                      <td className="px-6 py-4">
+                        <MoodBadge intelligence={emp.latestIntelligence} />
+                      </td>
+
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <Link
@@ -442,6 +517,14 @@ export default function Employees() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                             </svg>
                           </Link>
+
+                          <button
+                            onClick={() => setWhyEmployee(emp)}
+                            title="Why is this employee at risk?"
+                            className="px-2.5 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-colors"
+                          >
+                            Why?
+                          </button>
 
                           {canManage && (
                             <>
@@ -525,6 +608,11 @@ export default function Employees() {
         onSubmit={handleFormSubmit}
         loading={loading}
       />
+
+      {/* SHAP "Why?" Explanation Modal */}
+      {whyEmployee && (
+        <WhyExplanationModal employee={whyEmployee} onClose={() => setWhyEmployee(null)} />
+      )}
 
       {/* Bulk CSV Import Modal */}
       <BulkImportModal

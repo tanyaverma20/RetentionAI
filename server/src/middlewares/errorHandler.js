@@ -95,6 +95,27 @@ export function errorHandler(error, request, response, _next) {
     );
   }
 
+  // 3b. Uncaught Zod validation errors — a safety net for any route that
+  // calls schema.parse()/parseAsync() directly (e.g. the generic
+  // /hr/:collection routes) instead of going through the validate()
+  // middleware, which normally converts these into a 400 itself. Without
+  // this, a raw ZodError falls through to the generic 500 below, turning a
+  // client input mistake into a false "server fault".
+  if (error?.name === 'ZodError' && Array.isArray(error.issues)) {
+    return sendError(
+      response,
+      400,
+      'VALIDATION_ERROR',
+      'One or more fields are invalid.',
+      request.requestId,
+      error.issues.map((issue) => ({
+        field: issue.path.join('.'),
+        rule: issue.code,
+        message: issue.message,
+      })),
+    );
+  }
+
   // 4. Unhandled runtime exceptions (do not leak details)
   console.error(`[RequestId: ${request.requestId}] Internal Error:`, error?.message || error);
   

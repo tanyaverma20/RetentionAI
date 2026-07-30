@@ -24,9 +24,12 @@ from dotenv import load_dotenv
 from app.api.routes import router as prediction_router
 from app.api.explain_routes import router as explain_router
 from app.api.nlp_routes import router as nlp_router
+from app.api.employee_intelligence_routes import router as employee_intelligence_router
 from app.api.rag_routes import router as rag_router
 from app.api.agent_routes import router as agent_router
-from app.utils.database import connect_db, disconnect_db
+from app.api.decision_routes import router as decision_router
+from app.utils.database import connect_db, disconnect_db, get_db
+from app.utils.migrations import migrate_prediction_history_collection
 from app.prediction.prediction_service import prediction_service
 from app.explainability.shap_explainer import shap_cache
 from app.nlp.analyzer import get_emotion_classifier, get_zeroshot_classifier
@@ -41,6 +44,14 @@ async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────────────────────────────────────
     print("Starting up RetentionAI AI Service …")
     await connect_db()
+
+    # One-time reconciliation of the predictionHistory/predictionhistories
+    # collection-name mismatch with Node's Mongoose model (see
+    # app/utils/migrations.py) — safe to run every startup, no-op once done.
+    try:
+        await migrate_prediction_history_collection(get_db())
+    except Exception as exc:
+        print(f"Prediction history migration check failed: {exc}")
 
     # Load trained model bundle
     try:
@@ -95,8 +106,10 @@ app = FastAPI(
 app.include_router(prediction_router)
 app.include_router(explain_router)
 app.include_router(nlp_router)
+app.include_router(employee_intelligence_router)
 app.include_router(rag_router)
 app.include_router(agent_router)
+app.include_router(decision_router)
 
 
 if __name__ == "__main__":

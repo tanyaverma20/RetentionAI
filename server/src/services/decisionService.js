@@ -1,0 +1,353 @@
+import axios from 'axios';
+import mongoose from 'mongoose';
+import { Decision, STATUS_VALUES } from '../models/Decision.js';
+import { Employee } from '../models/Employee.js';
+import { toAiServiceError } from '../utils/aiServiceError.js';
+import { AppError } from '../errors/AppError.js';
+
+const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
+const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
+
+const aiClient = axios.create({
+  baseURL: AI_API_URL,
+  headers: {
+    Authorization: `Bearer ${AI_API_TOKEN}`,
+    'Content-Type': 'application/json',
+  },
+  timeout: 60000, // the full ML+SHAP+NLP+RAG+LLM pipeline can legitimately take a while
+});
+
+function mapDecisionToDoc(employeeId, organizationId, data, userId) {
+  return {
+    employeeId,
+    organizationId,
+    recommendationType: data.recommendationType,
+    priority: data.priority,
+    confidence: data.confidence,
+    reasoning: data.reasoning,
+    evidence: data.evidence || {},
+    affectedFactors: data.affectedFactors || [],
+    relatedPolicies: data.relatedPolicies || [],
+    recommendedActions: data.recommendedActions || [],
+    expectedOutcome: data.expectedOutcome || '',
+    reviewDate: data.reviewDate ? new Date(data.reviewDate) : undefined,
+    status: 'PENDING',
+    statusHistory: [{ status: 'PENDING', changedBy: userId, changedAt: new Date(), note: 'Generated' }],
+    generatedAt: data.generatedAt ? new Date(data.generatedAt) : new Date(),
+    generatedBy: data.generatedBy || 'system',
+  };
+}
+
+class DecisionService {
+  /**
+   * Get or generate the AI recommendation for one employee. Cached unless
+   * forceRefresh is set OR the employee's profile has been updated more
+   * recently than the cached decision — "do not regenerate unless employee
+   * data changes".
+   */
+  async generateForEmployee(employeeId, organizationId, userId, forceRefresh = false) {
+    const employee = await Employee.findById(employeeId).lean();
+    if (!employee) {
+      throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee not found.');
+    }
+
+    if (!forceRefresh) {
+      const cached = await Decision.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+      if (cached && employee.updatedAt && cached.generatedAt >= employee.updatedAt) {
+        return cached;
+      }
+    }
+
+    let data;
+    try {
+      const response = await aiClient.post('/decision/generate', {
+        employeeId: String(employeeId),
+        employeeData: employee,
+        userId: String(userId || 'system'),
+      });
+      data = response.data;
+    } catch (err) {
+      throw toAiServiceError(err, 'Decision generation failed', {
+        notReadyMessage: 'The Decision Engine is not ready yet (model/SHAP/NLP/RAG may still be initializing). Please try again shortly.',
+      });
+    }
+
+    return Decision.create(mapDecisionToDoc(employeeId, organizationId, data, userId));
+  }
+
+  /**
+   * Generates recommendations for many employees at once (explicit list, a
+   * department, or every ACTIVE employee), mirroring explainBatch/
+   * generateEmployeeIntelligenceBatch's filtering shape.
+   */
+  async generateBatch(organizationId, employeeIds, departmentId, userId) {
+    const filter = { organizationId };
+    if (employeeIds?.length) filter._id = { $in: employeeIds };
+    else if (departmentId) filter.departmentId = departmentId;
+    else filter.status = 'ACTIVE';
+    filter.isDeleted = false;
+
+    const employees = await Employee.find(filter).lean();
+    if (employees.length === 0) {
+      return { processed: 0, failed: 0, totalCount: 0 };
+    }
+
+    let rawDecisions;
+    try {
+      const response = await aiClient.post('/decision/batch', {
+        employees: employees.map((e) => ({
+          employeeId: String(e._id),
+          employeeData: e,
+          userId: String(userId || 'system'),
+        })),
+      });
+      rawDecisions = response.data?.decisions || [];
+    } catch (err) {
+      throw toAiServiceError(err, 'Batch decision generation failed', {
+        notReadyMessage: 'The Decision Engine is not ready yet. Please try again shortly.',
+      });
+    }
+
+    const docs = [];
+    let failed = 0;
+    for (const d of rawDecisions) {
+      if (d.error) {
+        failed += 1;
+        continue;
+      }
+      docs.push(mapDecisionToDoc(d.employeeId, organizationId, d, userId));
+    }
+
+    if (docs.length > 0) {
+      await Decision.insertMany(docs, { ordered: false });
+    }
+
+    return { processed: docs.length, failed, totalCount: employees.length };
+  }
+
+  /** Latest decision for one employee (used by the merged AI Insights endpoint). */
+  async getStored(employeeId) {
+    return Decision.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+  }
+
+  /** Full decision history for one employee. */
+  async getHistory(employeeId) {
+    return Decision.find({ employeeId }).sort({ generatedAt: -1 }).lean();
+  }
+
+  /**
+   * HR accept/dismiss/under-review workflow. Every status change is
+   * appended to statusHistory (audit trail) — restricted to HR/Admin at
+   * the route layer.
+   */
+  async updateStatus(decisionId, status, changedByUserId, note = '') {
+    if (!STATUS_VALUES.includes(status)) {
+      throw new AppError(400, 'INVALID_STATUS', `Status must be one of: ${STATUS_VALUES.join(', ')}`);
+    }
+    const decision = await Decision.findById(decisionId);
+    if (!decision) {
+      throw new AppError(404, 'DECISION_NOT_FOUND', 'Decision not found.');
+    }
+    decision.status = status;
+    decision.statusHistory.push({ status, changedBy: changedByUserId, changedAt: new Date(), note });
+    await decision.save();
+    return decision;
+  }
+
+  // ── Dashboard analytics ─────────────────────────────────────────────────
+
+  async getDashboardSummary(organizationId) {
+    const orgObjectId = mongoose.Types.ObjectId.isValid(organizationId)
+      ? new mongoose.Types.ObjectId(organizationId)
+      : organizationId;
+
+    const latestPerEmployee = await Decision.aggregate([
+      { $match: { organizationId: orgObjectId } },
+      { $sort: { generatedAt: -1 } },
+      {
+        $group: {
+          _id: '$employeeId',
+          decisionId: { $first: '$_id' },
+          recommendationType: { $first: '$recommendationType' },
+          priority: { $first: '$priority' },
+          confidence: { $first: '$confidence' },
+          status: { $first: '$status' },
+          generatedAt: { $first: '$generatedAt' },
+        },
+      },
+      {
+        $lookup: {
+          from: 'employees',
+          localField: '_id',
+          foreignField: '_id',
+          as: 'employee',
+        },
+      },
+      { $unwind: '$employee' },
+      {
+        $lookup: {
+          from: 'departments',
+          localField: 'employee.departmentId',
+          foreignField: '_id',
+          as: 'department',
+        },
+      },
+      { $unwind: { path: '$department', preserveNullAndEmptyArrays: true } },
+    ]);
+
+    const recommendationDistribution = {};
+    const departmentBreakdown = new Map();
+    const criticalEmployees = [];
+    const highPriorityActions = [];
+
+    for (const row of latestPerEmployee) {
+      recommendationDistribution[row.recommendationType] = (recommendationDistribution[row.recommendationType] || 0) + 1;
+
+      const deptKey = String(row.department?._id || 'unassigned');
+      if (!departmentBreakdown.has(deptKey)) {
+        departmentBreakdown.set(deptKey, { departmentId: row.department?._id || null, departmentName: row.department?.name || 'Unassigned', high: 0, medium: 0, low: 0, total: 0 });
+      }
+      const dept = departmentBreakdown.get(deptKey);
+      dept.total += 1;
+      if (row.priority === 'HIGH') dept.high += 1;
+      else if (row.priority === 'MEDIUM') dept.medium += 1;
+      else dept.low += 1;
+
+      if (row.priority === 'HIGH') {
+        const entry = {
+          employeeId: row._id,
+          employeeName: `${row.employee.firstName} ${row.employee.lastName}`,
+          departmentName: row.department?.name || 'Unassigned',
+          recommendationType: row.recommendationType,
+          confidence: row.confidence,
+          status: row.status,
+        };
+        criticalEmployees.push(entry);
+        if (row.status === 'PENDING') highPriorityActions.push({ ...entry, decisionId: row.decisionId });
+      }
+    }
+
+    criticalEmployees.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));
+
+    // Recommendation trends — monthly count, last 12 months, across ALL history (not just latest-per-employee).
+    const trendRows = await Decision.aggregate([
+      { $match: { organizationId: orgObjectId } },
+      {
+        $group: {
+          _id: { $dateToString: { format: '%Y-%m', date: '$generatedAt' } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } },
+      { $limit: 12 },
+    ]);
+    const recommendationTrends = trendRows.map((r) => ({ period: r._id, count: r.count }));
+
+    // Decision history — recent 10 across the org.
+    const decisionHistory = await Decision.find({ organizationId })
+      .sort({ generatedAt: -1 })
+      .limit(10)
+      .populate('employeeId', 'firstName lastName')
+      .lean();
+
+    // HR Action Queue — all pending decisions, priority-first.
+    const priorityRank = { HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const hrActionQueue = [...latestPerEmployee]
+      .filter((r) => r.status === 'PENDING')
+      .sort((a, b) => (priorityRank[b.priority] || 0) - (priorityRank[a.priority] || 0))
+      .slice(0, 20)
+      .map((row) => ({
+        decisionId: row.decisionId,
+        employeeId: row._id,
+        employeeName: `${row.employee.firstName} ${row.employee.lastName}`,
+        recommendationType: row.recommendationType,
+        priority: row.priority,
+      }));
+
+    // Recommendation acceptance rate — among decisions that have reached a
+    // terminal status (ACCEPTED or DISMISSED); PENDING/UNDER_REVIEW excluded
+    // since they haven't been decided on yet.
+    const [acceptedCount, dismissedCount] = await Promise.all([
+      Decision.countDocuments({ organizationId, status: 'ACCEPTED' }),
+      Decision.countDocuments({ organizationId, status: 'DISMISSED' }),
+    ]);
+    const decidedTotal = acceptedCount + dismissedCount;
+    const acceptanceRate = decidedTotal > 0 ? Math.round((acceptedCount / decidedTotal) * 100) / 100 : null;
+
+    return {
+      totalEmployeesWithDecisions: latestPerEmployee.length,
+      recommendationDistribution,
+      criticalEmployees: criticalEmployees.slice(0, 10),
+      highPriorityActions: highPriorityActions.slice(0, 10),
+      departmentBreakdown: Array.from(departmentBreakdown.values()),
+      recommendationTrends,
+      decisionHistory,
+      hrActionQueue,
+      acceptanceRate,
+      acceptedCount,
+      dismissedCount,
+    };
+  }
+
+  /**
+   * Manager Dashboard — same shape of data as getDashboardSummary, but
+   * scoped to a single department (a Department Manager's own team).
+   */
+  async getManagerDashboard(organizationId, departmentId) {
+    const employees = await Employee.find({ organizationId, departmentId, isDeleted: false }).select('_id firstName lastName').lean();
+    const employeeIds = employees.map((e) => e._id);
+    const employeeNameById = new Map(employees.map((e) => [String(e._id), `${e.firstName} ${e.lastName}`]));
+
+    const latest = await Decision.aggregate([
+      { $match: { employeeId: { $in: employeeIds } } },
+      { $sort: { generatedAt: -1 } },
+      {
+        $group: {
+          _id: '$employeeId',
+          decisionId: { $first: '$_id' },
+          recommendationType: { $first: '$recommendationType' },
+          priority: { $first: '$priority' },
+          status: { $first: '$status' },
+          affectedFactors: { $first: '$affectedFactors' },
+        },
+      },
+    ]);
+
+    const teamRisk = { HIGH: 0, MEDIUM: 0, LOW: 0 };
+    const recommendedInterventions = {};
+    const concernCounts = new Map();
+    const priorityEmployees = [];
+    const pendingActions = [];
+
+    for (const row of latest) {
+      if (row.priority in teamRisk) teamRisk[row.priority] += 1;
+      recommendedInterventions[row.recommendationType] = (recommendedInterventions[row.recommendationType] || 0) + 1;
+      for (const factor of row.affectedFactors || []) {
+        concernCounts.set(factor, (concernCounts.get(factor) || 0) + 1);
+      }
+      const name = employeeNameById.get(String(row._id)) || 'Unknown';
+      if (row.priority === 'HIGH') {
+        priorityEmployees.push({ employeeId: row._id, employeeName: name, recommendationType: row.recommendationType });
+      }
+      if (row.status === 'PENDING') {
+        pendingActions.push({ decisionId: row.decisionId, employeeId: row._id, employeeName: name, recommendationType: row.recommendationType, priority: row.priority });
+      }
+    }
+
+    const topConcerns = Array.from(concernCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([factor, count]) => ({ factor, count }));
+
+    return {
+      teamSize: employees.length,
+      teamRisk,
+      pendingActions: pendingActions.slice(0, 10),
+      recommendedInterventions,
+      topConcerns,
+      priorityEmployees: priorityEmployees.slice(0, 10),
+    };
+  }
+}
+
+export const decisionService = new DecisionService();

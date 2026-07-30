@@ -2,7 +2,7 @@ import os
 import uuid
 import datetime
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException, Header, status
+from fastapi import APIRouter, Depends, HTTPException, Header, status, BackgroundTasks
 from typing import List, Optional
 from app.api.schemas import (
     SinglePredictionRequest, 
@@ -15,6 +15,7 @@ from app.api.schemas import (
 )
 from app.prediction.prediction_service import prediction_service, ModelNotLoadedException
 from app.utils.database import get_db
+from train_model import train_model
 
 router = APIRouter()
 
@@ -230,3 +231,14 @@ async def health_check():
         modelLoaded=model_loaded,
         modelVersion=model_version
     )
+
+@router.post("/train", response_model=dict, dependencies=[Depends(verify_auth_token)])
+async def train_new_model(background_tasks: BackgroundTasks):
+    """
+    Trigger the model training pipeline in the background.
+    """
+    background_tasks.add_task(train_model)
+    return {
+        "success": True, 
+        "message": "Model training started in the background. Check logs for progress."
+    }

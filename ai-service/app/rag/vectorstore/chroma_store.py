@@ -21,13 +21,25 @@ def get_vectorstore() -> Chroma:
     )
     return vectorstore
 
-def index_documents(documents: List[Document]):
+def index_documents(documents: List[Document]) -> List[str]:
     """
     Adds a list of chunked documents to the vector store.
+    Returns the Chroma-assigned IDs (== each chunk's chunkId, so callers can
+    delete exactly these chunks later without a full reindex).
     """
     vectorstore = get_vectorstore()
-    vectorstore.add_documents(documents)
-    # Chroma automatically persists in newer versions, but we can call it if needed depending on version.
+    ids = [d.metadata["chunkId"] for d in documents]
+    vectorstore.add_documents(documents, ids=ids)
+    return ids
+
+def delete_document_chunks(document_id: str):
+    """
+    Deletes every chunk belonging to one document (by documentId metadata) —
+    used by document deletion and by reindexing a single document (old chunks
+    must go before the new ones are added, otherwise stale duplicates remain).
+    """
+    vectorstore = get_vectorstore()
+    vectorstore._collection.delete(where={"documentId": document_id})
 
 def clear_vectorstore():
     """

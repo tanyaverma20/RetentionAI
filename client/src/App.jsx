@@ -14,6 +14,10 @@ import AttendancePage from './pages/AttendancePage';
 import PerformancePage from './pages/PerformancePage';
 import TrainingPage from './pages/TrainingPage';
 import PromotionsPage from './pages/PromotionsPage';
+import EmployeeVoicePage from './pages/EmployeeVoicePage';
+import ReportsPage from './pages/ReportsPage';
+import KnowledgeManagement from './pages/KnowledgeManagement';
+import ManagerDashboard from './pages/ManagerDashboard';
 import ForgotPassword from './pages/ForgotPassword';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -58,6 +62,10 @@ export default function App() {
             <Route path="/hr/performance" element={<PerformancePage />} />
             <Route path="/hr/training" element={<TrainingPage />} />
             <Route path="/hr/promotions" element={<PromotionsPage />} />
+            <Route path="/hr/employee-voice" element={<EmployeeVoicePage />} />
+            <Route path="/reports" element={<ReportsPage />} />
+            <Route path="/knowledge" element={<KnowledgeManagement />} />
+            <Route path="/manager-dashboard" element={<ManagerDashboard />} />
           </Route>
         </Route>
 
@@ -67,4 +75,3 @@ export default function App() {
     </Routes>
   );
 }
-

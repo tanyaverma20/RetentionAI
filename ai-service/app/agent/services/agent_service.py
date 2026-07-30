@@ -17,7 +17,7 @@ from app.utils.database import get_db
 async def save_recommendation_to_db(recommendation: Dict[str, Any]):
     """Persists a recommendation to the agent_recommendations MongoDB collection."""
     try:
-        db = await get_db()
+        db = get_db()
         await db["agent_recommendations"].insert_one({
             "employeeId": recommendation["employeeId"],
             "timestamp": datetime.datetime.utcnow(),
@@ -89,7 +89,7 @@ async def generate_batch_recommendations(
 async def get_recommendation_history(limit: int = 50) -> List[Dict[str, Any]]:
     """Retrieves recent recommendation history from MongoDB."""
     try:
-        db = await get_db()
+        db = get_db()
         cursor = db["agent_recommendations"].find(
             {}, {"_id": 0}
         ).sort("timestamp", -1).limit(limit)
@@ -101,7 +101,7 @@ async def get_recommendation_history(limit: int = 50) -> List[Dict[str, Any]]:
 async def get_employee_recommendations(employee_id: str) -> List[Dict[str, Any]]:
     """Retrieves all recommendation history for a specific employee."""
     try:
-        db = await get_db()
+        db = get_db()
         cursor = db["agent_recommendations"].find(
             {"employeeId": employee_id}, {"_id": 0}
         ).sort("timestamp", -1)
@@ -113,7 +113,7 @@ async def get_employee_recommendations(employee_id: str) -> List[Dict[str, Any]]
 async def get_agent_statistics() -> Dict[str, Any]:
     """Aggregates agent statistics for the dashboard."""
     try:
-        db = await get_db()
+        db = get_db()
         col = db["agent_recommendations"]
 
         total = await col.count_documents({})

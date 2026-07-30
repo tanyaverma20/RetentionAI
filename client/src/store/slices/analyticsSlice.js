@@ -96,6 +96,11 @@ const analyticsSlice = createSlice({
       startDate: '',
       endDate: '',
       search: '',
+      designation: '',
+      performanceRating: '',
+      attendancePercent: '',
+      trainingStatus: '',
+      promotionDue: '',
     },
     aiGlobalImportance: null,
     aiLoading: false,
@@ -114,6 +119,11 @@ const analyticsSlice = createSlice({
         startDate: '',
         endDate: '',
         search: '',
+        designation: '',
+        performanceRating: '',
+        attendancePercent: '',
+        trainingStatus: '',
+        promotionDue: '',
       };
     },
     clearAnalyticsError: (state) => {

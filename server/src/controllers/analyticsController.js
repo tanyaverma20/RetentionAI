@@ -76,6 +76,27 @@ export async function getHrMetrics(request, response, next) {
   }
 }
 
+export async function getPerformanceAnalytics(request, response, next) {
+  try {
+    const analytics = await analyticsService.getPerformanceAnalytics(request.auth, request.query);
+    return sendSuccess(response, 200, analytics, request.requestId);
+  } catch (error) { return next(error); }
+}
+
+export async function getAttendanceAnalytics(request, response, next) {
+  try {
+    const analytics = await analyticsService.getAttendanceAnalytics(request.auth, request.query);
+    return sendSuccess(response, 200, analytics, request.requestId);
+  } catch (error) { return next(error); }
+}
+
+export async function getTrainingAnalytics(request, response, next) {
+  try {
+    const analytics = await analyticsService.getTrainingAnalytics(request.auth, request.query);
+    return sendSuccess(response, 200, analytics, request.requestId);
+  } catch (error) { return next(error); }
+}
+
 export async function getAiFeatureImportance(request, response, next) {
   try {
     const nSamples = request.query.n_samples ? parseInt(request.query.n_samples, 10) : 100;
@@ -108,4 +129,3 @@ export async function getAiGlobalPlot(request, response, next) {
     return next(error);
   }
 }
-

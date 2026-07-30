@@ -15,6 +15,7 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['error', 'warn', 'info', 'debug']).default('info'),
   AI_SERVICE_URL: z.string().default('http://127.0.0.1:8000'),
   AI_SERVICE_TOKEN: z.string().default('replace-with-a-service-token'),
+  AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -41,5 +42,6 @@ export const env = {
   aiService: {
     url: parsedEnv.data.AI_SERVICE_URL,
     token: parsedEnv.data.AI_SERVICE_TOKEN,
+    timeoutMs: parsedEnv.data.AI_SERVICE_TIMEOUT_MS,
   },
 };

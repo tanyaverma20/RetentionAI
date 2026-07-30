@@ -139,19 +139,36 @@ export async function seedDemoData() {
   // 5. Surveys
   const surveyRaw = readCSV('employee_surveys.csv');
   if (surveyRaw) {
-    const surveys = surveyRaw.filter(s => empMap.has(s.EmployeeID)).map(s => ({
-      organizationId: ORG_ID,
-      employeeId: empMap.get(s.EmployeeID),
-      surveyDate: new Date(s.SurveyDate),
-      engagementScore: parseInt(s.EngagementScore) || 3,
-      jobSatisfaction: parseInt(s.JobSatisfaction) || 3,
-      workLifeBalance: parseInt(s.WorkLifeBalance) || 3,
-      stressLevel: 3,
-      careerGrowthScore: parseInt(s.JobSatisfaction) || 3,
-      managerRelationshipScore: parseInt(s.EngagementScore) || 3,
-    }));
-    await Survey.insertMany(surveys, { ordered: false });
-    console.log(`[seed]   ✓ ${surveys.length} surveys`);
+    // Survey.js requires 10 dimension scores; the CSV only has 3
+    // (EngagementScore/JobSatisfaction/WorkLifeBalance). The remaining 7 were
+    // previously left unset — 4 of them (learningOpportunities, recognition,
+    // compensationSatisfaction, overallHappiness) have no schema default, so
+    // every document failed validation and insertMany silently inserted zero
+    // records (Mongoose does not throw for this in unordered mode — it just
+    // reports success with an empty result), even though the log line below
+    // (measuring the source array, not the actual write) claimed otherwise.
+    const surveys = surveyRaw.filter(s => empMap.has(s.EmployeeID)).map(s => {
+      const engagement = parseInt(s.EngagementScore) || 3;
+      const satisfaction = parseInt(s.JobSatisfaction) || 3;
+      const workLife = parseInt(s.WorkLifeBalance) || 3;
+      return {
+        organizationId: ORG_ID,
+        employeeId: empMap.get(s.EmployeeID),
+        surveyDate: new Date(s.SurveyDate),
+        engagementScore: engagement,
+        jobSatisfaction: satisfaction,
+        workLifeBalance: workLife,
+        stressLevel: Math.min(5, Math.max(1, 6 - workLife)),
+        careerGrowthScore: satisfaction,
+        managerRelationshipScore: engagement,
+        learningOpportunities: satisfaction,
+        recognition: engagement,
+        compensationSatisfaction: satisfaction,
+        overallHappiness: Math.round((engagement + satisfaction + workLife) / 3),
+      };
+    });
+    const surveyResult = await Survey.insertMany(surveys, { ordered: false });
+    console.log(`[seed]   ✓ ${surveyResult.length} surveys`);
   }
 
   // 6. Feedback

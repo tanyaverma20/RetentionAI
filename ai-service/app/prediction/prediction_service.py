@@ -4,11 +4,27 @@ import glob
 from bson import ObjectId
 import pandas as pd
 from app.preprocessing.pipeline import transform_inference
+from app.preprocessing.enrichment import enrich_employee_doc
 from app.training.trainer import load_model_bundle
 from app.utils.database import get_db
 
 class ModelNotLoadedException(Exception):
     pass
+
+
+def _safe_object_id(value):
+    """Casts a Mongo id-like value to a real ObjectId, or returns None if it
+    isn't one — used so predictionHistory/predictions writes match Node's
+    Mongoose ObjectId schema instead of storing plain strings."""
+    if value is None:
+        return None
+    if isinstance(value, ObjectId):
+        return value
+    try:
+        return ObjectId(str(value))
+    except Exception:
+        return None
+
 
 class PredictionService:
     def __init__(self):
@@ -72,46 +88,76 @@ class PredictionService:
         if not self.model_bundle:
             raise ModelNotLoadedException("No active model is loaded. Please train a model first.")
 
-        # 1. Parse and format employee data
+        # 1. Enrich with real Attendance/Performance/PromotionHistory/TrainingHistory/
+        # Survey/EmployeeFeedback/NLP-insight signals (see _enrich_employee_doc) before
+        # parsing — falls back to the caller's own employee_doc unchanged if no DB
+        # connection is available (e.g. isolated unit tests).
+        db_for_enrichment = get_db()
+        if db_for_enrichment is not None:
+            try:
+                employee_doc = await enrich_employee_doc(employee_doc, db_for_enrichment)
+            except Exception as e:
+                print(f"Employee feature enrichment failed, using raw employee_doc: {e}")
+
+        # 2. Parse and format employee data
         df = pd.DataFrame([employee_doc])
-        
-        # 2. Transform features
+
+        # 4. Transform features
         scaler = self.model_bundle["scaler"]
         encoders = self.model_bundle["encoders"]
         X_processed = transform_inference(df, scaler, encoders)
-        
-        # 3. Predict probability
+
+        # 5. Predict probability (already calibrated — see Phase 6, the model
+        # in the bundle is a CalibratedClassifierCV wrapping the tuned best model).
         model = self.model_bundle["model"]
         if hasattr(model, "predict_proba"):
             risk_score = float(model.predict_proba(X_processed)[0, 1])
         else:
             risk_score = float(model.predict(X_processed)[0])
-            
-        # 4. Calibrate risk level based on database spec thresholds
-        # LOW <= 0.34, MEDIUM <= 0.64, HIGH > 0.64
-        if risk_score <= 0.34:
+
+        # 6. Risk level bucketing, anchored on the Phase 7 recall-optimized
+        # decision threshold (never assumed to be 0.5 — see
+        # app/training/trainer.py's optimize_threshold()) instead of a fixed
+        # 0.34/0.64 split that was never derived from any evaluation.
+        # HIGH starts at the optimized threshold; MEDIUM starts at 60% of it.
+        threshold = self.model_bundle.get("threshold", 0.5)
+        medium_cutoff = threshold * 0.6
+        if risk_score < medium_cutoff:
             risk_level = "LOW"
-        elif risk_score <= 0.64:
+        elif risk_score < threshold:
             risk_level = "MEDIUM"
         else:
             risk_level = "HIGH"
-            
-        # 5. Compute confidence: probability of the predicted class (ranges from 0.5 to 1.0)
+
+        # 7. Compute confidence: probability of the predicted class (ranges from 0.5 to 1.0)
         confidence = risk_score if risk_score > 0.5 else (1.0 - risk_score)
-        
+
         predicted_at = datetime.datetime.now(datetime.timezone.utc)
         model_version = self.model_bundle.get("version", "v1.0")
-        
-        # 6. Save logs to MongoDB
-        db = get_db()
+
+        # 8. Save logs to MongoDB
+        # employeeId/organizationId must be real BSON ObjectIds, not strings —
+        # Node's Prediction/PredictionHistory Mongoose schemas declare both as
+        # ObjectId, and Node reads these same documents directly (rather than
+        # writing its own copy). Writing them as plain strings (the JSON form
+        # employee_doc arrives in) made every Node-side Mongoose lookup on
+        # these collections — Prediction.findOne({employeeId}), the merged AI
+        # Insights endpoint, explainService's predictionId join, Dashboard
+        # $lookup aggregations — silently match nothing, since MongoDB does
+        # strict BSON type comparison (an ObjectId query never equals a
+        # string-typed stored value).
+        db = db_for_enrichment
         history_id = None
-        
+
         if db is not None:
             try:
+                employee_oid = _safe_object_id(employee_doc.get("_id"))
+                org_oid = _safe_object_id(employee_doc.get("organizationId"))
+
                 # Insert into predictionHistory
                 history_doc = {
-                    "organizationId": employee_doc.get("organizationId"),
-                    "employeeId": employee_doc.get("_id"),
+                    "organizationId": org_oid,
+                    "employeeId": employee_oid,
                     "modelId": model_version,
                     "riskScore": risk_score,
                     "riskLevel": risk_level,
@@ -120,22 +166,27 @@ class PredictionService:
                     "runId": run_id,
                     "status": "SUCCESS"
                 }
-                res = await db["predictionHistory"].insert_one(history_doc)
+                # "predictionhistories" — matches Node's Mongoose default
+                # pluralization of the PredictionHistory model (previously
+                # wrote to "predictionHistory", a distinct, disjoint
+                # collection Node's schema never read from).
+                res = await db["predictionhistories"].insert_one(history_doc)
                 history_id = res.inserted_id
-                
+
                 # Upsert into predictions
                 pred_doc = {
-                    "organizationId": employee_doc.get("organizationId"),
-                    "employeeId": employee_doc.get("_id"),
+                    "organizationId": org_oid,
+                    "employeeId": employee_oid,
                     "modelId": model_version,
                     "latestHistoryId": history_id,
                     "riskScore": risk_score,
                     "riskLevel": risk_level,
+                    "confidence": confidence,
                     "predictedAt": predicted_at,
                     "status": "SUCCESS"
                 }
                 await db["predictions"].update_one(
-                    {"employeeId": employee_doc.get("_id")},
+                    {"employeeId": employee_oid},
                     {"$set": pred_doc},
                     upsert=True
                 )

@@ -22,12 +22,25 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 
-from app.preprocessing.pipeline import generate_synthetic_data, fit_transform_pipeline
+from app.preprocessing.pipeline import (
+    generate_synthetic_data,
+    fit_transform_pipeline,
+    NUMERICAL_COLS,
+    CATEGORICAL_COLS,
+)
 from app.training.trainer import train_and_select_best_model
 
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
+
+# The real, authoritative feature count/order — NUMERICAL_COLS + CATEGORICAL_COLS,
+# exactly what fit_transform_pipeline/transform_inference actually build and what
+# shap_explainer.py now derives feature_names from. Asserting against this (not a
+# hardcoded number) is the whole point of the schema-mismatch fix: these tests
+# stay correct automatically if the pipeline's column set ever changes.
+EXPECTED_FEATURE_COUNT = len(NUMERICAL_COLS) + len(CATEGORICAL_COLS)
+EXPECTED_FEATURE_ORDER = NUMERICAL_COLS + CATEGORICAL_COLS
 
 MOCK_EMP_ID = "60d5ec388832a828f8000020"
 MOCK_EMP = {
@@ -50,12 +63,40 @@ MOCK_EMP = {
 }
 
 
+def _make_mock_db(employees_find_one_return):
+    """
+    Builds a mock Motor database where db["employees"] behaves as the
+    caller specifies, and every OTHER collection (attendances, performances,
+    promotionhistories, traininghistories, surveys, employeefeedbacks,
+    nlp_insights) gracefully reports "no record for this employee" —
+    exercising enrich_employee_doc()'s documented neutral-default fallback
+    path rather than crashing on an employee-shaped document with the wrong
+    fields (which a single shared mock across all collections would cause).
+    """
+    employees_mock = MagicMock()
+    employees_mock.find_one = AsyncMock(return_value=employees_find_one_return)
+
+    empty_cursor = MagicMock()
+    empty_cursor.to_list = AsyncMock(return_value=[])
+
+    other_collection_mock = MagicMock()
+    other_collection_mock.find_one = AsyncMock(return_value=None)
+    other_collection_mock.find = MagicMock(return_value=empty_cursor)
+    other_collection_mock.count_documents = AsyncMock(return_value=0)
+
+    mock_db = MagicMock()
+    mock_db.__getitem__ = MagicMock(
+        side_effect=lambda key: employees_mock if key == "employees" else other_collection_mock
+    )
+    return mock_db
+
+
 @pytest.fixture(scope="session")
 def trained_bundle():
-    """Train a quick bundle on 200 synthetic records."""
-    df = generate_synthetic_data(200)
-    X, y, scaler, encoders, fm = fit_transform_pipeline(df)
-    return train_and_select_best_model(X, y, scaler, encoders, fm)
+    """Train a quick bundle on 400 synthetic records."""
+    df = generate_synthetic_data(400)
+    X_train, X_test, y_train, y_test, scaler, encoders, fm = fit_transform_pipeline(df)
+    return train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, fm)
 
 
 @pytest.fixture(scope="session")
@@ -80,10 +121,15 @@ class TestShapExplainer:
         assert ready_shap_cache.is_ready is True
 
     def test_explainer_type_matches_model(self, ready_shap_cache, trained_bundle):
+        """
+        trained_bundle["model"] is always a CalibratedClassifierCV (Phase 6)
+        — SHAP explains the uncalibrated importance_estimator instead (see
+        shap_explainer.py), so the authoritative algorithm identifier is
+        model_name, not an isinstance check on the calibrated wrapper.
+        """
         import shap
-        from sklearn.linear_model import LogisticRegression
 
-        if isinstance(trained_bundle["model"], LogisticRegression):
+        if trained_bundle["model_name"] == "LogisticRegression":
             assert isinstance(ready_shap_cache.explainer, shap.LinearExplainer)
         else:
             assert isinstance(ready_shap_cache.explainer, shap.TreeExplainer)
@@ -91,17 +137,28 @@ class TestShapExplainer:
     def test_background_data_shape(self, ready_shap_cache):
         bg = ready_shap_cache.background_data
         assert bg.ndim == 2
-        assert bg.shape[1] == 10   # 10 features
+        assert bg.shape[1] == EXPECTED_FEATURE_COUNT
         assert bg.shape[0] <= 100  # capped at 100
 
     def test_feature_names_length(self, ready_shap_cache):
-        assert len(ready_shap_cache.feature_names) == 10
-        assert len(ready_shap_cache.display_names) == 10
+        assert len(ready_shap_cache.feature_names) == EXPECTED_FEATURE_COUNT
+        assert len(ready_shap_cache.display_names) == EXPECTED_FEATURE_COUNT
+
+    def test_feature_names_derived_from_pipeline_not_hardcoded(self, ready_shap_cache):
+        """Regression test for the SHAP feature-schema mismatch fix: feature
+        names/order must come from the trained bundle's feature_metadata
+        (numerical_cols + categorical_cols), not a hardcoded list."""
+        assert ready_shap_cache.feature_names == EXPECTED_FEATURE_ORDER
+        assert ready_shap_cache.categorical_keys == set(CATEGORICAL_COLS)
+        # The two features that used to be hardcoded but never existed in the
+        # real pipeline must be gone.
+        assert "salary_per_tenure" not in ready_shap_cache.feature_names
+        assert "age_at_joining" not in ready_shap_cache.feature_names
 
     def test_compute_shap_values_shape(self, ready_shap_cache):
         X = ready_shap_cache.background_data[:5]
         sv = ready_shap_cache.compute_shap_values(X)
-        assert sv.shape == (5, 10)
+        assert sv.shape == (5, EXPECTED_FEATURE_COUNT)
 
     def test_expected_value_is_float(self, ready_shap_cache):
         ev = ready_shap_cache.get_expected_value()
@@ -149,13 +206,17 @@ class TestLocalExplainer:
         result = self._run()
         assert result["riskLevel"] in {"LOW", "MEDIUM", "HIGH"}
 
-    def test_risk_thresholds_correct(self):
+    def test_risk_thresholds_correct(self, trained_bundle):
+        """Phase 7: bucketing is anchored on the bundle's own optimized
+        threshold, not a hardcoded 0.34/0.64 split."""
         result = self._run()
         score = result["riskScore"]
         level = result["riskLevel"]
-        if score <= 0.34:
+        threshold = trained_bundle["threshold"]
+        medium_cutoff = threshold * 0.6
+        if score < medium_cutoff:
             assert level == "LOW"
-        elif score <= 0.64:
+        elif score < threshold:
             assert level == "MEDIUM"
         else:
             assert level == "HIGH"
@@ -166,15 +227,25 @@ class TestLocalExplainer:
 
     def test_shap_values_length(self):
         result = self._run()
-        assert len(result["shapValues"]) == 10
+        assert len(result["shapValues"]) == EXPECTED_FEATURE_COUNT
 
     def test_all_features_length(self):
         result = self._run()
-        assert len(result["allFeatures"]) == 10
+        assert len(result["allFeatures"]) == EXPECTED_FEATURE_COUNT
 
     def test_top_10_features_length(self):
+        # Deliberately still 10 — top10Features is always capped at 10 by
+        # explain_employee(), regardless of the total feature count.
         result = self._run()
         assert len(result["top10Features"]) == 10
+
+    def test_all_features_have_no_placeholder_raw_values(self):
+        """Regression test: every real feature (not just the original 7)
+        must resolve to an actual raw value/format, not a leftover 'N/A'
+        placeholder from the old hardcoded raw_values dict."""
+        result = self._run()
+        for f in result["allFeatures"]:
+            assert f["rawValue"] != "N/A"
 
     def test_top_positive_direction(self):
         result = self._run()
@@ -218,10 +289,10 @@ class TestGlobalExplainer:
     def _ensure_ready(self, ready_shap_cache):
         pass
 
-    def test_features_list_has_10_items(self):
+    def test_features_list_has_all_items(self):
         from app.explainability.global_explainer import compute_global_importance
         result = compute_global_importance(n_samples=50)
-        assert len(result["features"]) == 10
+        assert len(result["features"]) == EXPECTED_FEATURE_COUNT
 
     def test_importance_values_non_negative(self):
         from app.explainability.global_explainer import compute_global_importance
@@ -233,14 +304,14 @@ class TestGlobalExplainer:
         from app.explainability.global_explainer import compute_global_importance
         result = compute_global_importance(n_samples=50)
         ranks = [f["rank"] for f in result["features"]]
-        assert sorted(ranks) == list(range(1, 11))
+        assert sorted(ranks) == list(range(1, EXPECTED_FEATURE_COUNT + 1))
 
     def test_shap_matrix_shape(self):
         from app.explainability.global_explainer import compute_global_importance
         result = compute_global_importance(n_samples=40)
         matrix = result["shapMatrix"]
         assert len(matrix) == 40
-        assert all(len(row) == 10 for row in matrix)
+        assert all(len(row) == EXPECTED_FEATURE_COUNT for row in matrix)
 
     def test_has_model_name(self):
         from app.explainability.global_explainer import compute_global_importance
@@ -343,7 +414,12 @@ class TestExplainAPIRoutes:
     def api_client(self, ready_shap_cache):
         from fastapi.testclient import TestClient
         from app.main import app
-        with TestClient(app, raise_server_exceptions=True) as c:
+        # Send whatever AI_SERVICE_TOKEN is actually configured (main.py's
+        # load_dotenv() picks up ai-service/.env when the app module is
+        # imported) — verify_auth_token only bypasses auth when the token is
+        # unset/the placeholder, so a real configured token must be sent.
+        token = os.getenv("AI_SERVICE_TOKEN", "replace-with-a-service-token")
+        with TestClient(app, raise_server_exceptions=True, headers={"Authorization": f"Bearer {token}"}) as c:
             yield c
 
     def test_feature_importance_returns_200(self, api_client):
@@ -351,7 +427,7 @@ class TestExplainAPIRoutes:
         assert response.status_code == 200
         body = response.json()
         assert body["success"] is True
-        assert len(body["data"]["features"]) == 10
+        assert len(body["data"]["features"]) == EXPECTED_FEATURE_COUNT
 
     def test_feature_importance_ranks_are_ordered(self, api_client):
         response = api_client.get("/feature-importance")
@@ -361,10 +437,7 @@ class TestExplainAPIRoutes:
 
     @patch("app.api.explain_routes.get_db")
     def test_explain_employee_returns_200(self, mock_get_db, api_client):
-        mock_db = MagicMock()
-        mock_db.__getitem__ = MagicMock(side_effect=lambda k: mock_db)
-        mock_db.find_one = AsyncMock(return_value=MOCK_EMP)
-        mock_get_db.return_value = mock_db
+        mock_get_db.return_value = _make_mock_db(employees_find_one_return=MOCK_EMP)
 
         response = api_client.get(f"/explain/{MOCK_EMP_ID}")
         assert response.status_code == 200
@@ -378,10 +451,7 @@ class TestExplainAPIRoutes:
 
     @patch("app.api.explain_routes.get_db")
     def test_explain_not_found_returns_404(self, mock_get_db, api_client):
-        mock_db = MagicMock()
-        mock_db.__getitem__ = MagicMock(side_effect=lambda k: mock_db)
-        mock_db.find_one = AsyncMock(return_value=None)
-        mock_get_db.return_value = mock_db
+        mock_get_db.return_value = _make_mock_db(employees_find_one_return=None)
 
         response = api_client.get(f"/explain/60d5ec388832a828f8000099")
         assert response.status_code == 404

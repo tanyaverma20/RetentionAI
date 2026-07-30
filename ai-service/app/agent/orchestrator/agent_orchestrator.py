@@ -24,6 +24,8 @@ from app.agent.tools.ml_tool import run_ml_prediction
 from app.agent.tools.shap_tool import run_shap_explanation
 from app.agent.tools.nlp_tool import run_nlp_insights
 from app.agent.tools.rag_tool import run_rag_retrieval
+from app.preprocessing.enrichment import enrich_employee_doc
+from app.utils.database import get_db
 from app.agent.chains.reasoning_chain import run_reasoning_chain
 
 
@@ -46,7 +48,7 @@ def _build_rag_query(ml_result: Dict, nlp_result: Dict) -> str:
         parts.append("manager conflict leadership coaching policy")
     if "Work-Life Balance" in nlp_result.get("detectedTopics", []):
         parts.append("flexible work arrangement remote work policy")
-    if "Learning & Development" in nlp_result.get("detectedTopics", []):
+    if "Learning" in nlp_result.get("detectedTopics", []) or "Training" in nlp_result.get("detectedTopics", []):
         parts.append("training development learning policy")
 
     return " ".join(parts) if parts else "employee retention best practices"
@@ -107,6 +109,20 @@ async def orchestrate_recommendation(
     Full agentic pipeline for a single employee.
     Runs tools in parallel where possible, then reasons over the evidence.
     """
+    # ── Step 0: Enrich once with real Attendance/Performance/PromotionHistory/
+    # TrainingHistory/Survey/NLP signals, so the ML prediction and the SHAP
+    # explanation below both reason over the exact same feature values (data
+    # completeness, not decision logic — required so SHAP stays accurate
+    # after the Sprint 8 ML feature-set change; ml_tool's predict_single()
+    # would otherwise silently re-enrich on its own, but shap_tool calls the
+    # explainer directly and would otherwise see only neutral defaults).
+    db = get_db()
+    if db is not None:
+        try:
+            employee_doc = await enrich_employee_doc(employee_doc, db)
+        except Exception as e:
+            print(f"Employee feature enrichment failed in orchestrator, using raw employee_doc: {e}")
+
     # ── Step 1 & 3: Run ML and fetch NLP insights in parallel ──────────────
     ml_task = run_ml_prediction(employee_doc)
     nlp_task = run_nlp_insights(employee_id)

@@ -75,6 +75,9 @@ export function findEmployeeByUserId(userId) {
  * @param {string} [options.search]
  * @param {string} [options.sortBy='createdAt']
  * @param {string} [options.sortOrder='desc']
+ * @param {string} [options.sentiment] Filter by latest Employee Intelligence sentiment (Positive/Neutral/Negative)
+ * @param {string} [options.burnoutRisk] Filter by latest Employee Intelligence burnout risk (Low/Medium/High)
+ * @param {string} [options.emotion] Filter by latest Employee Intelligence dominant emotion
  * @returns {Promise<{ items: Array, totalItems: number, page: number, totalPages: number }>}
  */
 export async function listEmployees({
@@ -87,6 +90,9 @@ export async function listEmployees({
   search,
   sortBy = 'createdAt',
   sortOrder = 'desc',
+  sentiment,
+  burnoutRisk,
+  emotion,
 } = {}) {
   const filter = {};
 
@@ -118,20 +124,86 @@ export async function listEmployees({
   }
 
   const sortDirection = sortOrder === 'asc' ? 1 : -1;
-  const validSortFields = ['firstName', 'lastName', 'email', 'joiningDate', 'salary', 'createdAt', 'employeeCode'];
+  const validSortFields = [
+    'firstName', 'lastName', 'email', 'joiningDate', 'salary', 'createdAt', 'employeeCode',
+    'riskScore', 'burnoutScore', 'sentiment', 'emotion',
+  ];
+  const sortFieldMap = {
+    riskScore: 'latestPrediction.riskScore',
+    burnoutScore: 'latestIntelligence.burnoutScore',
+    sentiment: 'latestIntelligence.sentiment',
+    emotion: 'latestIntelligence.emotion',
+  };
   const actualSortBy = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
-  const sortOption = { [actualSortBy]: sortDirection };
+  const sortOption = { [sortFieldMap[actualSortBy] || actualSortBy]: sortDirection };
 
   const skip = (page - 1) * limit;
 
-  const [items, totalItems] = await Promise.all([
-    Employee.find(filter)
-      .populate(defaultPopulation)
-      .sort(sortOption)
-      .skip(skip)
-      .limit(limit),
-    Employee.countDocuments(filter),
+  // Join the latest Employee Intelligence profile (if any) the same way the
+  // latest Prediction is joined below — a $lookup sub-pipeline sorted by
+  // generatedAt desc + limit 1, since (unlike Prediction) EmployeeIntelligence
+  // keeps a full history and is not unique per employee.
+  const intelligenceLookupStages = [
+    {
+      $lookup: {
+        from: 'employeeintelligences',
+        let: { eid: '$_id' },
+        pipeline: [
+          { $match: { $expr: { $eq: ['$employeeId', '$$eid'] } } },
+          { $sort: { generatedAt: -1 } },
+          { $limit: 1 },
+        ],
+        as: 'latestIntelligence',
+      },
+    },
+    { $unwind: { path: '$latestIntelligence', preserveNullAndEmptyArrays: true } },
+  ];
+
+  const intelligenceMatch = {};
+  if (sentiment) intelligenceMatch['latestIntelligence.sentiment'] = sentiment;
+  if (burnoutRisk) intelligenceMatch['latestIntelligence.burnoutRisk'] = burnoutRisk;
+  if (emotion) intelligenceMatch['latestIntelligence.emotion'] = emotion;
+  const hasIntelligenceFilter = Object.keys(intelligenceMatch).length > 0;
+
+  // Always join the latest prediction so the risk badge/filter has data
+  // regardless of which column the list is sorted by.
+  const pipeline = [
+    { $match: filter },
+    {
+      $lookup: {
+        from: 'predictions',
+        localField: '_id',
+        foreignField: 'employeeId',
+        as: 'latestPrediction'
+      }
+    },
+    {
+      $unwind: {
+        path: '$latestPrediction',
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    ...intelligenceLookupStages,
+    ...(hasIntelligenceFilter ? [{ $match: intelligenceMatch }] : []),
+    { $sort: sortOption },
+    { $skip: skip },
+    { $limit: limit }
+  ];
+
+  const countPipeline = [
+    { $match: filter },
+    ...(hasIntelligenceFilter ? [...intelligenceLookupStages, { $match: intelligenceMatch }] : []),
+    { $count: 'total' }
+  ];
+
+  const [aggItems, countResult] = await Promise.all([
+    Employee.aggregate(pipeline),
+    Employee.aggregate(countPipeline)
   ]);
+
+  // Populate the resulting plain objects similar to find().populate()
+  const items = await Employee.populate(aggItems, defaultPopulation);
+  const totalItems = countResult.length > 0 ? countResult[0].total : 0;
 
   return {
     items,

@@ -3,7 +3,8 @@ test_ml.py — Pytest test suite for the ML Prediction Service
 
 Tests:
   - Pipeline feature engineering and transformations
-  - Model training, evaluation, and selection
+  - Model training, evaluation, and selection (5-model benchmark + HPO +
+    calibration + threshold optimization — see app/training/trainer.py)
   - API endpoint validation (predict, batch, model info, health)
 """
 import os
@@ -46,6 +47,8 @@ MOCK_EMPLOYEE_DOC = {
     "isDeleted": False,
 }
 
+VALID_ALGORITHMS = ["LogisticRegression", "RandomForest", "XGBoost", "LightGBM", "CatBoost"]
+
 
 class TestPipeline:
     """Tests for the data preprocessing pipeline."""
@@ -68,23 +71,37 @@ class TestPipeline:
         assert "TERMINATED" in statuses
 
     def test_fit_transform_output_shape(self):
-        df = generate_synthetic_data(80)
-        X, y, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
+        df = generate_synthetic_data(200)
+        X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
         expected_cols = len(NUMERICAL_COLS) + len(CATEGORICAL_COLS)
-        assert X.shape == (80, expected_cols)
-        assert len(y) == 80
+        assert X_train.shape[1] == expected_cols
+        assert X_test.shape[1] == expected_cols
+        assert X_train.shape[0] + X_test.shape[0] == 200
+        assert len(y_train) == X_train.shape[0]
+        assert len(y_test) == X_test.shape[0]
 
     def test_fit_transform_scaler_and_encoders_populated(self):
-        df = generate_synthetic_data(50)
-        _, _, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
+        df = generate_synthetic_data(200)
+        _, _, _, _, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
         assert scaler is not None
         for col in CATEGORICAL_COLS:
             assert col in encoders
         assert "feature_cols" in feature_metadata
 
+    def test_fit_transform_scaler_fit_only_on_train_split(self):
+        """
+        Regression test for the Sprint 8 data-leakage finding: the scaler/
+        encoders must be fit on the training partition only, not the full
+        dataset before splitting.
+        """
+        df = generate_synthetic_data(200)
+        _, _, _, _, scaler, _, _ = fit_transform_pipeline(df)
+        # StandardScaler fit on 160 rows (80% of 200), not all 200.
+        assert scaler.n_samples_seen_ == 160
+
     def test_transform_inference_shape_matches_training(self):
-        df_train = generate_synthetic_data(60)
-        X_train, _, scaler, encoders, _ = fit_transform_pipeline(df_train)
+        df_train = generate_synthetic_data(200)
+        X_train, _, _, _, scaler, encoders, _ = fit_transform_pipeline(df_train)
 
         single_df = pd.DataFrame([MOCK_EMPLOYEE_DOC])
         X_inf = transform_inference(single_df, scaler, encoders)
@@ -94,8 +111,8 @@ class TestPipeline:
 
     def test_transform_inference_handles_unseen_categories(self):
         """Unseen categorical values should be mapped to UNKNOWN gracefully."""
-        df_train = generate_synthetic_data(60)
-        _, _, scaler, encoders, _ = fit_transform_pipeline(df_train)
+        df_train = generate_synthetic_data(200)
+        _, _, _, _, scaler, encoders, _ = fit_transform_pipeline(df_train)
 
         emp = MOCK_EMPLOYEE_DOC.copy()
         emp["gender"] = "NONBINARY_CUSTOM"  # not in training set
@@ -106,56 +123,61 @@ class TestPipeline:
         X_inf = transform_inference(single_df, scaler, encoders)
         assert X_inf.shape[0] == 1
 
-    def test_target_encoding_active_is_zero(self):
-        df = generate_synthetic_data(50)
-        _, y, _, _, _ = fit_transform_pipeline(df)
-        active_mask = df["status"] == "ACTIVE"
-        assert (y[active_mask] == 0).all()
-
-    def test_target_encoding_terminated_is_one(self):
+    def test_target_encoding_matches_status_counts(self):
         df = generate_synthetic_data(200)
-        _, y, _, _, _ = fit_transform_pipeline(df)
-        term_mask = df["status"] == "TERMINATED"
-        if term_mask.any():
-            assert (y[term_mask] == 1).all()
+        _, _, y_train, y_test, _, _, _ = fit_transform_pipeline(df)
+        y_all = np.concatenate([y_train, y_test])
+        assert set(np.unique(y_all)).issubset({0, 1})
+        assert int(y_all.sum()) == int((df["status"] == "TERMINATED").sum())
+        assert int((y_all == 0).sum()) == int((df["status"] == "ACTIVE").sum())
 
 
 # ---------------------------------------------------------------------------
 # Unit tests: Model Training
 # ---------------------------------------------------------------------------
 class TestTrainer:
-    """Tests for the model training and selection logic."""
+    """Tests for the 5-model benchmark, hyperparameter tuning, calibration, and threshold optimization."""
 
     @pytest.fixture(scope="class")
     def trained_bundle(self):
-        df = generate_synthetic_data(200)
-        X, y, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
-        return train_and_select_best_model(X, y, scaler, encoders, feature_metadata)
+        df = generate_synthetic_data(400)
+        X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
+        return train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
 
     def test_bundle_has_required_keys(self, trained_bundle):
-        required = {"model", "model_name", "scaler", "encoders", "feature_metadata", "metrics", "version", "trained_at"}
+        required = {
+            "model", "model_name", "scaler", "encoders", "feature_metadata", "metrics",
+            "version", "trained_at", "threshold", "best_params", "all_model_metrics",
+            "calibration_method",
+        }
         assert required.issubset(set(trained_bundle.keys()))
 
     def test_selected_model_is_valid_algorithm(self, trained_bundle):
-        assert trained_bundle["model_name"] in ["LogisticRegression", "RandomForest", "XGBoost"]
+        assert trained_bundle["model_name"] in VALID_ALGORITHMS
+
+    def test_benchmark_covers_all_five_candidates(self, trained_bundle):
+        """Phase 4: all 5 algorithm families must have been trained and compared."""
+        assert set(trained_bundle["all_model_metrics"].keys()) == set(VALID_ALGORITHMS)
 
     def test_metrics_are_bounded(self, trained_bundle):
         m = trained_bundle["metrics"]
-        for key in ("accuracy", "precision", "recall", "f1", "rocAuc"):
+        for key in ("accuracy", "precision", "recall", "f1", "rocAuc", "prAuc"):
             assert key in m
             assert 0.0 <= m[key] <= 1.0
 
+    def test_threshold_is_not_hardcoded_to_half(self, trained_bundle):
+        """Phase 7: the threshold must be a real, optimized value in (0, 1) — not just assumed 0.5."""
+        assert 0.0 < trained_bundle["threshold"] < 1.0
+
     def test_model_can_predict_probabilities(self, trained_bundle):
-        """The selected model must support predict_proba."""
+        """The selected (calibrated) model must support predict_proba."""
         df_test = generate_synthetic_data(5)
-        _, _, scaler, encoders, _ = fit_transform_pipeline(df_test)
-        # Re-use the bundle's scaler/encoders for inference
         X_inf = transform_inference(df_test, trained_bundle["scaler"], trained_bundle["encoders"])
         model = trained_bundle["model"]
-        if hasattr(model, "predict_proba"):
-            probs = model.predict_proba(X_inf)
-            assert probs.shape == (5, 2)
-            assert np.allclose(probs.sum(axis=1), 1.0, atol=1e-5)
+        assert hasattr(model, "predict_proba")
+        probs = model.predict_proba(X_inf)
+        assert probs.shape == (5, 2)
+        assert np.allclose(probs.sum(axis=1), 1.0, atol=1e-5)
 
     def test_model_bundle_save_and_reload(self, trained_bundle, tmp_path):
         filepath = str(tmp_path / "test_model.joblib")
@@ -174,14 +196,16 @@ class TestTrainer:
 class TestPredictionService:
     """Tests for the prediction service with mocked MongoDB."""
 
+    @pytest.fixture(scope="class")
+    def shared_bundle(self):
+        df = generate_synthetic_data(400)
+        X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
+        return train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
+
     @pytest.fixture(autouse=True)
-    def load_model(self):
+    def load_model(self, shared_bundle):
         from app.prediction.prediction_service import prediction_service
-        if not prediction_service.model_bundle:
-            df = generate_synthetic_data(150)
-            X, y, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
-            bundle = train_and_select_best_model(X, y, scaler, encoders, feature_metadata)
-            prediction_service.model_bundle = bundle
+        prediction_service.model_bundle = shared_bundle
         self.svc = prediction_service
 
     def test_model_info_returns_correct_keys(self):
@@ -208,15 +232,21 @@ class TestPredictionService:
         assert result["status"] == "SUCCESS"
 
     @pytest.mark.asyncio
-    async def test_risk_thresholds_are_correct(self):
-        """Verify risk level assignments match the documented thresholds."""
+    async def test_risk_thresholds_match_model_bundle_threshold(self):
+        """
+        Phase 7: risk-level bucketing must be anchored on the model bundle's
+        own optimized threshold, not a hardcoded 0.34/0.64 split that was
+        never derived from any evaluation.
+        """
         with patch("app.prediction.prediction_service.get_db", return_value=None):
             result = await self.svc.predict_single(MOCK_EMPLOYEE_DOC)
 
+        threshold = self.svc.model_bundle["threshold"]
+        medium_cutoff = threshold * 0.6
         score = result["riskScore"]
-        if score <= 0.34:
+        if score < medium_cutoff:
             assert result["riskLevel"] == "LOW"
-        elif score <= 0.64:
+        elif score < threshold:
             assert result["riskLevel"] == "MEDIUM"
         else:
             assert result["riskLevel"] == "HIGH"
@@ -238,14 +268,19 @@ class TestAPIRoutes:
         from app.prediction.prediction_service import prediction_service
         from app.main import app
 
-        # Ensure model is loaded before TestClient starts
-        if not prediction_service.model_bundle:
-            df = generate_synthetic_data(150)
-            X, y, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
-            bundle = train_and_select_best_model(X, y, scaler, encoders, feature_metadata)
-            prediction_service.model_bundle = bundle
+        df = generate_synthetic_data(400)
+        X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
+        bundle = train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
+        prediction_service.model_bundle = bundle
 
-        with TestClient(app, raise_server_exceptions=True) as c:
+        # A real AI_SERVICE_TOKEN is configured in ai-service/.env, so every
+        # route's verify_auth_token dependency requires this Bearer header —
+        # without it every request here would 401 regardless of the route's
+        # own behavior.
+        token = os.getenv("AI_SERVICE_TOKEN", "")
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+
+        with TestClient(app, raise_server_exceptions=True, headers=headers) as c:
             yield c
 
     def test_health_endpoint_returns_200(self, api_client):

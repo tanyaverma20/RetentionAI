@@ -17,6 +17,10 @@ import hrRouter from './routes/hrRoutes.js';
 import { reportingRouter } from './routes/reportingRoutes.js';
 import { searchRouter } from './routes/searchRoutes.js';
 import { aiRouter } from './routes/aiRoutes.js';
+import { explainRouter } from './routes/explainRoutes.js';
+import { employeeIntelligenceRouter } from './routes/employeeIntelligenceRoutes.js';
+import { knowledgeRouter } from './routes/knowledgeRoutes.js';
+import { decisionRouter } from './routes/decisionRoutes.js';
 
 export const app = express();
 
@@ -46,9 +50,14 @@ app.use('/api/v1/users', userRouter);
 app.use('/api/v1/departments', departmentRouter);
 app.use('/api/v1/employees', employeeRouter);
 app.use('/api/v1/analytics', analyticsRouter);
+app.use('/api/v1/dashboard', analyticsRouter);
 app.use('/api/v1/hr', hrRouter);
 app.use('/api/v1/reports', reportingRouter);
 app.use('/api/v1/search', searchRouter);
 app.use('/api/v1/ai', aiRouter);
+app.use('/api/v1/explain', explainRouter);
+app.use('/api/v1/employee-intelligence', employeeIntelligenceRouter);
+app.use('/api/v1/knowledge', knowledgeRouter);
+app.use('/api/v1/decisions', decisionRouter);
 app.use(notFoundHandler);
 app.use(errorHandler);

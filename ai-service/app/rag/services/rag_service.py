@@ -1,72 +1,147 @@
 """
 app/rag/services/rag_service.py
 ================================
-Business logic layer for the RAG module.
-- Orchestrates document loading, chunking, indexing, and querying.
+Business logic layer for the Knowledge Intelligence (RAG) module.
+- Orchestrates document loading, cleaning, chunking, indexing, and querying.
 - Logs all RAG queries to MongoDB for audit and analytics.
+
+Grounding guarantee
+--------------------
+query_rag() NEVER calls the LLM when zero relevant chunks are retrieved —
+this is a hard code-level guard, not just a prompt instruction the model
+could ignore, so "never answer from model knowledge when no supporting
+documents are available" holds even if the LLM doesn't perfectly follow
+its system prompt.
 """
 
+import asyncio
+import datetime
 import os
 import time
-from typing import Dict, Any, List
+from typing import Any, Dict, List, Optional
 
-from app.rag.loaders.document_loader import load_documents
 from app.rag.chunkers.text_chunker import split_documents
-from app.rag.vectorstore.chroma_store import get_vectorstore, index_documents, clear_vectorstore
-from app.rag.chains.rag_chain import get_rag_chain
+from app.rag.cleaners.text_cleaner import clean_document_text
+from app.rag.chains.rag_chain import get_llm
+from app.rag.loaders.document_loader import load_documents, load_single_document
+from app.rag.prompts.rag_prompt import prompt_template
+from app.rag.security.sanitizer import wrap_as_untrusted_document
+from app.rag.vectorstore.chroma_store import (
+    clear_vectorstore,
+    delete_document_chunks,
+    get_vectorstore,
+    index_documents,
+)
 from app.utils.database import get_db
 
+# Fixed, server-controlled directory for legacy bulk (re)indexing — never
+# parameterizable from a request (see the docstring on load_documents()).
 KNOWLEDGE_BASE_DIR = os.path.join(
     os.path.dirname(__file__), "../../../knowledge_base"
 )
 
+# How long a single LLM call may run before the request fails cleanly
+# instead of hanging. Also passed to ChatGroq itself in rag_chain.py as a
+# second layer of protection.
+RAG_LLM_TIMEOUT_SECONDS = float(os.getenv("RAG_LLM_TIMEOUT_SECONDS", "30"))
 
-async def log_rag_query(query: str, response: str, sources: List[Dict], user_id: str, latency_ms: float):
+# Below this relevance score, a retrieved chunk is treated as noise rather
+# than real grounding evidence.
+MIN_RELEVANCE_SCORE = float(os.getenv("RAG_MIN_RELEVANCE_SCORE", "0.15"))
+
+_NOT_AVAILABLE_ANSWER = "The answer is not available in the company's policy documents."
+
+
+# ---------------------------------------------------------------------------
+# Cleaning + chunking helpers (shared by upload, single-document reindex, and
+# legacy bulk (re)indexing)
+# ---------------------------------------------------------------------------
+
+def _clean_and_chunk(raw_docs):
+    for d in raw_docs:
+        d.page_content = clean_document_text(d.page_content)
+    return split_documents([d for d in raw_docs if d.page_content])
+
+
+# ---------------------------------------------------------------------------
+# Query logging
+# ---------------------------------------------------------------------------
+
+async def log_rag_query(query: str, response: str, sources: List[Dict], user_id: str, latency_ms: float, grounded: bool):
     """Logs RAG query metadata to MongoDB for analytics."""
     try:
-        db = await get_db()
+        db = get_db()
         await db["rag_logs"].insert_one({
             "query": query,
             "response": response,
             "retrievedDocuments": [s.get("documentName") for s in sources],
+            "grounded": grounded,
             "latencyMs": latency_ms,
             "userId": user_id,
-            "timestamp": __import__("datetime").datetime.utcnow()
+            "timestamp": datetime.datetime.now(datetime.timezone.utc),
         })
     except Exception as e:
         print(f"Failed to log RAG query: {e}")
 
 
+# ---------------------------------------------------------------------------
+# Indexing — single document (upload / reindex-one) and legacy bulk
+# ---------------------------------------------------------------------------
+
+def index_single_document(file_path: str, document_id: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """
+    Loads, cleans, chunks, and indexes ONE file, tagged with documentId (and
+    any other metadata) on every chunk. Deletes any previously-indexed
+    chunks for this documentId first, so re-indexing a changed file can't
+    leave stale chunks behind alongside the new ones.
+
+    Chunk IDs are deterministic (see text_chunker.py), so calling this twice
+    with unchanged content is a no-op re-write, not a duplication — this is
+    the "avoid duplicate embeddings / incremental indexing" requirement.
+    """
+    full_metadata = {"documentId": document_id, **(metadata or {})}
+    raw_docs = load_single_document(file_path, full_metadata)
+    chunks = _clean_and_chunk(raw_docs)
+
+    delete_document_chunks(document_id)
+    if chunks:
+        index_documents(chunks)
+
+    return {
+        "success": True,
+        "message": f"Indexed {len(chunks)} chunks.",
+        "documentsIndexed": 1 if chunks else 0,
+        "chunksIndexed": len(chunks),
+    }
+
+
 def index_knowledge_base(directory: str = None) -> Dict[str, Any]:
     """
-    Loads, chunks, and indexes all documents from the knowledge_base directory.
+    Loads, chunks, and indexes all documents from the (fixed, server-side)
+    knowledge_base directory. `directory` is only ever set internally
+    (never from a request) — see load_documents()'s docstring.
     """
     kb_dir = directory or KNOWLEDGE_BASE_DIR
-    documents = load_documents(kb_dir)
+    raw_docs = load_documents(kb_dir)
 
-    if not documents:
+    if not raw_docs:
         return {"success": False, "message": "No documents found.", "documentsIndexed": 0, "chunksIndexed": 0}
 
-    chunks = split_documents(documents)
-
-    # Index into ChromaDB
+    chunks = _clean_and_chunk(raw_docs)
     index_documents(chunks)
 
-    # Count unique source documents
     unique_docs = len(set(c.metadata.get("source", "unknown") for c in chunks))
 
     return {
         "success": True,
         "message": f"Successfully indexed {unique_docs} documents into {len(chunks)} chunks.",
         "documentsIndexed": unique_docs,
-        "chunksIndexed": len(chunks)
+        "chunksIndexed": len(chunks),
     }
 
 
 def reindex_knowledge_base(directory: str = None) -> Dict[str, Any]:
-    """
-    Clears the existing vector store and re-indexes from scratch.
-    """
+    """Clears the existing vector store and re-indexes the fixed directory from scratch."""
     try:
         clear_vectorstore()
     except Exception as e:
@@ -75,46 +150,191 @@ def reindex_knowledge_base(directory: str = None) -> Dict[str, Any]:
     return index_knowledge_base(directory)
 
 
-async def query_rag(question: str, user_id: str = "anonymous", filter_document: str = None) -> Dict[str, Any]:
+def delete_document(document_id: str) -> Dict[str, Any]:
+    """Removes every chunk belonging to one document from the vector store."""
+    delete_document_chunks(document_id)
+    return {"success": True, "message": f"Deleted chunks for document {document_id}."}
+
+
+# ---------------------------------------------------------------------------
+# Retrieval helpers
+# ---------------------------------------------------------------------------
+
+def _build_filter(document_type: Optional[str], filter_document: Optional[str]) -> Optional[Dict[str, Any]]:
+    clauses = []
+    if filter_document:
+        clauses.append({"source": filter_document})
+    if document_type:
+        clauses.append({"documentType": document_type})
+    if not clauses:
+        return None
+    if len(clauses) == 1:
+        return clauses[0]
+    return {"$and": clauses}
+
+
+def _retrieve(question: str, top_k: int, document_type: Optional[str], filter_document: Optional[str]):
+    vectorstore = get_vectorstore()
+    filter_dict = _build_filter(document_type, filter_document)
+    try:
+        return vectorstore.similarity_search_with_relevance_scores(question, k=top_k, filter=filter_dict)
+    except Exception as e:
+        raise RuntimeError(f"Vector database unavailable: {e}")
+
+
+def _to_source_document(doc, score: float) -> Dict[str, Any]:
+    # Chroma/langchain's relevance-score conversion isn't guaranteed to stay
+    # within [0, 1] for every distance metric (it can go slightly negative
+    # for weak matches) — clip only for display; MIN_RELEVANCE_SCORE
+    # filtering above uses the raw score so genuinely weak matches are still
+    # correctly excluded.
+    display_score = max(0.0, min(1.0, float(score)))
+    return {
+        "documentName": doc.metadata.get("documentName", doc.metadata.get("source", "Unknown")),
+        "documentId": doc.metadata.get("documentId"),
+        "pageNumber": doc.metadata.get("pageNumber", doc.metadata.get("page")),
+        "chunkId": doc.metadata.get("chunkId"),
+        "content": doc.page_content[:300],
+        "similarityScore": round(display_score, 4),
+    }
+
+
+# ---------------------------------------------------------------------------
+# RAG query (grounded generation)
+# ---------------------------------------------------------------------------
+
+async def query_rag(
+    question: str,
+    user_id: str = "anonymous",
+    filter_document: str = None,
+    document_type: str = None,
+    top_k: int = 4,
+) -> Dict[str, Any]:
     """
-    Runs the full RAG pipeline: retrieve relevant chunks, generate grounded answer.
-    Returns answer, source metadata, confidence score, and latency.
+    Runs the full RAG pipeline: retrieve relevant chunks, generate a grounded
+    answer. Returns answer, per-passage similarity scores/citations,
+    confidence, and latency.
     """
     start = time.time()
+    top_k = max(1, min(top_k, 20))
 
-    rag_chain = get_rag_chain()
-    result = rag_chain.invoke({"input": question})
+    scored = _retrieve(question, top_k, document_type, filter_document)
+    scored = [(doc, score) for doc, score in scored if score >= MIN_RELEVANCE_SCORE]
 
+    if not scored:
+        # Hard grounding guard — the LLM is never called with no evidence.
+        latency_ms = round((time.time() - start) * 1000, 2)
+        await log_rag_query(question, _NOT_AVAILABLE_ANSWER, [], user_id, latency_ms, grounded=False)
+        return {
+            "answer": _NOT_AVAILABLE_ANSWER,
+            "sourceDocuments": [],
+            "confidenceScore": 0.0,
+            "latencyMs": latency_ms,
+            "retrievedChunksCount": 0,
+        }
+
+    sources = [_to_source_document(doc, score) for doc, score in scored]
+    context_text = "\n\n".join(
+        wrap_as_untrusted_document(source["documentName"], doc.page_content)
+        for (doc, _), source in zip(scored, sources)
+    )
+
+    llm = get_llm()
+    formatted_prompt = prompt_template.format(context=context_text, question=question)
+
+    loop = asyncio.get_event_loop()
+    try:
+        response = await asyncio.wait_for(
+            loop.run_in_executor(None, llm.invoke, formatted_prompt),
+            timeout=RAG_LLM_TIMEOUT_SECONDS,
+        )
+    except asyncio.TimeoutError:
+        raise TimeoutError("The knowledge assistant timed out generating an answer. Please try again.")
+
+    answer = response.content if hasattr(response, "content") else str(response)
     latency_ms = round((time.time() - start) * 1000, 2)
 
-    answer = result.get("answer", "")
-    context_docs = result.get("context", [])
+    is_grounded = _NOT_AVAILABLE_ANSWER.lower() not in answer.lower()
+    avg_score = sum(s["similarityScore"] for s in sources) / len(sources)
+    confidence_score = round(avg_score, 2) if is_grounded else 0.1
 
-    # Build source documents list
-    sources = []
-    for doc in context_docs:
-        sources.append({
-            "documentName": doc.metadata.get("documentName", doc.metadata.get("source", "Unknown")),
-            "pageNumber": doc.metadata.get("pageNumber", doc.metadata.get("page")),
-            "chunkId": doc.metadata.get("chunkId"),
-            "content": doc.page_content[:300]  # Return a preview
-        })
-
-    # Simple confidence heuristic: if the answer says "not available", confidence is 0
-    is_grounded = "not available in the company" not in answer.lower()
-    confidence_score = round(0.85 if is_grounded and sources else 0.1, 2)
-
-    # Log to MongoDB in background
-    await log_rag_query(question, answer, sources, user_id, latency_ms)
+    await log_rag_query(question, answer, sources, user_id, latency_ms, grounded=is_grounded)
 
     return {
         "answer": answer,
         "sourceDocuments": sources,
         "confidenceScore": confidence_score,
         "latencyMs": latency_ms,
-        "retrievedChunksCount": len(context_docs)
+        "retrievedChunksCount": len(sources),
     }
 
+
+# ---------------------------------------------------------------------------
+# Search — semantic and keyword, no LLM generation (cheap, fast)
+# ---------------------------------------------------------------------------
+
+def search_knowledge(
+    query_text: str,
+    mode: str = "semantic",
+    top_k: int = 10,
+    document_type: Optional[str] = None,
+) -> Dict[str, Any]:
+    """
+    Enterprise search over indexed chunks — either semantic (embedding
+    similarity) or keyword (plain substring match), no LLM call. Powers the
+    Knowledge Management search UI, distinct from the grounded-answer
+    /knowledge/query endpoint.
+    """
+    top_k = max(1, min(top_k, 50))
+    vectorstore = get_vectorstore()
+    filter_dict = {"documentType": document_type} if document_type else None
+
+    if mode == "keyword":
+        data = vectorstore.get(include=["metadatas", "documents"], where=filter_dict)
+        needle = query_text.lower()
+        results = []
+        for doc_text, meta in zip(data.get("documents", []), data.get("metadatas", [])):
+            if needle in (doc_text or "").lower():
+                results.append({
+                    "documentName": meta.get("documentName", meta.get("source", "Unknown")),
+                    "documentId": meta.get("documentId"),
+                    "pageNumber": meta.get("pageNumber", meta.get("page")),
+                    "chunkId": meta.get("chunkId"),
+                    "content": (doc_text or "")[:300],
+                    "similarityScore": None,
+                })
+        results = results[:top_k]
+    else:
+        scored = vectorstore.similarity_search_with_relevance_scores(query_text, k=top_k, filter=filter_dict)
+        results = [_to_source_document(doc, score) for doc, score in scored]
+
+    return {"mode": mode, "results": results, "resultCount": len(results)}
+
+
+# ---------------------------------------------------------------------------
+# Document detail — chunk-level view of one document (admin drill-down)
+# ---------------------------------------------------------------------------
+
+def get_document_chunks(document_id: str) -> Dict[str, Any]:
+    vectorstore = get_vectorstore()
+    data = vectorstore.get(where={"documentId": document_id}, include=["metadatas", "documents"])
+    chunks = []
+    for doc_text, meta in zip(data.get("documents", []), data.get("metadatas", [])):
+        chunks.append({
+            "chunkId": meta.get("chunkId"),
+            "pageNumber": meta.get("pageNumber", meta.get("page")),
+            "preview": (doc_text or "")[:300],
+        })
+    return {
+        "documentId": document_id,
+        "chunkCount": len(chunks),
+        "chunks": chunks,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Health / statistics
+# ---------------------------------------------------------------------------
 
 def get_vectorstore_health() -> Dict[str, Any]:
     """Returns vectorstore connection and chunk count."""
@@ -127,26 +347,24 @@ def get_vectorstore_health() -> Dict[str, Any]:
 
 
 async def get_rag_statistics() -> Dict[str, Any]:
-    """
-    Aggregates statistics from the rag_logs MongoDB collection and ChromaDB.
-    """
+    """Aggregates statistics from the rag_logs MongoDB collection and ChromaDB."""
     health = get_vectorstore_health()
 
     try:
-        db = await get_db()
+        db = get_db()
         total_queries = await db["rag_logs"].count_documents({})
+        grounded_queries = await db["rag_logs"].count_documents({"grounded": True})
+        success_rate = round(grounded_queries / total_queries, 2) if total_queries else 0.0
 
-        # Most searched documents
         pipeline = [
             {"$unwind": "$retrievedDocuments"},
             {"$group": {"_id": "$retrievedDocuments", "count": {"$sum": 1}}},
             {"$sort": {"count": -1}},
-            {"$limit": 5}
+            {"$limit": 5},
         ]
         top_docs = await db["rag_logs"].aggregate(pipeline).to_list(5)
         most_searched = [d["_id"] for d in top_docs if d["_id"]]
 
-        # Estimate unique indexed documents
         vs = get_vectorstore()
         all_meta = vs.get(include=["metadatas"])
         sources = set(m.get("source", "unknown") for m in all_meta.get("metadatas", []))
@@ -155,12 +373,15 @@ async def get_rag_statistics() -> Dict[str, Any]:
             "indexedDocuments": len(sources),
             "totalChunks": health["indexedChunkCount"],
             "recentQueryCount": total_queries,
-            "mostSearchedPolicies": most_searched
+            "mostSearchedPolicies": most_searched,
+            "querySuccessRate": success_rate,
         }
     except Exception as e:
+        print(f"Failed to compute RAG statistics: {e}")
         return {
             "indexedDocuments": 0,
             "totalChunks": health["indexedChunkCount"],
             "recentQueryCount": 0,
-            "mostSearchedPolicies": []
+            "mostSearchedPolicies": [],
+            "querySuccessRate": 0.0,
         }

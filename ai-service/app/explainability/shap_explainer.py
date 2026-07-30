@@ -21,42 +21,71 @@ Design decisions
   Returns shape (n, features) directly.
 """
 
+import re
+
 import numpy as np
 import shap
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 
 # ---------------------------------------------------------------------------
-# Human-readable display names for every feature column
-# Order must match FEATURE_COLS in pipeline.py:
-# ['salary','age','tenure_months','salary_per_tenure','age_at_joining',
-#  'gender','employmentType','workLocation','designation','departmentId']
+# Human-readable display name overrides.
+#
+# Feature keys/order are NEVER hardcoded here — see initialise() below, which
+# derives them from the trained model bundle's own feature_metadata (the same
+# numerical_cols/categorical_cols produced by
+# app.preprocessing.pipeline.fit_transform_pipeline() at training time). This
+# dict only supplies nicer wording for known keys; any feature not listed
+# here still gets a readable name via humanize_feature_name()'s fallback, so
+# a pipeline change (new/removed column) can never drift out of sync with
+# what the explainer reports — unlike the previous hardcoded 10-item list,
+# which silently diverged from the real ~22-column pipeline output.
 # ---------------------------------------------------------------------------
-FEATURE_DISPLAY_NAMES = [
-    "Monthly Salary",
-    "Employee Age",
-    "Tenure (Months)",
-    "Salary per Tenure Month",
-    "Age at Joining",
-    "Gender",
-    "Employment Type",
-    "Work Location",
-    "Designation / Role",
-    "Department",
-]
+_DISPLAY_NAME_OVERRIDES = {
+    "age": "Employee Age",
+    "salary": "Annual Salary",
+    "tenure_months": "Tenure (Months)",
+    "years_since_last_promotion": "Years Since Last Promotion",
+    "promotion_count": "Promotion Count",
+    "promotion_gap_ratio": "Promotion Gap Ratio",
+    "salary_growth_pct": "Salary Growth %",
+    "training_hours": "Training Hours",
+    "training_completion_rate": "Training Completion %",
+    "performance_rating": "Performance Rating",
+    "overtime_hours": "Overtime Hours",
+    "attendance_percentage": "Attendance %",
+    "leave_count": "Leave Count",
+    "leave_frequency": "Leave Frequency",
+    "job_satisfaction": "Job Satisfaction",
+    "work_life_balance": "Work-Life Balance",
+    "avg_survey_score": "Avg. Survey Score",
+    "engagement_score": "Engagement Score",
+    "feedback_frequency": "Feedback Frequency",
+    "sentiment_score": "Sentiment Score",
+    "burnout_score": "Burnout Score",
+    "promotion_frustration_nlp": "Promotion Frustration",
+    "manager_conflict_nlp": "Manager Conflict Signal",
+    "gender": "Gender",
+    "employmentType": "Employment Type",
+    "workLocation": "Work Location",
+    "designation": "Designation / Role",
+    "departmentId": "Department",
+}
 
-FEATURE_KEYS = [
-    "salary",
-    "age",
-    "tenure_months",
-    "salary_per_tenure",
-    "age_at_joining",
-    "gender",
-    "employmentType",
-    "workLocation",
-    "designation",
-    "departmentId",
-]
+
+def humanize_feature_name(key: str) -> str:
+    """
+    Returns a human-readable display name for a raw feature key. Known keys
+    use the curated override above; anything else (e.g. a column added to
+    the pipeline later) falls back to splitting snake_case/camelCase into
+    Title Case words, so the explainer never silently mislabels or drops a
+    feature just because this dict wasn't updated.
+    """
+    if key in _DISPLAY_NAME_OVERRIDES:
+        return _DISPLAY_NAME_OVERRIDES[key]
+    spaced = re.sub(r'(?<!^)(?=[A-Z])', ' ', key)  # camelCase -> spaced
+    spaced = spaced.replace('_', ' ')               # snake_case -> spaced
+    return spaced.strip().title()
 
 
 class ShapExplainerCache:
@@ -67,8 +96,13 @@ class ShapExplainerCache:
     ----------
     explainer        : fitted shap.TreeExplainer or shap.LinearExplainer
     background_data  : np.ndarray used to fit the explainer (None for XGBoost)
-    feature_names    : list of raw feature keys (10 items)
-    display_names    : list of HR-friendly display names (10 items)
+    feature_names    : list of raw feature keys, derived from the trained
+                        model bundle's feature_metadata (numerical_cols +
+                        categorical_cols, in that order — matching the exact
+                        column order fit_transform_pipeline/transform_inference
+                        actually build). NOT hardcoded.
+    categorical_keys : set of feature_names that are categorical (vs numerical)
+    display_names    : list of HR-friendly display names, one per feature_names entry
     model_name       : algorithm name from the bundle
     is_xgboost       : bool — True when using XGBoost path
     is_ready         : bool — True once initialised successfully
@@ -77,8 +111,9 @@ class ShapExplainerCache:
     def __init__(self):
         self.explainer = None
         self.background_data = None
-        self.feature_names = FEATURE_KEYS
-        self.display_names = FEATURE_DISPLAY_NAMES
+        self.feature_names = []
+        self.categorical_keys = set()
+        self.display_names = []
         self.model_name = None
         self.is_xgboost = False
         self.is_ready = False
@@ -91,19 +126,47 @@ class ShapExplainerCache:
         ----------
         model_bundle : dict
             The Joblib bundle produced by trainer.py. Must contain keys:
-            'model', 'model_name', 'scaler', 'encoders'.
+            'model', 'model_name', 'scaler', 'encoders', 'feature_metadata'.
         """
         from app.preprocessing.pipeline import generate_synthetic_data, fit_transform_pipeline
         import xgboost as xgb
 
-        model = model_bundle["model"]
+        # SHAP explains the tuned base estimator (importance_estimator — the
+        # same algorithm/hyperparameters/training data as the shipped model,
+        # just without the Phase 6 CalibratedClassifierCV wrapper), not the
+        # calibrated model itself: TreeExplainer/LinearExplainer need direct
+        # access to a tree/linear model's internals, which a calibration
+        # wrapper doesn't expose. Calibration (isotonic) is monotonic, so
+        # which features drove the decision is unaffected — only the
+        # final probability display (computed separately from bundle["model"]
+        # in local_explainer.py) differs. Falls back to bundle["model"] for
+        # any older bundle saved before this key existed.
+        model = model_bundle.get("importance_estimator") or model_bundle["model"]
         self.model_name = model_bundle.get("model_name", "Unknown")
         self.is_xgboost = isinstance(model, xgb.XGBClassifier)
+
+        # Derive feature names/order from the ACTUAL trained pipeline's
+        # metadata rather than a hardcoded list. X_processed is always built
+        # as hstack([X_numerical, X_categorical]) — see
+        # app.preprocessing.pipeline.fit_transform_pipeline/transform_inference
+        # — so numerical_cols + categorical_cols (in that order) is the real,
+        # authoritative column order for every SHAP value this cache computes.
+        feature_metadata = model_bundle.get("feature_metadata") or {}
+        numerical_cols = list(feature_metadata.get("numerical_cols") or [])
+        categorical_cols = list(feature_metadata.get("categorical_cols") or [])
+        if not numerical_cols and not categorical_cols:
+            raise RuntimeError(
+                "Model bundle has no feature_metadata (numerical_cols/categorical_cols). "
+                "Retrain the model — SHAP cannot derive feature names from an old bundle."
+            )
+        self.feature_names = numerical_cols + categorical_cols
+        self.categorical_keys = set(categorical_cols)
+        self.display_names = [humanize_feature_name(k) for k in self.feature_names]
 
         # Build background data for non-XGBoost models
         print("SHAP: Generating background dataset …")
         bg_df = generate_synthetic_data(150)
-        X_bg, _, _, _, _ = fit_transform_pipeline(bg_df)
+        X_bg, _, _, _, _, _, _ = fit_transform_pipeline(bg_df)
         rng = np.random.default_rng(42)
         idx = rng.choice(len(X_bg), size=min(100, len(X_bg)), replace=False)
         self.background_data = X_bg[idx]

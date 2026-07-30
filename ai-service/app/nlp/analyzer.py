@@ -2,6 +2,7 @@ import datetime
 from typing import Dict, List, Any
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
+from langdetect import detect as _detect_lang, LangDetectException
 import spacy
 import collections
 
@@ -34,10 +35,13 @@ def get_zeroshot_classifier():
     return _zeroshot_classifier
 
 
+# Employee Intelligence sprint topic taxonomy (kept close to the original list,
+# renamed/split to match required categories, plus a couple of extras and a
+# catch-all so nothing that was previously classifiable becomes unclassifiable).
 HR_TOPICS = [
-    "Compensation", "Career Growth", "Work Environment", 
-    "Leadership", "Team Collaboration", "Benefits", 
-    "Learning & Development", "Performance", "Work-Life Balance", "Others"
+    "Compensation", "Manager", "Promotion", "Training", "Culture",
+    "Workload", "Recognition", "Work-Life Balance", "Learning", "Team",
+    "Benefits", "Performance", "Other",
 ]
 
 HR_KEYWORDS = {
@@ -70,49 +74,82 @@ def analyze_sentiment(text: str) -> Dict[str, Any]:
     return {"label": label, "score": confidence}
 
 
+# Employee Intelligence sprint emotion taxonomy (required set).
+EMOTION_CATEGORIES = ["Happy", "Satisfied", "Frustrated", "Stressed", "Burned Out", "Demotivated"]
+
 def detect_emotions(text: str) -> Dict[str, float]:
     """
-    Detects emotions using a Transformer model.
-    Maps fine-grained emotions to HR-specific ones: Happy, Frustrated, Angry, Stressed, Burnout, Motivated, Disengaged.
+    Detects emotions using a Transformer model (go_emotions, 28 fine-grained
+    labels) and maps them onto the HR emotion taxonomy required by this sprint:
+    Happy, Satisfied, Frustrated, Stressed, Burned Out, Demotivated.
     """
     if not text:
         return {}
-        
+
     classifier = get_emotion_classifier()
     results = classifier(text)[0]
-    
-    # Map raw emotions to our HR set
-    mapped_emotions = {
-        "Happy": 0.0,
-        "Frustrated": 0.0,
-        "Angry": 0.0,
-        "Stressed": 0.0,
-        "Burnout": 0.0,
-        "Motivated": 0.0,
-        "Disengaged": 0.0
-    }
-    
+
+    mapped_emotions = {k: 0.0 for k in EMOTION_CATEGORIES}
+
     for r in results:
         label = r['label']
         score = r['score']
-        
-        if label in ['joy', 'amusement', 'optimism', 'approval']:
+
+        if label in ['joy', 'amusement', 'excitement', 'love']:
             mapped_emotions['Happy'] += score
-            if label == 'optimism':
-                mapped_emotions['Motivated'] += score
-        elif label in ['annoyance', 'disappointment', 'disapproval']:
+        elif label in ['approval', 'gratitude', 'pride', 'relief', 'optimism', 'caring', 'admiration']:
+            mapped_emotions['Satisfied'] += score
+        elif label in ['annoyance', 'disappointment', 'disapproval', 'anger']:
             mapped_emotions['Frustrated'] += score
-        elif label == 'anger':
-            mapped_emotions['Angry'] += score
-        elif label in ['nervousness', 'fear']:
+        elif label in ['nervousness', 'fear', 'embarrassment', 'confusion']:
             mapped_emotions['Stressed'] += score
         elif label in ['sadness', 'grief', 'remorse']:
-            mapped_emotions['Burnout'] += score
-        elif label in ['boredom', 'indifference']:
-            mapped_emotions['Disengaged'] += score
-            
-    # Normalize mapping
+            mapped_emotions['Burned Out'] += score
+        elif label in ['disgust', 'realization', 'disappointment']:
+            mapped_emotions['Demotivated'] += score
+
+    # Normalize mapping — keep only categories with a meaningful signal.
     return {k: min(1.0, v) for k, v in mapped_emotions.items() if v > 0.1}
+
+
+def dominant_emotion(emotions: Dict[str, float]) -> str:
+    """Returns the single strongest emotion, defaulting to 'Satisfied' when no signal fires."""
+    if not emotions:
+        return "Satisfied"
+    return max(emotions.items(), key=lambda kv: kv[1])[0]
+
+
+SUPPORTED_LANGUAGE = "en"
+
+
+def detect_language(text: str) -> str:
+    """
+    Best-effort language detection. Every model in this pipeline (VADER,
+    the go_emotions/DistilBART transformers, the HR keyword lemma set) is
+    English-only — running them on other languages silently produces
+    meaningless output rather than an error, so callers should gate on this
+    first. Returns 'unknown' rather than raising when detection itself fails
+    (e.g. text too short) — treated as unsupported by callers, not fatal.
+    """
+    if not text or not text.strip():
+        return "unknown"
+    try:
+        return _detect_lang(text)
+    except LangDetectException:
+        return "unknown"
+
+
+def burnout_level(burnout_score: float) -> str:
+    """
+    Buckets the continuous burnoutRisk score (0-1) into Low/Medium/High,
+    using the same 0.34/0.64 thresholds already established for risk
+    categorization elsewhere in this service (see local_explainer.py).
+    """
+    if burnout_score <= 0.34:
+        return "Low"
+    if burnout_score <= 0.64:
+        return "Medium"
+    return "High"
 
 
 def extract_keywords(text: str, cleaned_text: str) -> List[str]:
@@ -148,17 +185,17 @@ def classify_topic(text: str) -> List[str]:
     Uses Zero-Shot Classification to map text to predefined HR topics.
     """
     if not text:
-        return ["Others"]
-        
+        return ["Other"]
+
     classifier = get_zeroshot_classifier()
     result = classifier(text, candidate_labels=HR_TOPICS, multi_label=True)
-    
-    # Return topics with a score above 0.5
+
+    # Return topics with a score above 0.4
     topics = [label for label, score in zip(result['labels'], result['scores']) if score > 0.4]
-    
+
     if not topics:
         topics = [result['labels'][0]] # Return top 1 if none > 0.4
-        
+
     return topics
 
 
@@ -177,32 +214,68 @@ def calculate_risk_indicators(sentiment: Dict, emotions: Dict[str, float], topic
     
     is_negative = sentiment['label'] == 'Negative'
     neg_score = 1.0 - sentiment['score'] if is_negative else 0.0
-    
+
     # 1. Burnout Risk
     stress = emotions.get("Stressed", 0.0)
-    burnout = emotions.get("Burnout", 0.0)
+    burned_out = emotions.get("Burned Out", 0.0)
     wl_balance_issue = 1.0 if "Work-Life Balance" in topics or "Workload" in topics else 0.0
-    risks["burnoutRisk"] = min(1.0, (stress * 0.4 + burnout * 0.6 + wl_balance_issue * 0.3) * (1 + neg_score))
+    risks["burnoutRisk"] = min(1.0, (stress * 0.4 + burned_out * 0.6 + wl_balance_issue * 0.3) * (1 + neg_score))
 
     # 2. Resignation Intent
     frustration = emotions.get("Frustrated", 0.0)
-    disengaged = emotions.get("Disengaged", 0.0)
-    risks["resignationIntent"] = min(1.0, (frustration * 0.5 + disengaged * 0.5 + neg_score * 0.4))
-    
+    demotivated = emotions.get("Demotivated", 0.0)
+    risks["resignationIntent"] = min(1.0, (frustration * 0.5 + demotivated * 0.5 + neg_score * 0.4))
+
     # 3. Engagement Risk (Low Engagement)
-    risks["engagementRisk"] = min(1.0, (disengaged * 0.8 + neg_score * 0.3))
-    
+    risks["engagementRisk"] = min(1.0, (demotivated * 0.8 + neg_score * 0.3))
+
     # 4. Promotion Frustration
-    if "Career Growth" in topics or "promotion" in topics or "Compensation" in topics:
+    if "Promotion" in topics or "Compensation" in topics:
         risks["promotionFrustration"] = min(1.0, frustration * 0.8 + neg_score * 0.5)
-        
+
     # 5. Manager Conflict
-    if "Leadership" in topics or "Manager" in topics:
-        anger = emotions.get("Angry", 0.0)
-        risks["managerConflict"] = min(1.0, anger * 0.6 + frustration * 0.4 + neg_score * 0.3)
-        
+    if "Manager" in topics:
+        risks["managerConflict"] = min(1.0, frustration * 0.6 + neg_score * 0.3)
+
     # Round to 2 decimal places
     return {k: round(v, 2) for k, v in risks.items()}
+
+
+_SENTIMENT_PHRASES = {
+    "Positive": "positive",
+    "Neutral": "neutral",
+    "Negative": "increasingly negative",
+}
+
+_BURNOUT_PHRASES = {
+    "Low": "low",
+    "Medium": "moderate",
+    "High": "high — this warrants prompt attention",
+}
+
+
+def generate_summary(sentiment: Dict[str, Any], emotion: str, burnout: str, topics: List[str]) -> str:
+    """
+    Composes a plain-English, template-based summary from the analysis —
+    no LLM/generative call, same approach as the SHAP narrative builder.
+    """
+    parts: List[str] = []
+
+    topic_list = [t for t in topics if t != "Other"]
+    if topic_list:
+        topics_str = ", ".join(topic_list[:3]).lower()
+        parts.append(f"The employee has expressed {_SENTIMENT_PHRASES.get(sentiment['label'], 'mixed')} sentiment, primarily regarding {topics_str}.")
+    else:
+        parts.append(f"The employee has expressed {_SENTIMENT_PHRASES.get(sentiment['label'], 'mixed')} sentiment.")
+
+    if emotion in ("Frustrated", "Stressed", "Burned Out", "Demotivated"):
+        parts.append(f"The dominant emotional signal is {emotion.lower()}.")
+    elif emotion in ("Happy", "Satisfied"):
+        parts.append(f"The dominant emotional signal is {emotion.lower()}, a positive sign.")
+
+    parts.append(f"Burnout risk is {_BURNOUT_PHRASES.get(burnout, burnout.lower())}.")
+
+    return " ".join(parts)
 
 
 def analyze_hr_text(text: str, cleaned_text: str) -> Dict[str, Any]:
@@ -214,17 +287,30 @@ def analyze_hr_text(text: str, cleaned_text: str) -> Dict[str, Any]:
     keywords = extract_keywords(text, cleaned_text)
     topics = classify_topic(text)
     risks = calculate_risk_indicators(sentiment, emotions, topics)
-    
+    emotion = dominant_emotion(emotions)
+    burnout = burnout_level(risks["burnoutRisk"])
+    summary = generate_summary(sentiment, emotion, burnout, topics)
+
+    # Confidence blends the sentiment model's confidence with how strongly the
+    # dominant emotion fired — a simple, explainable proxy for "how sure is the
+    # pipeline about this read", not a separate model.
+    dominant_emotion_score = emotions.get(emotion, 0.5)
+    confidence = round((abs(sentiment['score'] - 0.5) * 2 * 0.5) + (dominant_emotion_score * 0.5), 2)
+
     return {
         "sentiment": sentiment['label'],
         "sentimentScore": round(sentiment['score'], 2),
         "detectedEmotions": {k: round(v, 2) for k, v in emotions.items()},
+        "dominantEmotion": emotion,
         "detectedTopics": topics,
         "extractedKeywords": keywords,
         "burnoutRisk": risks["burnoutRisk"],
+        "burnoutLevel": burnout,
         "resignationIntent": risks["resignationIntent"],
         "engagementRisk": risks["engagementRisk"],
         "promotionFrustration": risks["promotionFrustration"],
         "managerConflict": risks["managerConflict"],
+        "confidence": confidence,
+        "summary": summary,
         "generatedAt": datetime.datetime.utcnow().isoformat()
     }

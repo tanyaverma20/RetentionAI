@@ -121,3 +121,14 @@ export async function getHrMetrics(authContext, filter = {}) {
   return analyticsRepo.getHrMetrics(scopedFilter);
 }
 
+export async function getPerformanceAnalytics(authContext, filter = {}) {
+  return analyticsRepo.getPerformanceAnalytics(applyRbacScope(authContext, filter));
+}
+
+export async function getAttendanceAnalytics(authContext, filter = {}) {
+  return analyticsRepo.getAttendanceAnalytics(applyRbacScope(authContext, filter));
+}
+
+export async function getTrainingAnalytics(authContext, filter = {}) {
+  return analyticsRepo.getTrainingAnalytics(applyRbacScope(authContext, filter));
+}

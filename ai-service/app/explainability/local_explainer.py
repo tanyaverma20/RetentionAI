@@ -32,25 +32,36 @@ from app.preprocessing.pipeline import transform_inference
 
 # ---------------------------------------------------------------------------
 # Human-readable value formatters for each feature
+#
+# Only the fields with an HR-meaningful unit get a bespoke format; every
+# other numerical feature (including ones added to the pipeline after this
+# was written) falls through to a generic one-decimal number, and every
+# categorical feature is shown as-is. Nothing here depends on a fixed/known
+# feature list — see explain_employee() below for how the actual key set is
+# obtained from shap_cache.feature_names (derived from the trained model
+# bundle), not hardcoded.
 # ---------------------------------------------------------------------------
 
-def _fmt(key: str, raw_val: Any) -> str:
+_UNIT_FORMATTERS = {
+    "salary": lambda v: f"${float(v):,.0f}/yr",
+    "age": lambda v: f"{float(v):.0f} years old",
+    "tenure_months": lambda v: f"{float(v):.0f} months ({float(v) / 12:.1f} yrs)",
+    "attendance_percentage": lambda v: f"{float(v):.1f}%",
+    "avg_survey_score": lambda v: f"{float(v):.1f} / 5",
+}
+
+
+def _fmt(key: str, raw_val: Any, is_categorical: bool) -> str:
     """Return a human-readable string for a raw feature value."""
+    if is_categorical:
+        return str(raw_val)
+    formatter = _UNIT_FORMATTERS.get(key)
     try:
-        if key == "salary":
-            return f"${float(raw_val):,.0f}/yr"
-        if key == "age":
-            return f"{float(raw_val):.0f} years old"
-        if key == "tenure_months":
-            months = float(raw_val)
-            return f"{months:.0f} months ({months / 12:.1f} yrs)"
-        if key == "salary_per_tenure":
-            return f"${float(raw_val):,.0f}/month of tenure"
-        if key == "age_at_joining":
-            return f"joined at age {float(raw_val):.0f}"
+        if formatter:
+            return formatter(raw_val)
+        return f"{float(raw_val):,.1f}"
     except (TypeError, ValueError):
-        pass
-    return str(raw_val)
+        return str(raw_val)
 
 
 # ---------------------------------------------------------------------------
@@ -163,7 +174,7 @@ def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
     df = pd.DataFrame([employee_doc])
     scaler = bundle["scaler"]
     encoders = bundle["encoders"]
-    X = transform_inference(df, scaler, encoders)  # shape (1, 10)
+    X = transform_inference(df, scaler, encoders)  # shape (1, n_features) — n_features = len(shap_cache.feature_names)
 
     # 2. Predict probability
     model = bundle["model"]
@@ -172,10 +183,15 @@ def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
     else:
         risk_score = float(model.predict(X)[0])
 
-    # 3. Risk level & confidence
-    if risk_score <= 0.34:
+    # 3. Risk level & confidence — anchored on the Phase 7 recall-optimized
+    # threshold (see app/training/trainer.py's optimize_threshold()), the
+    # same bucketing prediction_service.py's predict_single() applies, so
+    # /explain and /predict never disagree on an employee's risk level.
+    threshold = bundle.get("threshold", 0.5)
+    medium_cutoff = threshold * 0.6
+    if risk_score < medium_cutoff:
         risk_level = "LOW"
-    elif risk_score <= 0.64:
+    elif risk_score < threshold:
         risk_level = "MEDIUM"
     else:
         risk_level = "HIGH"
@@ -183,45 +199,52 @@ def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
     confidence = risk_score if risk_score > 0.5 else (1.0 - risk_score)
 
     # 4. SHAP values
-    shap_vals = shap_cache.compute_shap_values(X)[0]  # shape (10,)
+    shap_vals = shap_cache.compute_shap_values(X)[0]  # shape (n_features,)
     base_value = shap_cache.get_expected_value()
 
     # 5. Build per-feature dicts
     feature_keys = shap_cache.feature_names
     display_names = shap_cache.display_names
+    categorical_keys = shap_cache.categorical_keys
 
-    # Recover raw feature values from the transformed df (pre-scale)
-    # We rebuild from the original employee_doc for interpretability
-    raw_values: dict[str, Any] = {
-        "salary":           employee_doc.get("salary", 0),
-        "age":              (
-            (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("dateOfBirth", "1990-01-01")).tz_localize(None)).days / 365.25
-            if employee_doc.get("dateOfBirth") else "N/A"
-        ),
-        "tenure_months":    (
-            (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01")).tz_localize(None)).days / 30.43
-            if employee_doc.get("joiningDate") else "N/A"
-        ),
-        "salary_per_tenure": (
-            employee_doc.get("salary", 0) / (
-                max(
-                    (pd.Timestamp("2026-07-27") - pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01")).tz_localize(None)).days / 30.43,
-                    1,
-                )
-            )
-            if employee_doc.get("joiningDate") else "N/A"
-        ),
-        "age_at_joining":   "N/A",
-        "gender":           employee_doc.get("gender", "N/A"),
-        "employmentType":   employee_doc.get("employmentType", "N/A"),
-        "workLocation":     employee_doc.get("workLocation", "N/A"),
-        "designation":      employee_doc.get("designation", "N/A"),
-        "departmentId":     str(employee_doc.get("departmentId", "N/A")),
-    }
+    # Recover raw feature values from the original employee_doc for
+    # interpretability. Only 'age'/'tenure_months' need special-case date
+    # math (mirroring the exact same derivation pipeline.py itself applies
+    # when the column isn't already present) — every other feature is read
+    # generically by key, with the same fallback the model actually saw at
+    # inference time (0 for missing numerical, 'UNKNOWN' for missing
+    # categorical — see transform_inference), so what's displayed always
+    # matches what was fed into the model. This works for any feature key
+    # the trained pipeline reports, not just a fixed hardcoded set.
+    current_date = pd.Timestamp.now()
+
+    def _derived_age() -> float:
+        dob = employee_doc.get("dateOfBirth")
+        if not dob:
+            return 0.0
+        return (current_date - pd.to_datetime(dob).tz_localize(None)).days / 365.25
+
+    def _derived_tenure_months() -> float:
+        joining = employee_doc.get("joiningDate")
+        if not joining:
+            return 0.0
+        return (current_date - pd.to_datetime(joining).tz_localize(None)).days / 30.43
+
+    raw_values: dict[str, Any] = {}
+    for key in feature_keys:
+        if key == "age":
+            raw_values[key] = employee_doc.get("age", _derived_age())
+        elif key == "tenure_months":
+            raw_values[key] = employee_doc.get("tenure_months", _derived_tenure_months())
+        elif key in categorical_keys:
+            raw_values[key] = str(employee_doc.get(key, "UNKNOWN"))
+        else:
+            raw_values[key] = employee_doc.get(key, 0)
 
     all_features = []
     for key, display, sv in zip(feature_keys, display_names, shap_vals):
         raw = raw_values.get(key, "N/A")
+        is_categorical = key in categorical_keys
         all_features.append({
             "featureKey":     key,
             "displayName":    display,
@@ -229,7 +252,7 @@ def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
             "absShapValue":   float(abs(sv)),
             "direction":      "INCREASES_RISK" if sv > 0 else "REDUCES_RISK",
             "rawValue":       raw,
-            "formattedValue": _fmt(key, raw),
+            "formattedValue": _fmt(key, raw, is_categorical),
         })
 
     # Sort by |shap| descending

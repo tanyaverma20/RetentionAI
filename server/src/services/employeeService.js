@@ -90,7 +90,7 @@ export async function getEmployeeProfile(employeeId, authContext) {
     throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found.');
   }
 
-  const { role, userId, departmentId } = authContext;
+  const { role, userId, departmentId, employeeId: callerEmployeeId } = authContext;
 
   // ADMIN and HR_MANAGER have unrestricted view access
   if (role === 'ADMIN' || role === 'HR_MANAGER') {
@@ -105,11 +105,18 @@ export async function getEmployeeProfile(employeeId, authContext) {
     return employee;
   }
 
-  // EMPLOYEE can only view their own profile (match by userId or linked employee record)
+  // EMPLOYEE can only view their own profile — matched via the bidirectional
+  // User<->Employee link (either direction may be the one actually set).
+  // Regression fix: the previous check's second clause (`employee.id ===
+  // employeeId`) was always true — `employee` was just fetched BY that same
+  // `employeeId`, so it could never disagree — making every EMPLOYEE token
+  // able to view any other employee's full profile including salary.
   if (role === 'EMPLOYEE') {
+    const employeeIdStr = employeeId.toString();
     const isOwnProfile =
+      (callerEmployeeId && callerEmployeeId === employeeIdStr) ||
       (employee.userId && employee.userId._id?.toString() === userId) ||
-      employee.id === employeeId;
+      (employee.userId && employee.userId.toString?.() === userId);
 
     if (!isOwnProfile) {
       throw new AppError(403, 'FORBIDDEN', 'Access denied. You can only view your own employee profile.');
