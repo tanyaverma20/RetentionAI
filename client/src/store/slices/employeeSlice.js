@@ -90,6 +90,17 @@ export const restoreEmployee = createAsyncThunk(
   },
 );
 
+export const deleteAllEmployees = createAsyncThunk(
+  'employee/deleteAllEmployees',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await employeeService.deleteAllEmployees();
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to delete all employees.');
+    }
+  },
+);
+
 export const bulkImportEmployees = createAsyncThunk(
   'employee/bulkImportEmployees',
   async (payload, { rejectWithValue }) => {
@@ -285,6 +296,19 @@ const employeeSlice = createSlice({
         state.successMessage = 'Employee soft-deleted successfully!';
       })
       .addCase(softDeleteEmployee.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // deleteAllEmployees
+      .addCase(deleteAllEmployees.fulfilled, (state, action) => {
+        state.loading = false;
+        if (!state.filters.includeDeleted) {
+          state.employees = [];
+          state.totalItems = 0;
+        }
+        state.successMessage = `Soft-deleted ${action.payload?.deletedCount ?? 0} employee(s).`;
+      })
+      .addCase(deleteAllEmployees.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

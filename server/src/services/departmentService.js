@@ -116,6 +116,34 @@ export async function deleteDepartment(departmentId) {
 }
 
 /**
+ * Delete every department that has no active employees assigned, applying
+ * the exact same guard as deleteDepartment() per department instead of
+ * bypassing it — a department still holding employees is skipped and
+ * reported rather than deleted, so this can never silently orphan an
+ * employee's departmentId reference. Hard-delete, same as the single-
+ * department path (departments have no soft-delete/restore concept).
+ * @returns {Promise<{ deletedCount: number, skippedCount: number, skipped: Array<{id: string, name: string, employeeCount: number}> }>}
+ */
+export async function deleteAllDepartments() {
+  const departments = await departmentRepository.listDepartments();
+
+  const skipped = [];
+  let deletedCount = 0;
+
+  for (const department of departments) {
+    const employeeCount = await departmentRepository.countEmployeesInDepartment(department._id);
+    if (employeeCount > 0) {
+      skipped.push({ id: department._id.toString(), name: department.name, employeeCount });
+      continue;
+    }
+    await departmentRepository.deleteDepartmentById(department._id);
+    deletedCount += 1;
+  }
+
+  return { deletedCount, skippedCount: skipped.length, skipped };
+}
+
+/**
  * List all departments with dynamic employee counts.
  * @param {object} options
  * @returns {Promise<Array<object>>}

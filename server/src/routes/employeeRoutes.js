@@ -44,6 +44,15 @@ employeeRouter.post(
   employeeController.bulkImport,
 );
 
+// Delete all — soft-deletes every active employee at once (reversible, same
+// as the single-employee delete below). Registered on the collection root
+// (DELETE /), distinct from DELETE /:employeeId — no route-ordering conflict.
+employeeRouter.delete(
+  '/',
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  employeeController.bulkSoftDeleteAllEmployees,
+);
+
 // List employees (scope enforced inside controller/service based on user role)
 employeeRouter.get('/', employeeController.listEmployees);
 

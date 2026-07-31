@@ -6,6 +6,7 @@ import {
   clearDepartmentError,
   clearDepartmentSuccess,
   createDepartment,
+  deleteAllDepartments,
   deleteDepartment,
   fetchDepartments,
   updateDepartment,
@@ -22,6 +23,8 @@ export default function Departments() {
   const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
   const [selectedDept, setSelectedDept] = useState(null);
   const [deleteConfirmDept, setDeleteConfirmDept] = useState(null);
+  const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false);
+  const [deleteAllConfirmText, setDeleteAllConfirmText] = useState('');
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
 
@@ -56,6 +59,14 @@ export default function Departments() {
     await dispatch(deleteDepartment(id));
     setDeleteConfirmDept(null);
     dispatch(fetchDepartments());
+  };
+
+  const handleDeleteAll = async () => {
+    if (deleteAllConfirmText !== 'DELETE ALL') return;
+    await dispatch(deleteAllDepartments());
+    setIsDeleteAllOpen(false);
+    setDeleteAllConfirmText('');
+    dispatch(fetchDepartments({ q: searchTerm }));
   };
 
   const handleBulkUploadSubmit = async (formData) => {
@@ -99,6 +110,15 @@ export default function Departments() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               Add Department
+            </button>
+            <button
+              onClick={() => setIsDeleteAllOpen(true)}
+              className="flex items-center justify-center gap-2 px-5 py-3 text-sm font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-2xl transition-all"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              </svg>
+              Delete All
             </button>
           </div>
         )}
@@ -286,6 +306,52 @@ export default function Departments() {
                 className="px-5 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-lg shadow-rose-600/25"
               >
                 Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete All Confirmation Modal — typed confirmation required given the blast radius */}
+      {isDeleteAllOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md p-6 bg-slate-900 border border-rose-500/30 rounded-2xl shadow-2xl space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-bold text-slate-100">Delete All Departments</h3>
+              <p className="text-xs text-slate-400 mt-1">
+                This will permanently delete <span className="text-slate-200 font-bold">all {departments.length} department(s)</span>.
+                Departments that still have active employees assigned will be skipped and reported, not force-deleted.
+                This cannot be undone for departments that are deleted.
+              </p>
+              <p className="text-xs text-slate-400 mt-3">
+                Type <span className="font-mono font-bold text-rose-400">DELETE ALL</span> to confirm.
+              </p>
+              <input
+                type="text"
+                value={deleteAllConfirmText}
+                onChange={(e) => setDeleteAllConfirmText(e.target.value)}
+                placeholder="DELETE ALL"
+                className="mt-3 w-full px-3 py-2 text-sm bg-slate-950 border border-slate-700 rounded-xl text-slate-200 text-center font-mono focus:outline-none focus:border-rose-500"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                onClick={() => { setIsDeleteAllOpen(false); setDeleteAllConfirmText(''); }}
+                className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-slate-800 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAll}
+                disabled={deleteAllConfirmText !== 'DELETE ALL' || loading}
+                className="px-5 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl shadow-lg shadow-rose-600/25"
+              >
+                {loading ? 'Deleting…' : 'Delete All'}
               </button>
             </div>
           </div>

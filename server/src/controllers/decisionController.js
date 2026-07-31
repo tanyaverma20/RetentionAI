@@ -19,7 +19,12 @@ export async function generateDecision(req, res, next) {
     );
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
-    return next(error);
+    // decisionService throws plain Errors carrying .statusCode/.code (see
+    // toAiServiceError) — errorHandler.js only special-cases `instanceof
+    // AppError`, so passing the raw error through here fell into its generic
+    // 500 "An unexpected error occurred." for every failure, no matter the
+    // real cause (rate limit, timeout, 404, etc.). Wrapping preserves it.
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
   }
 }
 
@@ -31,7 +36,7 @@ export async function getDecision(req, res, next) {
     }
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
   }
 }
 
@@ -40,7 +45,7 @@ export async function getDecisionHistory(req, res, next) {
     const result = await decisionService.getHistory(req.params.employeeId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
   }
 }
 
@@ -50,7 +55,7 @@ export async function generateBatch(req, res, next) {
     const result = await decisionService.generateBatch(extractOrgId(req), employeeIds, departmentId, req.auth.userId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
   }
 }
 
@@ -63,7 +68,7 @@ export async function updateDecisionStatus(req, res, next) {
     const result = await decisionService.updateStatus(req.params.id, status, req.auth.userId, note);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
   }
 }
 
@@ -72,7 +77,7 @@ export async function getDashboardSummary(req, res, next) {
     const result = await decisionService.getDashboardSummary(extractOrgId(req));
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
   }
 }
 
@@ -85,6 +90,6 @@ export async function getManagerDashboard(req, res, next) {
     const result = await decisionService.getManagerDashboard(extractOrgId(req), departmentId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
   }
 }

@@ -57,6 +57,17 @@ export const deleteDepartment = createAsyncThunk(
   },
 );
 
+export const deleteAllDepartments = createAsyncThunk(
+  'department/deleteAllDepartments',
+  async (_, { rejectWithValue }) => {
+    try {
+      return await departmentService.deleteAllDepartments();
+    } catch (error) {
+      return rejectWithValue(error.response?.data?.error?.message || 'Failed to delete all departments.');
+    }
+  },
+);
+
 export const assignDepartmentManager = createAsyncThunk(
   'department/assignDepartmentManager',
   async ({ departmentId, managerId }, { rejectWithValue }) => {
@@ -161,6 +172,22 @@ const departmentSlice = createSlice({
         state.successMessage = 'Department deleted successfully!';
       })
       .addCase(deleteDepartment.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
+      })
+      // deleteAllDepartments — only removes the ones the backend actually
+      // deleted; departments it skipped (still have active employees) stay
+      // in state, since they were reported in action.payload.skipped, not deleted.
+      .addCase(deleteAllDepartments.fulfilled, (state, action) => {
+        state.loading = false;
+        const skippedIds = new Set((action.payload?.skipped || []).map((d) => d.id));
+        state.departments = state.departments.filter((d) => skippedIds.has(d._id || d.id));
+        const { deletedCount = 0, skippedCount = 0 } = action.payload || {};
+        state.successMessage = skippedCount > 0
+          ? `Deleted ${deletedCount} department(s). ${skippedCount} skipped (still has active employees).`
+          : `Deleted ${deletedCount} department(s).`;
+      })
+      .addCase(deleteAllDepartments.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       })

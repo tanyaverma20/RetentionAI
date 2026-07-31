@@ -226,8 +226,39 @@ export default function Dashboard() {
     try {
       setIsTraining(true);
       setTrainMessage('');
+
+      // /ai/train only acknowledges that training has been scheduled in the
+      // AI service's background — it returns immediately, long before the
+      // model is actually retrained. Capture the current model's trainedAt
+      // first so we can tell a genuinely new model apart from the one
+      // already running, instead of just echoing the "started" ack forever.
+      let baselineTrainedAt = null;
+      try {
+        const info = await aiService.getModelInfo();
+        baselineTrainedAt = info?.trainedAt ?? null;
+      } catch {
+        // No model loaded yet — any successful getModelInfo() below counts as new.
+      }
+
       const res = await aiService.trainModel();
-      setTrainMessage(res.message || 'Training started.');
+      setTrainMessage(res?.message || 'Training started.');
+
+      const POLL_INTERVAL_MS = 5000;
+      const MAX_POLLS = 60; // 5 minutes
+      for (let i = 0; i < MAX_POLLS; i++) {
+        await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+        try {
+          const info = await aiService.getModelInfo();
+          if (info?.trainedAt && info.trainedAt !== baselineTrainedAt) {
+            setTrainMessage(`Model trained successfully — ${info.algorithm} (${info.version}).`);
+            loadExplainabilityWidgets();
+            return;
+          }
+        } catch {
+          // Model not loaded yet — still training, keep polling.
+        }
+      }
+      setTrainMessage('Training is taking longer than expected — it may still be running in the background. Check back shortly.');
     } catch (err) {
       setTrainMessage(extractErrorMessage(err, 'Failed to start training.'));
     } finally {

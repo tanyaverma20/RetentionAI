@@ -8,10 +8,16 @@ const explanationSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    // Optional back-reference. An explanation is generated from the live SHAP
+    // computation, which carries its own riskScore/riskLevel — it does not
+    // depend on a stored Prediction document existing. Marking this required
+    // made every explanation unsaveable whenever /predict/batch hadn't been run
+    // first, and (because explainService inserts with `ordered: false`) the
+    // whole batch was dropped silently instead of erroring.
     predictionId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Prediction',
-      required: true,
+      default: null,
     },
     organizationId: {
       type: mongoose.Schema.Types.ObjectId,

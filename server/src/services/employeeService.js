@@ -272,6 +272,17 @@ export async function restoreEmployee(employeeId) {
 }
 
 /**
+ * Soft delete every active (not already soft-deleted) employee at once.
+ * Same reversible operation as softDeleteEmployee — restore individually via
+ * POST /:employeeId/restore. No hard-delete path exists for employees.
+ * @returns {Promise<{ deletedCount: number }>}
+ */
+export async function bulkSoftDeleteAllEmployees() {
+  const deletedCount = await employeeRepository.softDeleteAllEmployees();
+  return { deletedCount };
+}
+
+/**
  * Helper to parse CSV string into array of objects.
  * Handles comma separation and quotes.
  *

@@ -19,6 +19,8 @@ from app.preprocessing.pipeline import (
 )
 from app.training.trainer import train_and_select_best_model, save_model_bundle
 from app.training.reports import generate_all_reports
+from app.prediction.prediction_service import prediction_service
+from app.explainability.shap_explainer import shap_cache
 
 MONGODB_URI = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
 MONGODB_DB_NAME = os.getenv("MONGODB_DB_NAME", "retentionai")
@@ -65,6 +67,18 @@ def train_model():
     os.makedirs(MODEL_ARTIFACT_PATH, exist_ok=True)
     target_filepath = os.path.join(MODEL_ARTIFACT_PATH, "attrition_model.joblib")
     save_model_bundle(bundle, target_filepath)
+
+    # 4a. Reload the freshly saved bundle into the RUNNING process. Without
+    # this, /train writes a new model to disk but the live prediction_service/
+    # shap_cache singletons keep serving whatever was loaded at process
+    # startup — the new model would only ever take effect after a manual
+    # FastAPI restart, silently. Mirrors app/main.py's own startup sequence.
+    prediction_service.load_active_model()
+    if prediction_service.model_bundle is not None:
+        shap_cache.initialise(prediction_service.model_bundle)
+        print("Reloaded newly trained model into the running service (predictions + SHAP).")
+    else:
+        print("WARNING: Failed to reload newly trained model bundle after training.")
 
     # 4b. Generate benchmark/calibration/threshold/feature-importance reports
     # and confusion matrix / ROC / PR / calibration curve plots.

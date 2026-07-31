@@ -46,6 +46,11 @@ export const employeeService = {
     return response.data.data;
   },
 
+  async deleteAllEmployees() {
+    const response = await api.delete('/employees');
+    return response.data.data;
+  },
+
   async bulkImport(payload) {
     const response = await api.post('/employees/bulk-import', payload);
     return response.data.data;

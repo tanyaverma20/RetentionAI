@@ -27,4 +27,5 @@ motor>=3.7.1
 nltk==3.9.1
 pypdf==5.1.0
 docx2txt==0.8
+unstructured[md]==0.24.1
 markdown==3.7

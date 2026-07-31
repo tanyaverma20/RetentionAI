@@ -6,13 +6,22 @@ import { toAiServiceError } from '../utils/aiServiceError.js';
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
 
+// Default budget for the small single-employee/dashboard calls, which return
+// in well under a second. The workforce-wide batch gets its own budget below:
+// even fully optimized it runs the NLP models over every distinct text in the
+// corpus, which is seconds-to-minutes of genuine compute, not a hung request.
+// Kept under Node's 300s default server.requestTimeout so Express doesn't kill
+// the inbound request before axios reports on the outbound one.
+const AI_DEFAULT_TIMEOUT_MS = 30000;
+const AI_BATCH_TIMEOUT_MS = 240000;
+
 const aiClient = axios.create({
   baseURL: AI_API_URL,
   headers: {
     Authorization: `Bearer ${AI_API_TOKEN}`,
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: AI_DEFAULT_TIMEOUT_MS,
 });
 
 function mapProfileToDoc(employeeId, organizationId, data) {
@@ -72,7 +81,9 @@ class EmployeeIntelligenceService {
 
     let profiles;
     try {
-      const response = await aiClient.post('/employee-intelligence/batch', payload);
+      const response = await aiClient.post('/employee-intelligence/batch', payload, {
+        timeout: AI_BATCH_TIMEOUT_MS,
+      });
       profiles = response.data?.profiles || [];
     } catch (err) {
       throw toAiServiceError(err, 'Batch Employee Intelligence generation failed', {
@@ -85,9 +96,20 @@ class EmployeeIntelligenceService {
     }
 
     const docs = profiles.map((p) => mapProfileToDoc(p.employeeId, organizationId, p));
-    await EmployeeIntelligence.insertMany(docs, { ordered: false });
 
-    return { processed: docs.length };
+    // `ordered: false` keeps one bad record from aborting the batch, but
+    // Mongoose then resolves even when documents fail validation — it just
+    // returns the subset that made it in. Report what was actually written
+    // rather than what we intended to write, so a silent drop can't be
+    // mistaken for success (this is exactly how the SHAP batch reported
+    // "processed: 1254" while persisting zero rows).
+    const inserted = await EmployeeIntelligence.insertMany(docs, { ordered: false });
+    const skipped = docs.length - inserted.length;
+    if (skipped > 0) {
+      console.warn(`generateBatch: ${skipped}/${docs.length} Employee Intelligence profiles were rejected on insert.`);
+    }
+
+    return { processed: inserted.length, skipped };
   }
 
   /**

@@ -64,6 +64,15 @@ export async function deleteDepartment(request, response, next) {
   }
 }
 
+export async function deleteAllDepartments(request, response, next) {
+  try {
+    const result = await departmentService.deleteAllDepartments();
+    return sendSuccess(response, 200, result, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function assignManager(request, response, next) {
   try {
     const department = await departmentService.assignDepartmentManager(

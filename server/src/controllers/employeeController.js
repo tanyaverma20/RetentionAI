@@ -177,6 +177,15 @@ export async function restoreEmployee(request, response, next) {
   }
 }
 
+export async function bulkSoftDeleteAllEmployees(request, response, next) {
+  try {
+    const result = await employeeService.bulkSoftDeleteAllEmployees();
+    return sendSuccess(response, 200, result, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 export async function bulkImport(request, response, next) {
   try {
     const { csvText, records } = request.validatedBody || {};

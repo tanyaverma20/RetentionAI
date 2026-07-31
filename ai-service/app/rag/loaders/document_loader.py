@@ -45,6 +45,14 @@ def load_single_document(file_path: str, metadata: Optional[Dict[str, Any]] = No
         "documentName": os.path.basename(file_path),
         **(metadata or {}),
     }
+    # Chroma's upsert rejects an empty list as a metadata value outright
+    # ("Expected metadata list value for key 'tags' to be non-empty in
+    # upsert") — reproduced directly via the upload endpoint by leaving the
+    # optional Tags field blank, which sends tags=[]. None is dropped too,
+    # since Chroma metadata values must be str/int/float/bool/non-empty-list,
+    # never null. A document uploaded with no tags should just have no
+    # `tags` key at all, not a value Chroma refuses to store.
+    base_metadata = {k: v for k, v in base_metadata.items() if not (v is None or v == [])}
     for d in docs:
         d.metadata.update(base_metadata)
 

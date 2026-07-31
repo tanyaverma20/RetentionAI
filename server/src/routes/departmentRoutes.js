@@ -72,6 +72,16 @@ departmentRouter.delete(
   departmentController.deleteDepartment,
 );
 
+// Delete all — same per-department "no active employees" guard as the
+// single-delete route above; departments still holding employees are
+// skipped and reported, never force-deleted. Registered on the collection
+// root (DELETE /), distinct from DELETE /:departmentId.
+departmentRouter.delete(
+  '/',
+  authorize(ROLE_NAMES.ADMIN, ROLE_NAMES.HR_MANAGER),
+  departmentController.deleteAllDepartments,
+);
+
 departmentRouter.post(
   '/:departmentId/manager',
   validateDepartmentIdParam,

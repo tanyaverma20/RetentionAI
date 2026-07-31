@@ -30,7 +30,7 @@ export async function uploadDocument(request, response, next) {
     });
     return sendSuccess(response, 201, doc, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -39,7 +39,7 @@ export async function reindexDocument(request, response, next) {
     const doc = await knowledgeService.reindexDocument(request.params.id);
     return sendSuccess(response, 200, doc, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -48,7 +48,7 @@ export async function reindexAll(request, response, next) {
     const result = await knowledgeService.reindexAll(extractOrgId(request));
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -57,7 +57,7 @@ export async function deleteDocument(request, response, next) {
     const result = await knowledgeService.deleteDocument(request.params.id);
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -74,7 +74,7 @@ export async function listDocuments(request, response, next) {
     });
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -83,7 +83,7 @@ export async function getDocument(request, response, next) {
     const doc = await knowledgeService.getDocument(request.params.id);
     return sendSuccess(response, 200, doc, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -106,7 +106,7 @@ export async function queryKnowledge(request, response, next) {
     });
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -119,7 +119,7 @@ export async function searchKnowledge(request, response, next) {
     const result = await knowledgeService.search({ q, mode, topK, documentType });
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -128,7 +128,7 @@ export async function getStatistics(request, response, next) {
     const result = await knowledgeService.getStatistics(extractOrgId(request));
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }
 
@@ -137,6 +137,6 @@ export async function getEmployeeKnowledgeInsights(request, response, next) {
     const result = await knowledgeService.getEmployeeKnowledgeInsights(request.params.employeeId);
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
-    return next(error);
+    return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
   }
 }

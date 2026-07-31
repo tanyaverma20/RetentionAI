@@ -258,6 +258,19 @@ export function restoreEmployee(employeeId) {
 }
 
 /**
+ * Soft delete every employee not already soft-deleted, mirroring the same
+ * fields softDeleteEmployee() sets for a single record.
+ * @returns {Promise<number>} count of employees updated
+ */
+export async function softDeleteAllEmployees() {
+  const result = await Employee.updateMany(
+    { isDeleted: { $ne: true } },
+    { $set: { isDeleted: true, deletedAt: new Date(), status: 'INACTIVE' } },
+  );
+  return result.modifiedCount;
+}
+
+/**
  * Perform bulk insertion of multiple employee documents.
  * @param {Array<object>} records
  * @returns {Promise<Array<import('mongoose').Document>>}

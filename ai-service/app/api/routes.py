@@ -1,5 +1,6 @@
 import os
 import uuid
+import asyncio
 import datetime
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header, status, BackgroundTasks
@@ -152,18 +153,30 @@ async def predict_batch(request: BatchPredictionRequest):
         }
         
     run_id = f"batch_{int(datetime.datetime.now(datetime.timezone.utc).timestamp())}"
-    predictions = []
-    failed_count = 0
-    
-    for emp in employees:
-        try:
-            serialized_emp = serialize_doc(emp)
-            pred = await prediction_service.predict_single(serialized_emp, run_id=run_id)
-            predictions.append(pred)
-        except Exception as e:
-            print(f"Failed prediction for employee {emp.get('_id')}: {e}")
-            failed_count += 1
-            
+
+    # Root cause of predict/batch timing out: this ran one employee at a time,
+    # each doing predict_single()'s full enrich_employee_doc() (attendance/
+    # performance/promotion/training/survey/feedback/nlp lookups) sequentially
+    # over the network to Atlas — the same bottleneck already fixed for
+    # explain_batch, employee_intelligence_batch, and decision_batch. Same
+    # bounded-concurrency fix, same semaphore width as explain_batch/employee-
+    # intelligence (no external LLM call here, so no reason to be as
+    # conservative as decision_service.py's batch).
+    semaphore = asyncio.Semaphore(50)
+
+    async def _predict_one(emp):
+        async with semaphore:
+            try:
+                serialized_emp = serialize_doc(emp)
+                return await prediction_service.predict_single(serialized_emp, run_id=run_id)
+            except Exception as e:
+                print(f"Failed prediction for employee {emp.get('_id')}: {e}")
+                return None
+
+    results = await asyncio.gather(*(_predict_one(emp) for emp in employees))
+    predictions = [p for p in results if p is not None]
+    failed_count = len(results) - len(predictions)
+
     result = {
         "runId": run_id,
         "status": "COMPLETED" if failed_count == 0 else "PARTIALLY_COMPLETED",

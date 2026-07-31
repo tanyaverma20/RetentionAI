@@ -2,8 +2,13 @@ import api from './api';
 
 export const aiService = {
   async trainModel() {
+    // Express wraps every AI-service response as { success, data, meta } —
+    // the FastAPI ack (`{ success, message }`) lives at response.data.data,
+    // not response.data. Returning response.data made every caller's
+    // `res.message` read undefined and silently fall back to a hardcoded
+    // string, no matter what the backend actually said.
     const response = await api.post('/ai/train');
-    return response.data;
+    return response.data.data;
   },
 
   /** Fetch the existing stored prediction for an employee (read-only, does not trigger inference). */

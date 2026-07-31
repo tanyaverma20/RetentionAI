@@ -1,4 +1,5 @@
 import axios from 'axios';
+import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { Prediction } from '../models/Prediction.js';
 
@@ -56,7 +57,12 @@ class AIService {
       if (departmentId) payload.departmentId = departmentId;
       if (employeeIds) payload.employeeIds = employeeIds;
 
-      const response = await aiClient.post('/predict/batch', payload);
+      // Own budget, not env.aiService.timeoutMs (10s default meant for the
+      // single-employee calls below) — same fix already applied to explain/
+      // employee-intelligence/decision batch calls: a full-workforce batch
+      // enriches every employee from Attendance/Performance/Survey/etc. over
+      // the network and just needs longer than any single-item call does.
+      const response = await aiClient.post('/predict/batch', payload, { timeout: 180000 });
       return response.data.data;
     } catch (error) {
       throw toServiceError(error, 'Failed to run batch prediction');
@@ -87,8 +93,19 @@ class AIService {
   }
 
   async getDashboardRiskCounts(organizationId) {
+    // Aggregation pipelines are NOT cast against the schema the way find()
+    // is — the raw string org id from the request header never matched the
+    // ObjectId actually stored on Prediction documents, so this silently
+    // returned zero rows (HIGH/MEDIUM/LOW all 0) despite predictions
+    // existing. Same class of bug already fixed in explainService's
+    // getDepartmentRiskDrivers and employeeIntelligenceService's
+    // getDashboardSummary.
+    const orgId = mongoose.isValidObjectId(organizationId)
+      ? new mongoose.Types.ObjectId(String(organizationId))
+      : organizationId;
+
     const results = await Prediction.aggregate([
-      { $match: { organizationId } },
+      { $match: { organizationId: orgId } },
       {
         $group: {
           _id: '$riskLevel',

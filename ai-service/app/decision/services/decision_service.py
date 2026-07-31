@@ -25,6 +25,7 @@ decision pipeline, not an autonomous agent.
 
 from __future__ import annotations
 
+import asyncio
 import datetime
 from typing import Any, Dict, List
 
@@ -151,38 +152,59 @@ async def generate_decision(employee_id: str, employee_doc: Dict[str, Any], user
 
 async def generate_batch_decisions(employees: List[Dict[str, Any]], user_id: str = "system") -> List[Dict[str, Any]]:
     """
-    Sequentially generates decisions for a batch, isolating per-employee failures.
+    Generates decisions for a batch with bounded concurrency, isolating
+    per-employee failures.
 
     Each employee entry may carry its own `userId` (the authenticated HR/Admin
     user who triggered the batch — Node forwards it per-employee, mirroring
     the single-generate request shape). That per-employee value is always
     preferred; the `user_id` parameter is only a fallback for entries that
     omit it, so a real batch request never gets silently stamped "system".
+
+    Root cause this replaces: this ran one employee at a time — reproduced
+    directly against this endpoint, the "Generate Recommendations" button on
+    the Dashboard stayed on "Generating…" for 4+ minutes and still didn't
+    finish for the full ~1250-employee active workforce, because each
+    employee runs the full prediction+SHAP+sentiment+RAG+LLM pipeline
+    sequentially. Mirrors employee_intelligence_routes.py's bounded-semaphore
+    concurrency pattern. The bound (20, lower than explain_batch's/employee-
+    intelligence's 50) is deliberately conservative: unlike those two, each
+    unit of work here makes an LLM API call, and providers commonly enforce
+    their own per-key concurrent-request ceiling independent of the token
+    quota — too high a fan-out risks tripping that as well as the token
+    limit. Measured directly against this endpoint: concurrency=10 processed
+    ~10 employees every ~2s (clustered request timestamps in the Groq call
+    log confirm real parallelism, not just syntactic concurrency) — for the
+    full ~1250-employee workforce that projects to ~250s, just over Express's
+    240s batch timeout. 20 keeps the same safety margin below common
+    per-key concurrency ceilings while comfortably clearing that budget.
     """
-    results = []
-    for emp in employees:
+    semaphore = asyncio.Semaphore(20)
+
+    async def _generate_one(emp: Dict[str, Any]) -> Dict[str, Any]:
         emp_user_id = emp.get("userId") or user_id
-        try:
-            result = await generate_decision(emp["employeeId"], emp["employeeData"], emp_user_id)
-            results.append(result)
-        except Exception as e:
-            results.append({
-                "employeeId": emp.get("employeeId"),
-                "error": str(e),
-                "recommendationType": "NO_ACTION_REQUIRED",
-                "priority": "LOW",
-                "confidence": 0.0,
-                "reasoning": f"Decision generation failed: {e}",
-                "evidence": {},
-                "affectedFactors": [],
-                "relatedPolicies": [],
-                "expectedOutcome": "",
-                "reviewDate": "",
-                "recommendedActions": [],
-                "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-                "generatedBy": emp_user_id,
-            })
-    return results
+        async with semaphore:
+            try:
+                return await generate_decision(emp["employeeId"], emp["employeeData"], emp_user_id)
+            except Exception as e:
+                return {
+                    "employeeId": emp.get("employeeId"),
+                    "error": str(e),
+                    "recommendationType": "NO_ACTION_REQUIRED",
+                    "priority": "LOW",
+                    "confidence": 0.0,
+                    "reasoning": f"Decision generation failed: {e}",
+                    "evidence": {},
+                    "affectedFactors": [],
+                    "relatedPolicies": [],
+                    "expectedOutcome": "",
+                    "reviewDate": "",
+                    "recommendedActions": [],
+                    "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+                    "generatedBy": emp_user_id,
+                }
+
+    return await asyncio.gather(*(_generate_one(emp) for emp in employees))
 
 
 # ---------------------------------------------------------------------------

@@ -26,6 +26,11 @@ export const departmentService = {
     return response.data.data;
   },
 
+  async deleteAllDepartments() {
+    const response = await api.delete('/departments');
+    return response.data.data;
+  },
+
   async bulkUploadDepartments(formData) {
     const response = await api.post('/departments/bulk', formData, {
       headers: {

@@ -214,7 +214,22 @@ class ShapExplainerCache:
         if not self.is_ready:
             raise RuntimeError("SHAP explainer has not been initialised.")
 
-        raw = self.explainer.shap_values(X)
+        # TreeExplainer (LightGBM/RandomForest/XGBoost) runs an additivity
+        # sanity check by default — sum(shap_values) should equal model
+        # output minus the base value. Reproduced directly against this
+        # service: "Additivity check failed in TreeExplainer! ... sum of the
+        # SHAP values was -3.432395, while the model output was -3.249611."
+        # This is a documented, occasionally-hit floating-point tolerance
+        # issue with boosted-tree models (SHAP's own error message names
+        # check_additivity=False as the accepted mitigation) — it crashed the
+        # ENTIRE batch explain request (500) rather than degrading one
+        # sample, for a difference too small to matter for feature-attribution
+        # display purposes. LinearExplainer has no such check/kwarg, so this
+        # only applies to TreeExplainer.
+        if isinstance(self.explainer, shap.TreeExplainer):
+            raw = self.explainer.shap_values(X, check_additivity=False)
+        else:
+            raw = self.explainer.shap_values(X)
 
         if isinstance(raw, list):
             # Older SHAP: list[0]=class-0, list[1]=class-1

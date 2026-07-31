@@ -10,13 +10,31 @@ import { logger } from '../utils/logger.js';
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
 
+// Default budget for the single-employee call — the full ML+SHAP+NLP+RAG+LLM
+// pipeline for one employee legitimately takes a while, but not this long.
+// The batch call gets its own, much larger budget below.
+//
+// generate_batch_decisions (ai-service) now runs employees with bounded
+// concurrency (semaphore of 20) instead of one at a time, but that only
+// helps up to a point: measured directly against this endpoint, raising
+// concurrency from 10 to 20 made essentially no difference to total wall
+// time (40 employees: 9.86s either way; full ~1250-employee workforce:
+// ~319.5s). The Groq call log confirms why — request timestamps cluster at
+// a flat ~4/sec regardless of client-side concurrency, meaning Groq's own
+// account-level rate ceiling, not this code, is the bottleneck once you're
+// past a handful of concurrent requests. No amount of added concurrency
+// here can exceed that external ceiling. 420s keeps real margin above the
+// measured ~320s floor.
+const AI_DEFAULT_TIMEOUT_MS = 60000;
+const AI_BATCH_TIMEOUT_MS = 420000;
+
 const aiClient = axios.create({
   baseURL: AI_API_URL,
   headers: {
     Authorization: `Bearer ${AI_API_TOKEN}`,
     'Content-Type': 'application/json',
   },
-  timeout: 60000, // the full ML+SHAP+NLP+RAG+LLM pipeline can legitimately take a while
+  timeout: AI_DEFAULT_TIMEOUT_MS,
 });
 
 function mapDecisionToDoc(employeeId, organizationId, data, userId) {
@@ -105,13 +123,17 @@ class DecisionService {
 
     let rawDecisions;
     try {
-      const response = await aiClient.post('/decision/batch', {
-        employees: employees.map((e) => ({
-          employeeId: String(e._id),
-          employeeData: e,
-          userId: String(userId || 'system'),
-        })),
-      });
+      const response = await aiClient.post(
+        '/decision/batch',
+        {
+          employees: employees.map((e) => ({
+            employeeId: String(e._id),
+            employeeData: e,
+            userId: String(userId || 'system'),
+          })),
+        },
+        { timeout: AI_BATCH_TIMEOUT_MS },
+      );
       rawDecisions = response.data?.decisions || [];
     } catch (err) {
       throw toAiServiceError(err, 'Batch decision generation failed', {

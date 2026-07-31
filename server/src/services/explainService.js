@@ -1,9 +1,19 @@
 import axios from 'axios';
+import mongoose from 'mongoose';
 import Explanation from '../models/Explanation.js';
 import { Prediction } from '../models/Prediction.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
+
+// Per-request budgets. The default covers the small single-employee/global
+// calls; the batch call gets its own because it is inherently long-running —
+// it runs SHAP over the entire active workforce in one shot (~12s for 1254
+// employees on this dataset) and grows with headcount. Every historical
+// AI_SERVICE_UNAVAILABLE in server/logs/error-*.log was logged at
+// durationMs≈30010, i.e. this timeout firing, not the AI service being down.
+const AI_DEFAULT_TIMEOUT_MS = 30000;
+const AI_BATCH_TIMEOUT_MS = 180000;
 
 const aiClient = axios.create({
   baseURL: AI_API_URL,
@@ -11,7 +21,7 @@ const aiClient = axios.create({
     Authorization: `Bearer ${AI_API_TOKEN}`,
     'Content-Type': 'application/json',
   },
-  timeout: 30000,
+  timeout: AI_DEFAULT_TIMEOUT_MS,
 });
 
 /**
@@ -21,9 +31,18 @@ const aiClient = axios.create({
  */
 function toExplainError(err, fallbackMessage) {
   if (!err.response) {
-    const e = new Error('AI service is currently unavailable. Please try again later.');
-    e.statusCode = 503;
-    e.code = 'AI_SERVICE_UNAVAILABLE';
+    // Distinguish "took too long" from "nothing listening". Collapsing both
+    // into AI_SERVICE_UNAVAILABLE is what made the original batch failure so
+    // hard to diagnose: the AI service was up and answering the whole time,
+    // the request just exceeded the client timeout.
+    const timedOut = err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT';
+    const e = new Error(
+      timedOut
+        ? `AI service did not respond within ${err.config?.timeout ?? AI_DEFAULT_TIMEOUT_MS}ms. The request may be too large — try a smaller batch.`
+        : 'AI service is currently unavailable. Please try again later.',
+    );
+    e.statusCode = timedOut ? 504 : 503;
+    e.code = timedOut ? 'AI_SERVICE_TIMEOUT' : 'AI_SERVICE_UNAVAILABLE';
     return e;
   }
   const status = err.response.status;
@@ -123,7 +142,9 @@ class ExplainService {
 
     let batchResults;
     try {
-      const response = await aiClient.post('/explain/batch', payload);
+      const response = await aiClient.post('/explain/batch', payload, {
+        timeout: AI_BATCH_TIMEOUT_MS,
+      });
       batchResults = response.data?.data?.explanations || [];
     } catch (err) {
       throw toExplainError(err, 'Batch SHAP explanation failed');
@@ -151,9 +172,18 @@ class ExplainService {
       ),
     );
 
-    await Explanation.insertMany(docs, { ordered: false });
+    // `ordered: false` keeps one bad record from aborting the batch, but
+    // Mongoose then *resolves* even when every document fails validation —
+    // it just returns the subset that made it in. Reporting docs.length here
+    // meant the endpoint answered 200 {processed: 1254} while writing zero
+    // rows. Report what was actually inserted, and surface the gap.
+    const inserted = await Explanation.insertMany(docs, { ordered: false });
+    const skipped = docs.length - inserted.length;
+    if (skipped > 0) {
+      console.warn(`explainBatch: ${skipped}/${docs.length} explanations were rejected on insert.`);
+    }
 
-    return { processed: docs.length };
+    return { processed: inserted.length, skipped };
   }
 
   /**
@@ -183,8 +213,16 @@ class ExplainService {
    * reflects departments that have had at least one explanation generated.
    */
   async getDepartmentRiskDrivers(organizationId) {
+    // Aggregation pipelines are NOT cast against the schema the way find() is,
+    // so the raw string org id from the request header never matches the
+    // ObjectId actually stored on the document — the widget came back empty
+    // even with explanations present.
+    const orgId = mongoose.isValidObjectId(organizationId)
+      ? new mongoose.Types.ObjectId(String(organizationId))
+      : organizationId;
+
     const rows = await Explanation.aggregate([
-      { $match: { organizationId } },
+      { $match: { organizationId: orgId } },
       {
         $lookup: {
           from: 'employees',

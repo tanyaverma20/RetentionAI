@@ -53,6 +53,7 @@ from app.api.employee_intelligence_schemas import (
 from app.nlp.analyzer import (
     analyze_sentiment,
     analyze_hr_text,
+    analyze_hr_texts_batch,
     burnout_level,
     detect_language,
     dominant_emotion,
@@ -145,6 +146,76 @@ async def _collect_employee_texts(db, employee_id: ObjectId) -> list[dict]:
                         "text": value,
                     })
     return texts
+
+
+async def _collect_texts_bulk(db, employee_ids: list[ObjectId]) -> dict[str, list[str]]:
+    """
+    Bulk equivalent of _collect_employee_texts for the batch endpoint: returns
+    {employeeIdStr: [text, ...]} for every requested employee.
+
+    _collect_employee_texts issues one query PER SOURCE PER EMPLOYEE — with 3
+    sources and 1254 active employees that is 3,762 sequential round-trips,
+    every one of them awaited in turn. This issues exactly len(_TEXT_SOURCES)
+    queries total, each an indexed $in over the whole employee set, and keeps
+    the same source-agnostic contract: adding a tuple to _TEXT_SOURCES still
+    requires no changes here.
+    """
+    by_employee: dict[str, list[str]] = {str(eid): [] for eid in employee_ids}
+
+    for collection_name, fields, _source_label in _TEXT_SOURCES:
+        projection = {"employeeId": 1, **{f: 1 for f in fields}}
+        cursor = db[collection_name].find({"employeeId": {"$in": employee_ids}}, projection)
+        async for doc in cursor:
+            key = str(doc.get("employeeId"))
+            bucket = by_employee.get(key)
+            if bucket is None:
+                continue
+            for field in fields:
+                value = doc.get(field)
+                if value and isinstance(value, str) and value.strip():
+                    bucket.append(value)
+
+    return by_employee
+
+
+def _analyze_unique_texts(texts: list[str]) -> dict[str, dict]:
+    """
+    Runs the NLP pipeline once per DISTINCT text and returns {text: analysis}.
+
+    Synchronous and CPU-bound — call via asyncio.to_thread.
+
+    Two multipliers are removed here. First, deduplication: the analysis is a
+    pure function of the text, so identical strings cannot produce different
+    results. The seeded corpus is 2,778 text records drawn from just 20
+    distinct strings (a 139x redundancy factor), and re-running the models on
+    a string already analyzed is wasted work regardless of the corpus.
+    Second, batching: analyze_hr_texts_batch feeds the transformers a list so
+    HuggingFace pads and batches the forward passes.
+
+    Language gating matches _analyze_text_safe — non-English text is dropped
+    (mapped to None) rather than fed to English-only models.
+    """
+    analyzable = [t for t in texts if detect_language(t) in (SUPPORTED_LANGUAGE, "unknown")]
+
+    results: dict[str, dict] = {t: None for t in texts}
+    if not analyzable:
+        return results
+
+    try:
+        for text, analysis in zip(analyzable, analyze_hr_texts_batch(analyzable)):
+            results[text] = analysis
+    except Exception as exc:
+        # Preserve the per-text isolation _analyze_text_safe gave us: if the
+        # batched call fails for any reason, fall back to analyzing one at a
+        # time so a single pathological text can't void the whole run.
+        print(f"Batched NLP analysis failed ({exc}) — falling back to per-text.")
+        for text in analyzable:
+            try:
+                results[text] = analyze_hr_text(text, clean_text(text))
+            except Exception as inner:
+                print(f"Failed to analyze a text record: {inner}")
+
+    return results
 
 
 def _aggregate_employee_intelligence(employee_id: str, analyses: list[dict]) -> dict:
@@ -322,18 +393,41 @@ async def employee_intelligence_batch(request: EmployeeIntelligenceBatchRequest)
     else:
         query["status"] = "ACTIVE"
 
-    employee_ids = [str(emp["_id"]) async for emp in db["employees"].find(query, {"_id": 1})]
+    employee_oids = [emp["_id"] async for emp in db["employees"].find(query, {"_id": 1})]
+
+    # Root cause of the "Generate Employee Intelligence" 503
+    # (AI_SERVICE_UNAVAILABLE): this used to loop employee-by-employee, and
+    # inside each employee, text-by-text — 3 Mongo queries plus a full
+    # single-text NLP pipeline run per record, all sequentially awaited.
+    # Measured directly against this endpoint: 81.5s for 5 employees (13 text
+    # records) = 6.27s per text, which over the full 1254-employee / 2778-record
+    # workforce is ~4.9 HOURS. Express's 30s axios timeout fired long before
+    # FastAPI got anywhere, and a response-less axios error maps to
+    # AI_SERVICE_UNAVAILABLE — the service was never actually down.
+    #
+    # Three fixes, in order of impact:
+    #   1. Analyze each DISTINCT text once (2778 records -> 20 unique strings).
+    #   2. Batch the transformer forward passes (zero-shot was 89% of runtime).
+    #   3. Bulk-fetch all text in 3 queries instead of 3,762.
+    # The per-employee aggregation itself is pure Python over already-computed
+    # analyses, so it stays a plain loop.
+    #
+    # The single-employee endpoints below are deliberately untouched — they
+    # analyze a handful of records and already respond in well under a second.
+    texts_by_employee = await _collect_texts_bulk(db, employee_oids)
+
+    distinct_texts = list({t for texts in texts_by_employee.values() for t in texts})
+    analysis_by_text = await asyncio.to_thread(_analyze_unique_texts, distinct_texts)
 
     profiles = []
     failed_count = 0
-    for employee_id in employee_ids:
+    for employee_id in (str(oid) for oid in employee_oids):
         try:
-            text_records = await _collect_employee_texts(db, ObjectId(employee_id))
-            analyses = []
-            for record in text_records:
-                analysis = await _analyze_text_safe(record["text"])
-                if analysis is not None:
-                    analyses.append(analysis)
+            analyses = [
+                analysis
+                for text in texts_by_employee.get(employee_id, [])
+                if (analysis := analysis_by_text.get(text)) is not None
+            ]
             profiles.append(_aggregate_employee_intelligence(employee_id, analyses))
         except Exception as exc:
             print(f"Failed to build Employee Intelligence for {employee_id}: {exc}")
@@ -342,7 +436,7 @@ async def employee_intelligence_batch(request: EmployeeIntelligenceBatchRequest)
     return EmployeeIntelligenceBatchResponse(
         success=True,
         profiles=[EmployeeIntelligenceResponse(**p) for p in profiles],
-        totalCount=len(employee_ids),
+        totalCount=len(employee_oids),
         successCount=len(profiles),
         failedCount=failed_count,
     )
