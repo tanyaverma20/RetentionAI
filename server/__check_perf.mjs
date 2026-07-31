@@ -1,0 +1,10 @@
+import mongoose from 'mongoose';
+import dotenv from 'dotenv';
+dotenv.config();
+await mongoose.connect(process.env.MONGODB_URI);
+const db = mongoose.connection.db;
+const sample = await db.collection('performances').findOne({});
+console.log(JSON.stringify(sample, null, 2));
+const empSample = await db.collection('employees').findOne({}, { projection: { firstName:1, lastName:1, performanceRating:1, engagementScore:1, overtimeHours:1 } });
+console.log(JSON.stringify(empSample, null, 2));
+await mongoose.disconnect();

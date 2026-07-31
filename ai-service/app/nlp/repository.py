@@ -1,4 +1,5 @@
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from bson import ObjectId
 from app.utils.database import get_db
 
 async def get_nlp_collection():
@@ -9,6 +10,36 @@ async def get_nlp_collection():
     # the GET endpoints below surfaced it as a 500).
     db = get_db()
     return db["nlp_insights"]
+
+
+async def get_latest_employee_intelligence(employee_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Returns the most recent Employee Intelligence profile for one employee.
+
+    Root cause this fixes: the Decision Engine's evidence step previously
+    called get_employee_insights(), which reads this service's OWN
+    `nlp_insights` collection — written only by the legacy /nlp/analyze and
+    /nlp/analyze/batch endpoints. Nothing in the actual "Generate Employee
+    Intelligence" flow (server/src/services/employeeIntelligenceService.js,
+    called via POST /employee-intelligence and /employee-intelligence/batch
+    below) ever writes there — it persists into its own `employeeintelligences`
+    collection instead. `nlp_insights` is therefore permanently empty, so
+    every employee's NLP evidence silently defaulted to Neutral/0.0/[],
+    starving nearly every Business Rule of the sentiment/burnout/topic
+    signals it needs and collapsing every decision to NO_ACTION_REQUIRED.
+    This queries the collection that is actually populated, on the same
+    shared MongoDB database both services connect to.
+    """
+    db = get_db()
+    try:
+        oid = ObjectId(employee_id)
+    except Exception:
+        return None
+    doc = await db["employeeintelligences"].find_one(
+        {"employeeId": oid},
+        sort=[("generatedAt", -1)],
+    )
+    return doc
 
 async def find_cached_insight(source_document_id: str, text_hash: str) -> Dict[str, Any] | None:
     """

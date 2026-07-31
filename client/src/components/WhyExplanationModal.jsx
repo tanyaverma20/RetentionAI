@@ -55,31 +55,31 @@ export default function WhyExplanationModal({ employee, onClose }) {
   ].sort((a, b) => Math.abs(b.shapValue) - Math.abs(a.shapValue));
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-lg max-h-[85vh] overflow-y-auto p-6 bg-white border border-slate-100 rounded-2xl shadow-card space-y-5">
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-xs font-mono font-semibold uppercase tracking-widest text-amber-400">Why is this employee at risk?</p>
-            <h3 className="text-lg font-bold text-slate-100 mt-1">
+            <p className="text-xs font-mono font-semibold uppercase tracking-widest text-amber-600">Why is this employee at risk?</p>
+            <h3 className="text-lg font-bold text-slate-900 mt-1">
               {employee.firstName} {employee.lastName}
             </h3>
           </div>
-          <button onClick={onClose} className="text-slate-500 hover:text-slate-300 text-xl leading-none">×</button>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none">×</button>
         </div>
 
         {loading && (
           <div className="flex items-center justify-center py-10">
-            <div className="w-8 h-8 rounded-full border-2 border-slate-700 border-t-amber-500 animate-spin" />
+            <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-amber-500 animate-spin" />
           </div>
         )}
 
         {!loading && error && (
-          <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-400 text-xs">{error}</div>
+          <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs">{error}</div>
         )}
 
         {!loading && !error && !explanation && (
           <div className="text-center py-8">
-            <p className="text-sm text-slate-400 mb-4">No SHAP explanation generated yet for this employee.</p>
+            <p className="text-sm text-slate-500 mb-4">No SHAP explanation generated yet for this employee.</p>
             <button
               onClick={() => handleGenerate(false)}
               disabled={generating}
@@ -92,7 +92,7 @@ export default function WhyExplanationModal({ employee, onClose }) {
 
         {!loading && explanation && (
           <div className="space-y-4">
-            <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl text-sm text-amber-100 leading-relaxed">
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm text-amber-100 leading-relaxed">
               {explanation.summary}
             </div>
 
@@ -102,14 +102,14 @@ export default function WhyExplanationModal({ employee, onClose }) {
                   <div
                     key={i}
                     className={`flex items-center justify-between p-3 rounded-xl border ${
-                      f.isPositive ? 'bg-rose-500/5 border-rose-500/15' : 'bg-emerald-500/5 border-emerald-500/15'
+                      f.isPositive ? 'bg-rose-50 border-rose-100' : 'bg-emerald-50 border-emerald-100'
                     }`}
                   >
                     <div>
-                      <div className="text-sm font-semibold text-slate-200">{f.displayName}</div>
-                      <div className="text-xs text-slate-500">{f.formattedValue}</div>
+                      <div className="text-sm font-semibold text-slate-800">{f.displayName}</div>
+                      <div className="text-xs text-slate-400">{f.formattedValue}</div>
                     </div>
-                    <div className={`text-xs font-bold px-2 py-1 rounded-lg ${f.isPositive ? 'text-rose-400 bg-rose-500/10' : 'text-emerald-400 bg-emerald-500/10'}`}>
+                    <div className={`text-xs font-bold px-2 py-1 rounded-lg ${f.isPositive ? 'text-rose-600 bg-rose-50' : 'text-emerald-600 bg-emerald-50'}`}>
                       {f.isPositive ? '+' : ''}{(f.shapValue * 100).toFixed(1)}%
                     </div>
                   </div>
@@ -117,11 +117,11 @@ export default function WhyExplanationModal({ employee, onClose }) {
               </div>
             )}
 
-            <div className="flex justify-end pt-2 border-t border-slate-800">
+            <div className="flex justify-end pt-2 border-t border-slate-100">
               <button
                 onClick={() => handleGenerate(true)}
                 disabled={generating}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-all disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-50 border border-amber-100 rounded-xl transition-all disabled:opacity-50"
               >
                 {generating ? 'Refreshing…' : 'Refresh Explanation'}
               </button>

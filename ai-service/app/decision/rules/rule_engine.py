@@ -16,12 +16,29 @@ autonomous agent) and returns one canonical `recommendationType` from the
 fixed taxonomy below, plus which rule(s) fired (for the "Reasoning"/
 "Supporting Evidence" fields).
 
+Why almost everyone used to get NO_ACTION_REQUIRED
+----------------------------------------------------
+Two independent bugs upstream of this file meant sentiment/burnout/topics
+were always neutral/empty regardless of the employee's real data (fixed in
+app/nlp/repository.py + app/agent/tools/nlp_tool.py +
+app/preprocessing/enrichment.py), and any LLM failure aborted the whole
+decision before this module ever ran (fixed in agent_orchestrator.py). But
+even with real data flowing in, this module ITSELF had no rule that fired
+for "elevated risk with no other specific corroborating signal" — every
+rule below the top of the list demands a specific co-occurring condition
+(a topic, a frustration score, a tenure band), so a HIGH or MEDIUM risk
+employee who didn't happen to match one of those narrow combinations fell
+straight through to the default. Real enterprise HR platforms don't leave
+an at-risk employee with no action just because no single narrow driver was
+identified — they escalate on risk tier alone. The `high_risk_retention_
+meeting` and `medium_risk_monitor_weekly` catch-alls below close that gap.
+
 Extensibility
 -------------
 Each rule is one independent `Rule` entry in RULES. Adding a new
 recommendation type or condition means appending one entry — no existing
 rule's code is read, modified, or reordered to add a new one (rules are
-evaluated independently; only their declared priority breaks ties).
+evaluated independently, in order; the first match wins).
 """
 
 from __future__ import annotations
@@ -31,9 +48,20 @@ from typing import Any, Callable, Dict, List
 
 # ---------------------------------------------------------------------------
 # Fixed recommendation taxonomy — the only categories a Decision may carry.
+# The five new tiered categories (IMMEDIATE_INTERVENTION, RETENTION_MEETING,
+# PERFORMANCE_IMPROVEMENT_PLAN, MONITOR_WEEKLY, CAREER_DISCUSSION) sit
+# alongside the existing specific-driver categories, which still fire first
+# when their narrower conditions are met — the tiered ones only take over
+# when nothing more specific applies, acting as the risk-tier-appropriate
+# floor rather than replacing the richer rules.
 # ---------------------------------------------------------------------------
 
 RECOMMENDATION_TYPES = [
+    "IMMEDIATE_INTERVENTION",
+    "RETENTION_MEETING",
+    "PERFORMANCE_IMPROVEMENT_PLAN",
+    "MONITOR_WEEKLY",
+    "CAREER_DISCUSSION",
     "RETENTION_PLAN",
     "PROMOTION_REVIEW",
     "COMPENSATION_REVIEW",
@@ -60,12 +88,28 @@ class Rule:
     reasoning: str  # human-readable explanation template, shown when this rule fires
 
 
-def _is_high_risk(e: Dict[str, Any]) -> bool:
-    return e.get("mlRiskLevel") == "HIGH"
+def _risk_tier(e: Dict[str, Any]) -> str:
+    """VERY_HIGH | HIGH | MEDIUM | LOW — see decision_service._build_rule_evidence
+    for how mlRiskTier is derived from the model's own riskScore/threshold."""
+    return e.get("mlRiskTier") or e.get("mlRiskLevel") or "LOW"
+
+
+def _is_very_high_risk(e: Dict[str, Any]) -> bool:
+    return _risk_tier(e) == "VERY_HIGH"
+
+
+def _is_high_or_above(e: Dict[str, Any]) -> bool:
+    return _risk_tier(e) in ("HIGH", "VERY_HIGH")
 
 
 def _is_medium_or_high_risk(e: Dict[str, Any]) -> bool:
-    return e.get("mlRiskLevel") in ("HIGH", "MEDIUM")
+    return _risk_tier(e) in ("MEDIUM", "HIGH", "VERY_HIGH")
+
+
+def _is_high_risk(e: Dict[str, Any]) -> bool:
+    # Kept for the existing rules below that were written against the plain
+    # ML riskLevel (HIGH/MEDIUM/LOW) rather than the new 4-tier split.
+    return e.get("mlRiskLevel") == "HIGH"
 
 
 def _negative_sentiment(e: Dict[str, Any]) -> bool:
@@ -77,12 +121,28 @@ def _has_topic(e: Dict[str, Any], *topics: str) -> bool:
     return bool(detected.intersection(topics))
 
 
+def _low_performance(e: Dict[str, Any]) -> bool:
+    rating = e.get("performanceRating")
+    return rating is not None and rating < 2.5
+
+
 # ---------------------------------------------------------------------------
 # Rules — ordered most-specific first. The first rule whose condition is
 # true wins (deterministic, auditable — no ambiguity about which rule fired).
 # ---------------------------------------------------------------------------
 
 RULES: List[Rule] = [
+    Rule(
+        name="immediate_intervention",
+        recommendation_type="IMMEDIATE_INTERVENTION",
+        priority="HIGH",
+        condition=lambda e: (
+            _is_very_high_risk(e)
+            and _negative_sentiment(e)
+            and e.get("burnoutRisk", 0) >= 0.6
+        ),
+        reasoning="Very high attrition risk combined with negative sentiment and high burnout is a crisis-level combination — it requires immediate manager intervention rather than a routine retention conversation.",
+    ),
     Rule(
         name="high_risk_burnout_promotion_overdue",
         recommendation_type="PROMOTION_REVIEW",
@@ -157,6 +217,13 @@ RULES: List[Rule] = [
         reasoning="Elevated risk within the first 6 months alongside team/culture-related feedback suggests onboarding support via mentorship would help.",
     ),
     Rule(
+        name="performance_improvement_plan",
+        recommendation_type="PERFORMANCE_IMPROVEMENT_PLAN",
+        priority="HIGH",
+        condition=lambda e: _is_high_or_above(e) and _low_performance(e),
+        reasoning="High attrition risk combined with a below-average performance rating indicates a formal Performance Improvement Plan is warranted alongside retention efforts.",
+    ),
+    Rule(
         name="career_growth_signal",
         recommendation_type="CAREER_DEVELOPMENT",
         priority="MEDIUM",
@@ -184,11 +251,32 @@ RULES: List[Rule] = [
         reasoning="Elevated attrition risk with negative sentiment or resignation-intent signals warrants a general retention plan even without one dominant specific driver.",
     ),
     Rule(
+        name="career_discussion_declining_engagement",
+        recommendation_type="CAREER_DISCUSSION",
+        priority="MEDIUM",
+        condition=lambda e: _risk_tier(e) == "MEDIUM" and e.get("engagementDeclining", False),
+        reasoning="Medium attrition risk combined with a real drop in engagement score between the two most recent surveys suggests a career discussion would help re-engage the employee before risk escalates further.",
+    ),
+    Rule(
+        name="high_risk_retention_meeting",
+        recommendation_type="RETENTION_MEETING",
+        priority="HIGH",
+        condition=_is_high_or_above,
+        reasoning="Elevated (high or very high) attrition risk on its own — even without one specific dominant driver identified above — warrants a retention meeting with the employee.",
+    ),
+    Rule(
+        name="medium_risk_monitor_weekly",
+        recommendation_type="MONITOR_WEEKLY",
+        priority="MEDIUM",
+        condition=lambda e: _risk_tier(e) == "MEDIUM",
+        reasoning="Medium attrition risk warrants weekly monitoring even without a more specific driver identified above.",
+    ),
+    Rule(
         name="recognition_opportunity",
         recommendation_type="RECOGNITION_PROGRAM",
         priority="LOW",
         condition=lambda e: (
-            e.get("mlRiskLevel") == "LOW"
+            _risk_tier(e) == "LOW"
             and e.get("sentiment") == "Positive"
             and any("performance" in f.lower() or "rating" in f.lower() for f in e.get("topProtectiveFeatures", []))
         ),
@@ -201,7 +289,7 @@ _DEFAULT_RULE = Rule(
     recommendation_type="NO_ACTION_REQUIRED",
     priority="LOW",
     condition=lambda e: True,
-    reasoning="No business rule condition was met for the current evidence — risk and sentiment signals do not indicate a specific action is needed at this time.",
+    reasoning="Low attrition risk with no elevated sentiment, burnout, or engagement signals — no action is needed at this time.",
 )
 
 

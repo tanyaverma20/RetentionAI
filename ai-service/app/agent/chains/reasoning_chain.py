@@ -22,7 +22,23 @@ def get_agent_llm():
         _llm = ChatGroq(
             model="llama-3.3-70b-versatile",
             api_key=groq_api_key,
-            temperature=0.1  # Low temperature for consistent, factual output
+            temperature=0.1,  # Low temperature for consistent, factual output
+            # ChatGroq defaults to max_retries=2, and the underlying client
+            # honors the Retry-After hint Groq sends on 429s. That's fine for
+            # a short per-minute rate limit, but this account's limit is a
+            # DAILY token quota (TPD) — Groq's own error message reports
+            # waits of 9-12+ minutes. With the default retries, a single
+            # rate-limited employee could block for 20-30+ minutes (2 retries
+            # x that wait) before the existing per-employee try/except in
+            # generate_batch_decisions ever got a chance to catch it and move
+            # on — which is what made "Generate Recommendations" appear to
+            # hang forever across a ~1250-employee batch instead of finishing
+            # in seconds with per-employee NO_ACTION_REQUIRED fallbacks.
+            # Failing fast here preserves that existing isolation; it does
+            # not change what happens on failure, only how long one call is
+            # allowed to block before it's reported.
+            max_retries=0,
+            request_timeout=30,
         )
     return _llm
 

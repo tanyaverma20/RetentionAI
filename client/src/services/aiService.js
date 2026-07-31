@@ -61,7 +61,12 @@ export const aiService = {
   /** Generate SHAP explanations for the whole workforce (or a subset). */
   async explainBatch(employeeIds = null) {
     const payload = employeeIds ? { employeeIds } : {};
-    const response = await api.post('/explain/batch', payload);
+    // Bounded slightly above Express's own AI_BATCH_TIMEOUT_MS (180s) for this
+    // route — without this, the axios instance's default (no timeout) meant
+    // the promise would only ever settle once Express responded, with no
+    // client-side guarantee at all. This is a pure safety net: Express should
+    // always respond well before this fires.
+    const response = await api.post('/explain/batch', payload, { timeout: 210000 });
     return response.data.data;
   },
 
@@ -88,7 +93,9 @@ export const aiService = {
   /** Generate Employee Intelligence profiles for many employees at once (or the whole workforce). */
   async generateEmployeeIntelligenceBatch(employeeIds = null) {
     const payload = employeeIds ? { employeeIds } : {};
-    const response = await api.post('/employee-intelligence/batch', payload);
+    // Bounded slightly above Express's own AI_BATCH_TIMEOUT_MS (240s) for this
+    // route, same reasoning as explainBatch above.
+    const response = await api.post('/employee-intelligence/batch', payload, { timeout: 270000 });
     return response.data.data;
   },
 

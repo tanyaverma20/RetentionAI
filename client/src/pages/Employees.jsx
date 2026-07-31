@@ -23,21 +23,21 @@ import {
 import { bulkImportHrRecords } from '../store/slices/hrSlice';
 
 const RISK_STYLES = {
-  HIGH: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
-  MEDIUM: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  LOW: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  HIGH: 'bg-rose-50 text-rose-600 border-rose-100',
+  MEDIUM: 'bg-amber-50 text-amber-600 border-amber-100',
+  LOW: 'bg-emerald-50 text-emerald-600 border-emerald-100',
 };
 
 function RiskBadge({ riskLevel, probability }) {
-  if (!riskLevel) return <span className="text-xs text-slate-600 italic">No Data</span>;
-  const style = RISK_STYLES[riskLevel] || 'bg-slate-700/30 text-slate-500';
+  if (!riskLevel) return <span className="text-xs text-slate-400 italic">No Data</span>;
+  const style = RISK_STYLES[riskLevel] || 'bg-slate-200/30 text-slate-400';
   return (
     <div className="flex flex-col gap-0.5">
       <span className={`inline-block px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${style}`}>
         {riskLevel}
       </span>
       {probability !== undefined && (
-        <span className="text-xs font-mono text-slate-400">{(probability * 100).toFixed(0)}%</span>
+        <span className="text-xs font-mono text-slate-500">{(probability * 100).toFixed(0)}%</span>
       )}
     </div>
   );
@@ -45,17 +45,17 @@ function RiskBadge({ riskLevel, probability }) {
 
 const SENTIMENT_EMOJI = { Positive: '😊', Neutral: '😐', Negative: '😟' };
 const BURNOUT_STYLES = {
-  Low: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  Medium: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  High: 'bg-rose-500/15 text-rose-400 border-rose-500/30',
+  Low: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+  Medium: 'bg-amber-50 text-amber-600 border-amber-100',
+  High: 'bg-rose-50 text-rose-600 border-rose-100',
 };
 
 function MoodBadge({ intelligence }) {
-  if (!intelligence) return <span className="text-xs text-slate-600 italic">No Data</span>;
+  if (!intelligence) return <span className="text-xs text-slate-400 italic">No Data</span>;
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="text-xs text-slate-300">{SENTIMENT_EMOJI[intelligence.sentiment] || ''} {intelligence.sentiment}</span>
-      <span className={`inline-block w-fit px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${BURNOUT_STYLES[intelligence.burnoutRisk] || 'bg-slate-700/30 text-slate-500'}`}>
+      <span className="text-xs text-slate-600">{SENTIMENT_EMOJI[intelligence.sentiment] || ''} {intelligence.sentiment}</span>
+      <span className={`inline-block w-fit px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full border ${BURNOUT_STYLES[intelligence.burnoutRisk] || 'bg-slate-200/30 text-slate-400'}`}>
         {intelligence.burnoutRisk} Burnout
       </span>
     </div>
@@ -183,34 +183,34 @@ export default function Employees() {
 
   const getStatusBadge = (status, isDeleted) => {
     if (isDeleted) {
-      return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      return 'bg-rose-50 text-rose-600 border-rose-100';
     }
     switch (status) {
       case 'ACTIVE':
-        return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       case 'INACTIVE':
-        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+        return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
       case 'ON_LEAVE':
-        return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+        return 'bg-amber-50 text-amber-600 border-amber-100';
       case 'TERMINATED':
-        return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+        return 'bg-rose-50 text-rose-600 border-rose-100';
       default:
-        return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+        return 'bg-slate-500/10 text-slate-500 border-slate-500/20';
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-3xl bg-white border border-slate-100 shadow-card">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono font-semibold text-indigo-400 uppercase tracking-widest mb-1">
+          <div className="flex items-center gap-2 text-xs font-mono font-semibold text-indigo-600 uppercase tracking-widest mb-1">
             <span>Workforce Directory</span>
             <span>•</span>
             <span>{totalItems} Total Records</span>
           </div>
-          <h1 className="text-3xl font-extrabold text-slate-100">Employee Management</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-3xl font-extrabold text-slate-900">Employee Management</h1>
+          <p className="text-sm text-slate-500 mt-1">
             Search, filter, manage profiles, and bulk import workforce data across departments.
           </p>
         </div>
@@ -223,16 +223,16 @@ export default function Employees() {
                 dispatch(fetchEmployees({ page, limit, search: filters.search, departmentId: filters.departmentId, designation: filters.designation, status: filters.status, includeDeleted: filters.includeDeleted, sortBy: filters.sortBy, sortOrder: filters.sortOrder }));
               }}
               disabled={loading}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-60 border border-violet-500/30 rounded-2xl transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-violet-600 hover:bg-violet-500 disabled:opacity-60 border border-violet-100 rounded-2xl transition-all"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>
               {loading ? 'Running AI…' : 'Run AI Prediction'}
             </button>
             <button
               onClick={() => setIsImportModalOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-2xl transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-slate-800 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-2xl transition-all"
             >
-              <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
               Bulk Import CSV
@@ -248,7 +248,7 @@ export default function Employees() {
             </button>
             <button
               onClick={() => setIsDeleteAllOpen(true)}
-              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-2xl transition-all"
+              className="flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-rose-600 bg-rose-50 hover:bg-rose-50 border border-rose-100 rounded-2xl transition-all"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -261,30 +261,30 @@ export default function Employees() {
 
       {/* Notifications */}
       {successMessage && (
-        <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400 text-sm">
+        <div className="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-emerald-600 text-sm">
           <span>{successMessage}</span>
-          <button onClick={() => dispatch(clearEmployeeSuccess())} className="text-emerald-400 hover:text-emerald-300 font-bold">
+          <button onClick={() => dispatch(clearEmployeeSuccess())} className="text-emerald-600 hover:text-emerald-600 font-bold">
             ×
           </button>
         </div>
       )}
 
       {error && (
-        <div className="flex items-center justify-between p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-sm">
+        <div className="flex items-center justify-between p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm">
           <span>{error}</span>
-          <button onClick={() => dispatch(clearEmployeeError())} className="text-rose-400 hover:text-rose-300 font-bold">
+          <button onClick={() => dispatch(clearEmployeeError())} className="text-rose-600 hover:text-rose-600 font-bold">
             ×
           </button>
         </div>
       )}
 
       {/* Search & Filter Toolbar */}
-      <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-3xl space-y-4 backdrop-blur-md">
+      <div className="p-4 bg-white/80 border border-slate-100 rounded-3xl space-y-4 backdrop-blur-md">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {/* Search Box */}
           <div className="relative">
             <svg
-              className="w-4 h-4 absolute left-3.5 top-3 text-slate-500"
+              className="w-4 h-4 absolute left-3.5 top-3 text-slate-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -296,7 +296,7 @@ export default function Employees() {
               placeholder="Search name, code, email, designation..."
               value={filters.search}
               onChange={handleSearchChange}
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-xs placeholder-slate-500 focus:outline-none transition-colors"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-xs placeholder-slate-500 focus:outline-none transition-colors"
             />
           </div>
 
@@ -304,7 +304,7 @@ export default function Employees() {
           <select
             value={filters.departmentId}
             onChange={(e) => handleFilterChange('departmentId', e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-xs focus:outline-none"
           >
             <option value="">All Departments</option>
             {departments.map((dept) => (
@@ -318,7 +318,7 @@ export default function Employees() {
           <select
             value={filters.status}
             onChange={(e) => handleFilterChange('status', e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-xs focus:outline-none"
           >
             <option value="">All Statuses</option>
             <option value="ACTIVE">Active</option>
@@ -331,7 +331,7 @@ export default function Employees() {
           <select
             value={riskFilter}
             onChange={(e) => setRiskFilter(e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-xs focus:outline-none"
           >
             <option value="">All Risk Levels</option>
             <option value="HIGH">🔴 High Risk</option>
@@ -343,7 +343,7 @@ export default function Employees() {
           <select
             value={filters.sentiment}
             onChange={(e) => handleFilterChange('sentiment', e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-xs focus:outline-none"
           >
             <option value="">All Sentiments</option>
             <option value="Positive">😊 Positive</option>
@@ -355,7 +355,7 @@ export default function Employees() {
           <select
             value={filters.burnoutRisk}
             onChange={(e) => handleFilterChange('burnoutRisk', e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-xs focus:outline-none"
           >
             <option value="">All Burnout Levels</option>
             <option value="Low">🟢 Low Burnout</option>
@@ -367,7 +367,7 @@ export default function Employees() {
           <select
             value={filters.emotion}
             onChange={(e) => handleFilterChange('emotion', e.target.value)}
-            className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+            className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-xs focus:outline-none"
           >
             <option value="">All Emotions</option>
             <option value="Happy">Happy</option>
@@ -383,7 +383,7 @@ export default function Employees() {
             <select
               value={filters.sortBy}
               onChange={(e) => handleFilterChange('sortBy', e.target.value)}
-              className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-xs focus:outline-none"
+              className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-xs focus:outline-none"
             >
               <option value="createdAt">Date Created</option>
               <option value="joiningDate">Joining Date</option>
@@ -399,21 +399,21 @@ export default function Employees() {
             <button
               onClick={() => handleFilterChange('sortOrder', filters.sortOrder === 'asc' ? 'desc' : 'asc')}
               title={`Sort ${filters.sortOrder === 'asc' ? 'Descending' : 'Ascending'}`}
-              className="p-2 bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 rounded-xl transition-colors"
+              className="p-2 bg-slate-50 border border-slate-100 hover:border-slate-300 text-slate-600 rounded-xl transition-colors"
             >
               {filters.sortOrder === 'asc' ? '↑' : '↓'}
             </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-800/60 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-100/60 text-xs">
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-slate-400 cursor-pointer">
+            <label className="flex items-center gap-2 text-slate-500 cursor-pointer">
               <input
                 type="checkbox"
                 checked={filters.includeDeleted}
                 onChange={(e) => handleFilterChange('includeDeleted', e.target.checked)}
-                className="w-4 h-4 rounded bg-slate-950 border-slate-800 text-indigo-600 focus:ring-indigo-500"
+                className="w-4 h-4 rounded bg-slate-50 border-slate-100 text-indigo-600 focus:ring-indigo-500"
               />
               Show Soft-Deleted Employees
             </label>
@@ -421,7 +421,7 @@ export default function Employees() {
 
           <button
             onClick={() => dispatch(resetFilters())}
-            className="text-indigo-400 hover:text-indigo-300 font-semibold transition-colors"
+            className="text-indigo-600 hover:text-indigo-600 font-semibold transition-colors"
           >
             Reset Filters
           </button>
@@ -429,25 +429,25 @@ export default function Employees() {
       </div>
 
       {/* Employees Data Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-xl">
+      <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden shadow-card">
         {loading ? (
           <div className="flex items-center justify-center p-16">
             <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-indigo-500"></div>
           </div>
         ) : employees.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center mx-auto mb-3">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center mx-auto mb-3">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-slate-200">No employees match criteria</h3>
-            <p className="text-xs text-slate-400 mt-1">Try adjusting search terms or filters.</p>
+            <h3 className="text-lg font-bold text-slate-800">No employees match criteria</h3>
+            <p className="text-xs text-slate-500 mt-1">Try adjusting search terms or filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300">
-              <thead className="bg-slate-950/80 text-xs font-mono font-semibold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+            <table className="w-full text-left text-sm text-slate-600">
+              <thead className="bg-white/80 text-xs font-mono font-semibold uppercase tracking-wider text-slate-500 border-b border-slate-100">
                 <tr>
                   <th className="px-6 py-4">Employee</th>
                   <th className="px-6 py-4">Department &amp; Role</th>
@@ -459,7 +459,7 @@ export default function Employees() {
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800/60">
+              <tbody className="divide-y divide-slate-100/60">
                 {employees
                   .filter(emp => !riskFilter || emp.latestPrediction?.riskLevel === riskFilter)
                   .map((emp) => {
@@ -469,41 +469,41 @@ export default function Employees() {
                   return (
                     <tr
                       key={empId}
-                      className={`hover:bg-slate-800/40 transition-colors ${
-                        emp.isDeleted ? 'opacity-60 bg-rose-500/5' : ''
+                      className={`hover:bg-slate-100/40 transition-colors ${
+                        emp.isDeleted ? 'opacity-60 bg-rose-50' : ''
                       }`}
                     >
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-800 to-indigo-900/50 border border-slate-700 flex items-center justify-center font-bold text-indigo-300">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-slate-800 to-indigo-900/50 border border-slate-200 flex items-center justify-center font-bold text-indigo-600">
                             {emp.firstName?.[0]}
                             {emp.lastName?.[0]}
                           </div>
                           <div>
                             <Link
                               to={`/employees/${empId}`}
-                              className="font-semibold text-slate-100 hover:text-indigo-300 transition-colors"
+                              className="font-semibold text-slate-900 hover:text-indigo-600 transition-colors"
                             >
                               {emp.firstName} {emp.lastName}
                             </Link>
-                            <div className="text-xs font-mono text-indigo-400">{emp.employeeCode}</div>
+                            <div className="text-xs font-mono text-indigo-600">{emp.employeeCode}</div>
                           </div>
                         </div>
                       </td>
 
                       <td className="px-6 py-4">
-                        <div className="font-semibold text-slate-200">{emp.designation}</div>
-                        <div className="text-xs text-slate-400">
+                        <div className="font-semibold text-slate-800">{emp.designation}</div>
+                        <div className="text-xs text-slate-500">
                           {dept?.name ? `${dept.name} (${dept.code})` : 'Unassigned'}
                         </div>
                       </td>
 
                       <td className="px-6 py-4">
-                        <div className="text-slate-200">{emp.email}</div>
-                        <div className="text-xs text-slate-500">{emp.phone || 'N/A'}</div>
+                        <div className="text-slate-800">{emp.email}</div>
+                        <div className="text-xs text-slate-400">{emp.phone || 'N/A'}</div>
                       </td>
 
-                      <td className="px-6 py-4 font-mono text-xs text-slate-300">
+                      <td className="px-6 py-4 font-mono text-xs text-slate-600">
                         {emp.joiningDate ? new Date(emp.joiningDate).toLocaleDateString() : 'N/A'}
                       </td>
 
@@ -531,7 +531,7 @@ export default function Employees() {
                           <Link
                             to={`/employees/${empId}`}
                             title="View Profile"
-                            className="p-2 text-slate-400 hover:text-indigo-300 bg-slate-800/60 hover:bg-slate-800 rounded-xl transition-colors"
+                            className="p-2 text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-slate-100 rounded-xl transition-colors"
                           >
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -542,7 +542,7 @@ export default function Employees() {
                           <button
                             onClick={() => setWhyEmployee(emp)}
                             title="Why is this employee at risk?"
-                            className="px-2.5 py-2 text-xs font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-colors"
+                            className="px-2.5 py-2 text-xs font-bold text-amber-600 hover:text-amber-600 bg-amber-50 hover:bg-amber-50 border border-amber-100 rounded-xl transition-colors"
                           >
                             Why?
                           </button>
@@ -554,7 +554,7 @@ export default function Employees() {
                                   <button
                                     onClick={() => { setSelectedEmployee(emp); setIsFormModalOpen(true); }}
                                     title="Edit Employee"
-                                    className="p-2 text-slate-400 hover:text-indigo-300 bg-slate-800/60 hover:bg-slate-800 rounded-xl transition-colors"
+                                    className="p-2 text-slate-500 hover:text-indigo-600 bg-slate-100 hover:bg-slate-100 rounded-xl transition-colors"
                                   >
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -563,7 +563,7 @@ export default function Employees() {
                                   <button
                                     onClick={() => setDeleteConfirmEmp(emp)}
                                     title="Soft Delete Employee"
-                                    className="p-2 text-slate-400 hover:text-rose-400 bg-slate-800/60 hover:bg-slate-800 rounded-xl transition-colors"
+                                    className="p-2 text-slate-500 hover:text-rose-600 bg-slate-100 hover:bg-slate-100 rounded-xl transition-colors"
                                   >
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -574,7 +574,7 @@ export default function Employees() {
                                 <button
                                   onClick={() => handleRestore(emp)}
                                   title="Restore Employee"
-                                  className="px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-xl transition-colors"
+                                  className="px-3 py-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-600 bg-emerald-50 hover:bg-emerald-50 border border-emerald-100 rounded-xl transition-colors"
                                 >
                                   Restore
                                 </button>
@@ -593,24 +593,24 @@ export default function Employees() {
 
         {/* Pagination Controls */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 bg-slate-950/60 border-t border-slate-800 text-xs text-slate-400">
+          <div className="flex items-center justify-between px-6 py-4 bg-slate-50 border-t border-slate-100 text-xs text-slate-500">
             <div>
-              Showing Page <span className="font-bold text-slate-200">{page}</span> of{' '}
-              <span className="font-bold text-slate-200">{totalPages}</span> ({totalItems} records)
+              Showing Page <span className="font-bold text-slate-800">{page}</span> of{' '}
+              <span className="font-bold text-slate-800">{totalPages}</span> ({totalItems} records)
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 disabled={page <= 1}
                 onClick={() => dispatch(setPage(page - 1))}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg disabled:opacity-40 transition-colors"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg disabled:opacity-40 transition-colors"
               >
                 Previous
               </button>
               <button
                 disabled={page >= totalPages}
                 onClick={() => dispatch(setPage(page + 1))}
-                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg disabled:opacity-40 transition-colors"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg disabled:opacity-40 transition-colors"
               >
                 Next
               </button>
@@ -646,24 +646,24 @@ export default function Employees() {
 
       {/* Soft Delete Confirmation Modal */}
       {deleteConfirmEmp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md p-6 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md p-6 bg-white border border-slate-100 rounded-2xl shadow-card space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center mx-auto">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-100">Soft Delete Employee</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                Are you sure you want to soft delete <span className="text-slate-200 font-bold">{deleteConfirmEmp.firstName} {deleteConfirmEmp.lastName}</span>?
+              <h3 className="text-lg font-bold text-slate-900">Soft Delete Employee</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Are you sure you want to soft delete <span className="text-slate-800 font-bold">{deleteConfirmEmp.firstName} {deleteConfirmEmp.lastName}</span>?
                 The employee profile will be deactivated but retained for audit log compliance.
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setDeleteConfirmEmp(null)}
-                className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-slate-800 rounded-xl"
+                className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 bg-slate-100 rounded-xl"
               >
                 Cancel
               </button>
@@ -680,34 +680,34 @@ export default function Employees() {
 
       {/* Delete All Confirmation Modal — typed confirmation required given the blast radius */}
       {isDeleteAllOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-          <div className="w-full max-w-md p-6 bg-slate-900 border border-rose-500/30 rounded-2xl shadow-2xl space-y-4">
-            <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md p-6 bg-white border border-rose-100 rounded-2xl shadow-card space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center mx-auto">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             <div className="text-center">
-              <h3 className="text-lg font-bold text-slate-100">Delete All Employees</h3>
-              <p className="text-xs text-slate-400 mt-1">
-                This will soft-delete <span className="text-slate-200 font-bold">all {totalItems} employee record(s)</span> across every department.
+              <h3 className="text-lg font-bold text-slate-900">Delete All Employees</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                This will soft-delete <span className="text-slate-800 font-bold">all {totalItems} employee record(s)</span> across every department.
                 They can be restored individually afterward, but not in bulk. This affects everyone using this workspace.
               </p>
-              <p className="text-xs text-slate-400 mt-3">
-                Type <span className="font-mono font-bold text-rose-400">DELETE ALL</span> to confirm.
+              <p className="text-xs text-slate-500 mt-3">
+                Type <span className="font-mono font-bold text-rose-600">DELETE ALL</span> to confirm.
               </p>
               <input
                 type="text"
                 value={deleteAllConfirmText}
                 onChange={(e) => setDeleteAllConfirmText(e.target.value)}
                 placeholder="DELETE ALL"
-                className="mt-3 w-full px-3 py-2 text-sm bg-slate-950 border border-slate-700 rounded-xl text-slate-200 text-center font-mono focus:outline-none focus:border-rose-500"
+                className="mt-3 w-full px-3 py-2 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-center font-mono focus:outline-none focus:border-rose-500"
               />
             </div>
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => { setIsDeleteAllOpen(false); setDeleteAllConfirmText(''); }}
-                className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-slate-800 rounded-xl"
+                className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 bg-slate-100 rounded-xl"
               >
                 Cancel
               </button>

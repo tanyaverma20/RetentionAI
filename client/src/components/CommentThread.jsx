@@ -20,14 +20,14 @@ function CommentNode({ comment, onReply, depth = 0 }) {
   const [replyBody, setReplyBody] = useState('');
 
   return (
-    <div className={depth > 0 ? 'ml-6 mt-2 pl-3 border-l border-slate-800' : 'mt-3'}>
-      <div className="p-3 bg-slate-950/50 border border-slate-800 rounded-xl">
+    <div className={depth > 0 ? 'ml-6 mt-2 pl-3 border-l border-slate-100' : 'mt-3'}>
+      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-bold text-slate-200">{comment.authorUserId?.name || 'Unknown'}</span>
-          <span className="text-[10px] text-slate-500">{new Date(comment.createdAt).toLocaleString()}</span>
+          <span className="text-xs font-bold text-slate-800">{comment.authorUserId?.name || 'Unknown'}</span>
+          <span className="text-[10px] text-slate-400">{new Date(comment.createdAt).toLocaleString()}</span>
         </div>
-        <p className="text-xs text-slate-300 whitespace-pre-wrap">{comment.body}</p>
-        <button onClick={() => setReplying((r) => !r)} className="text-[10px] text-indigo-400 hover:text-indigo-300 mt-1">
+        <p className="text-xs text-slate-600 whitespace-pre-wrap">{comment.body}</p>
+        <button onClick={() => setReplying((r) => !r)} className="text-[10px] text-indigo-600 hover:text-indigo-600 mt-1">
           Reply
         </button>
         {replying && (
@@ -35,7 +35,7 @@ function CommentNode({ comment, onReply, depth = 0 }) {
             <input
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
-              className="flex-1 px-2 py-1 text-xs bg-slate-900 border border-slate-800 rounded-lg text-slate-200"
+              className="flex-1 px-2 py-1 text-xs bg-white border border-slate-100 rounded-lg text-slate-800"
               placeholder="Write a reply..."
             />
             <button
@@ -90,7 +90,7 @@ export default function CommentThread({ entityType, entityId }) {
         <input
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          className="flex-1 px-3 py-2 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-200"
+          className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-800"
           placeholder={`Comment as ${user?.name || 'you'}...`}
         />
         <button
@@ -100,8 +100,8 @@ export default function CommentThread({ entityType, entityId }) {
           Post
         </button>
       </div>
-      {loading && <p className="text-xs text-slate-500 italic">Loading comments...</p>}
-      {!loading && tree.length === 0 && <p className="text-xs text-slate-500 italic">No comments yet.</p>}
+      {loading && <p className="text-xs text-slate-400 italic">Loading comments...</p>}
+      {!loading && tree.length === 0 && <p className="text-xs text-slate-400 italic">No comments yet.</p>}
       {tree.map((c) => (
         <CommentNode key={c._id} comment={c} onReply={handlePost} />
       ))}

@@ -59,26 +59,26 @@ export default function DepartmentBulkUploadModal({ isOpen, onClose, onSubmit, l
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-lg p-6 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-lg p-6 bg-white border border-slate-100 rounded-2xl shadow-card relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition-colors"
+          className="absolute top-4 right-4 text-slate-500 hover:text-slate-900 transition-colors"
         >
           <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <h2 className="text-xl font-bold text-slate-100 mb-2">Bulk Upload Departments</h2>
-        <p className="text-sm text-slate-400 mb-6">
+        <h2 className="text-xl font-bold text-slate-900 mb-2">Bulk Upload Departments</h2>
+        <p className="text-sm text-slate-500 mb-6">
           Upload a CSV file containing department records. Ensure it matches the template format.
         </p>
 
         <div className="flex justify-between items-center mb-4">
           <button
             onClick={handleDownloadTemplate}
-            className="text-sm text-indigo-400 hover:text-indigo-300 font-semibold underline flex items-center gap-1"
+            className="text-sm text-indigo-600 hover:text-indigo-600 font-semibold underline flex items-center gap-1"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -98,7 +98,7 @@ export default function DepartmentBulkUploadModal({ isOpen, onClose, onSubmit, l
 
           <div
             className={`w-full h-32 border-2 border-dashed rounded-xl flex flex-col items-center justify-center transition-colors cursor-pointer ${
-              dragActive ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-700 hover:border-indigo-400 hover:bg-slate-800'
+              dragActive ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:border-indigo-400 hover:bg-slate-100'
             }`}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
@@ -106,14 +106,14 @@ export default function DepartmentBulkUploadModal({ isOpen, onClose, onSubmit, l
             onDrop={handleDrop}
             onClick={() => fileInputRef.current.click()}
           >
-            <svg className="w-8 h-8 text-slate-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-8 h-8 text-slate-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
             {file ? (
-              <p className="text-sm text-slate-200 font-medium">{file.name}</p>
+              <p className="text-sm text-slate-800 font-medium">{file.name}</p>
             ) : (
-              <p className="text-sm text-slate-400">
-                Drag and drop your CSV here, or <span className="text-indigo-400">click to browse</span>
+              <p className="text-sm text-slate-500">
+                Drag and drop your CSV here, or <span className="text-indigo-600">click to browse</span>
               </p>
             )}
           </div>
@@ -122,7 +122,7 @@ export default function DepartmentBulkUploadModal({ isOpen, onClose, onSubmit, l
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-slate-800 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 bg-slate-100 rounded-xl transition-colors"
             >
               Cancel
             </button>

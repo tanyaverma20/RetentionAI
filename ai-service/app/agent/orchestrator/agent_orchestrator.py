@@ -187,6 +187,36 @@ async def orchestrate_recommendation(
                                 f"Burnout: {nlp_result.get('burnoutRisk', 0):.2f}. "
                                 f"Top Risk Features: {', '.join(shap_result.get('topRiskFeatures', []))}"
         }
+    except Exception as e:
+        # Any OTHER LLM failure — rate limits (groq.RateLimitError on a 429),
+        # network errors, provider outages, malformed responses, etc. Root
+        # cause this fixes: only ValueError was ever caught here, so a Groq
+        # 429 propagated all the way out of this function and out of
+        # generate_decision() uncaught. That aborted the ENTIRE decision
+        # before decision_service.py's deterministic Business Rules engine —
+        # which needs no LLM at all — ever got to run. The batch-level
+        # catch-all in generate_batch_decisions then hardcoded every one of
+        # those employees to NO_ACTION_REQUIRED/LOW regardless of their real
+        # risk/sentiment/burnout, which is why almost every employee ended up
+        # with the same recommendation whenever the LLM was unavailable.
+        # Falling back to a structured, evidence-based (not fabricated)
+        # narrative here lets the real, risk-driven business rules still run
+        # downstream no matter what the LLM does.
+        llm_output = {
+            "priority": ml_result.get("riskLevel", "MEDIUM"),
+            "recommendedActions": [{
+                "category": "Manual Review",
+                "description": f"LLM reasoning unavailable ({type(e).__name__}). The recommendation category below comes from the deterministic Business Rules engine; review evidence manually for narrative context.",
+                "priority": "MEDIUM",
+                "policyReference": None,
+                "expectedImpact": "Ensures the employee still receives a risk-appropriate action even when the LLM is unavailable."
+            }],
+            "expectedBusinessImpact": "Manual review required.",
+            "reasoningSummary": f"LLM unavailable ({type(e).__name__}: {str(e)[:200]}). "
+                                f"ML Risk: {ml_result.get('riskLevel')} ({ml_result.get('riskScore',0):.1%}). "
+                                f"Burnout: {nlp_result.get('burnoutRisk', 0):.2f}. "
+                                f"Top Risk Features: {', '.join(shap_result.get('topRiskFeatures', []))}"
+        }
 
     # ── Step 7: Confidence scoring ─────────────────────────────────────────
     confidence_scores = _calculate_confidence(
@@ -219,6 +249,9 @@ async def orchestrate_recommendation(
             "sentiment": evidence["sentiment"],
             "burnoutRisk": evidence["burnoutRisk"],
             "resignationIntent": evidence["resignationIntent"],
+            "engagementRisk": evidence["engagementRisk"],
+            "promotionFrustration": evidence["promotionFrustration"],
+            "managerConflict": evidence["managerConflict"],
             "detectedTopics": evidence["detectedTopics"],
             "extractedKeywords": evidence["extractedKeywords"],
             "ragPoliciesFound": evidence["policyReferences"],

@@ -11,7 +11,7 @@ export default function BaseLayout() {
 
   if (useDashboardLayout) {
     return (
-      <div className="h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white overflow-hidden">
+      <div className="h-screen bg-canvas text-slate-900 flex flex-col font-sans selection:bg-indigo-200 selection:text-indigo-900 overflow-hidden">
         <Navbar />
         <div className="flex flex-1 min-h-0 overflow-hidden">
           <Outlet />
@@ -21,12 +21,12 @@ export default function BaseLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-canvas text-slate-900 flex flex-col font-sans selection:bg-indigo-200 selection:text-indigo-900">
       <Navbar />
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
         <Outlet />
       </main>
-      <footer className="border-t border-slate-900 bg-slate-950/50 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-white/50 py-6 text-center text-xs text-slate-400">
         RetentionAI Platform &copy; 2026 &bull; Secure Authentication &amp; Authorization Engine
       </footer>
     </div>

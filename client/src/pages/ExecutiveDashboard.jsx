@@ -9,37 +9,46 @@ function extractErrorMessage(err, fallback) {
 }
 
 const SEVERITY_STYLES = {
-  CRITICAL: 'bg-rose-500/10 text-rose-400 border-rose-500/30',
-  HIGH: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-  MEDIUM: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
-  LOW: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+  CRITICAL: 'bg-rose-50 text-rose-600 border-rose-100',
+  HIGH: 'bg-orange-50 text-orange-600 border-orange-100',
+  MEDIUM: 'bg-amber-50 text-amber-600 border-amber-100',
+  LOW: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+};
+
+const KPI_TILE_STYLES = {
+  indigo: { border: 'border-indigo-100', text: 'text-indigo-600' },
+  rose: { border: 'border-rose-100', text: 'text-rose-600' },
+  emerald: { border: 'border-emerald-100', text: 'text-emerald-600' },
+  amber: { border: 'border-amber-100', text: 'text-amber-600' },
+  sky: { border: 'border-sky-100', text: 'text-sky-600' },
 };
 
 function KpiTile({ label, value, sub, accent = 'indigo' }) {
+  const styles = KPI_TILE_STYLES[accent] || KPI_TILE_STYLES.indigo;
   return (
-    <div className={`p-5 bg-slate-900 border border-${accent}-500/20 rounded-3xl shadow-xl`}>
-      <div className="text-xs font-semibold text-slate-500 uppercase tracking-widest">{label}</div>
-      <div className={`text-3xl font-black text-${accent}-400 mt-2`}>{value}</div>
-      {sub && <div className="text-xs text-slate-500 mt-1">{sub}</div>}
+    <div className={`p-5 bg-white border ${styles.border} rounded-3xl shadow-card`}>
+      <div className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{label}</div>
+      <div className={`text-3xl font-black ${styles.text} mt-2`}>{value}</div>
+      {sub && <div className="text-xs text-slate-400 mt-1">{sub}</div>}
     </div>
   );
 }
 
 function SectionCard({ title, icon, children, className = '' }) {
   return (
-    <div className={`p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl ${className}`}>
-      <h2 className="text-base font-bold text-slate-100 mb-4">{icon} {title}</h2>
+    <div className={`p-6 bg-white border border-slate-100 rounded-3xl shadow-card ${className}`}>
+      <h2 className="text-base font-bold text-slate-900 mb-4">{icon} {title}</h2>
       {children}
     </div>
   );
 }
 
 function riskColor(score) {
-  if (score == null) return 'bg-slate-800 text-slate-500';
-  if (score >= 0.6) return 'bg-rose-500/30 text-rose-300';
-  if (score >= 0.35) return 'bg-amber-500/25 text-amber-300';
-  if (score >= 0.15) return 'bg-yellow-500/15 text-yellow-300';
-  return 'bg-emerald-500/15 text-emerald-300';
+  if (score == null) return 'bg-slate-100 text-slate-400';
+  if (score >= 0.6) return 'bg-rose-50 text-rose-600';
+  if (score >= 0.35) return 'bg-amber-50 text-amber-600';
+  if (score >= 0.15) return 'bg-yellow-50 text-yellow-600';
+  return 'bg-emerald-50 text-emerald-600';
 }
 
 export default function ExecutiveDashboard() {
@@ -123,10 +132,10 @@ export default function ExecutiveDashboard() {
 
   if (error) {
     return (
-      <div className="p-8 text-center bg-slate-900 border border-slate-800 rounded-3xl space-y-2">
-        <div className="w-14 h-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-2xl">⚠️</div>
-        <h2 className="text-lg font-bold text-slate-100">Unable to load Executive Dashboard</h2>
-        <p className="text-sm text-slate-400">{error}</p>
+      <div className="p-8 text-center bg-white border border-slate-100 rounded-3xl space-y-2">
+        <div className="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-100 flex items-center justify-center mx-auto text-2xl">⚠️</div>
+        <h2 className="text-lg font-bold text-slate-900">Unable to load Executive Dashboard</h2>
+        <p className="text-sm text-slate-500">{error}</p>
       </div>
     );
   }
@@ -136,16 +145,16 @@ export default function ExecutiveDashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl">
+      <div className="p-6 rounded-3xl bg-white border border-slate-100 shadow-card">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-indigo-400 uppercase tracking-widest mb-1">
+            <div className="flex items-center gap-2 text-xs font-mono font-semibold text-indigo-600 uppercase tracking-widest mb-1">
               <span>🏛️ Executive Workforce Intelligence Center</span>
             </div>
-            <h1 className="text-3xl font-extrabold text-slate-100">Company Overview</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <h1 className="text-3xl font-extrabold text-slate-900">Company Overview</h1>
+            <p className="text-sm text-slate-500 mt-1">
               Generated {new Date(dashboard.generatedAt).toLocaleString()} · {dashboard.scope.employeeCount} employees in scope
-              {loadTimeMs != null && <span className="text-slate-600"> · loaded in {loadTimeMs}ms</span>}
+              {loadTimeMs != null && <span className="text-slate-400"> · loaded in {loadTimeMs}ms</span>}
             </p>
           </div>
           <div className="flex gap-2">
@@ -162,28 +171,28 @@ export default function ExecutiveDashboard() {
         </div>
 
         {/* Part 4 — Filters */}
-        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-800">
-          <select onChange={(e) => handleFilterChange('departmentId', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300">
+        <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-100">
+          <select onChange={(e) => handleFilterChange('departmentId', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-600">
             <option value="">All Departments</option>
             {dashboard.departmentHealth.map((d) => d.departmentId && (
               <option key={d.departmentId} value={d.departmentId}>{d.departmentName}</option>
             ))}
           </select>
-          <select onChange={(e) => handleFilterChange('gender', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300">
+          <select onChange={(e) => handleFilterChange('gender', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-600">
             <option value="">All Genders</option>
             <option value="MALE">Male</option>
             <option value="FEMALE">Female</option>
             <option value="OTHER">Other</option>
           </select>
-          <select onChange={(e) => handleFilterChange('riskLevel', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300">
+          <select onChange={(e) => handleFilterChange('riskLevel', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-600">
             <option value="">All Risk Levels</option>
             <option value="HIGH">High Risk</option>
             <option value="MEDIUM">Medium Risk</option>
             <option value="LOW">Low Risk</option>
           </select>
-          <input type="number" placeholder="Min Experience (yrs)" onChange={(e) => handleFilterChange('minExperienceYears', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300 w-40" />
-          <input type="date" onChange={(e) => handleFilterChange('startDate', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300" />
-          <input type="date" onChange={(e) => handleFilterChange('endDate', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-950 border border-slate-800 rounded-lg text-slate-300" />
+          <input type="number" placeholder="Min Experience (yrs)" onChange={(e) => handleFilterChange('minExperienceYears', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-600 w-40" />
+          <input type="date" onChange={(e) => handleFilterChange('startDate', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-600" />
+          <input type="date" onChange={(e) => handleFilterChange('endDate', e.target.value)} className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-600" />
         </div>
       </div>
 
@@ -198,11 +207,11 @@ export default function ExecutiveDashboard() {
 
       {/* Critical Departments */}
       {dashboard.criticalDepartments.length > 0 && (
-        <div className="p-4 bg-rose-500/5 border border-rose-500/20 rounded-2xl">
-          <h3 className="text-sm font-bold text-rose-400 mb-2">⚠️ Critical Departments Requiring Attention</h3>
+        <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl">
+          <h3 className="text-sm font-bold text-rose-600 mb-2">⚠️ Critical Departments Requiring Attention</h3>
           <div className="flex flex-wrap gap-2">
             {dashboard.criticalDepartments.map((d) => (
-              <span key={d.departmentName} className="px-3 py-1.5 text-xs bg-rose-500/10 text-rose-300 border border-rose-500/20 rounded-full">
+              <span key={d.departmentName} className="px-3 py-1.5 text-xs bg-rose-50 text-rose-600 border border-rose-100 rounded-full">
                 {d.departmentName} — Risk {(d.avgRiskScore * 100).toFixed(0)}% / Burnout {(d.avgBurnoutScore * 100).toFixed(0)}%
               </span>
             ))}
@@ -215,10 +224,10 @@ export default function ExecutiveDashboard() {
         <SectionCard title="Department Health" icon="🏢">
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {dashboard.departmentHealth.map((d) => (
-              <div key={d.departmentName} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+              <div key={d.departmentName} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
                 <div>
-                  <div className="font-semibold text-slate-200">{d.departmentName}</div>
-                  <div className="text-slate-500">{d.location} · {d.predictedCount} employees analyzed</div>
+                  <div className="font-semibold text-slate-800">{d.departmentName}</div>
+                  <div className="text-slate-400">{d.location} · {d.predictedCount} employees analyzed</div>
                 </div>
                 <div className="flex gap-2">
                   <span className={`px-2 py-1 rounded-full font-bold ${riskColor(d.avgRiskScore)}`}>Risk {(d.avgRiskScore * 100).toFixed(0)}%</span>
@@ -226,15 +235,15 @@ export default function ExecutiveDashboard() {
                 </div>
               </div>
             ))}
-            {dashboard.departmentHealth.length === 0 && <p className="text-center text-xs text-slate-500 italic py-8">No department data yet — generate predictions for employees to populate this view.</p>}
+            {dashboard.departmentHealth.length === 0 && <p className="text-center text-xs text-slate-400 italic py-8">No department data yet — generate predictions for employees to populate this view.</p>}
           </div>
         </SectionCard>
 
         <SectionCard title="Risk Heatmap (Department × Risk Level)" icon="🌡️">
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {dashboard.riskHeatmap.map((row) => (
-              <div key={row.departmentName} className="p-3 bg-slate-950/50 border border-slate-800 rounded-xl">
-                <div className="text-xs font-semibold text-slate-300 mb-2">{row.departmentName} ({row.totalPredicted})</div>
+              <div key={row.departmentName} className="p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                <div className="text-xs font-semibold text-slate-600 mb-2">{row.departmentName} ({row.totalPredicted})</div>
                 <div className="flex gap-2">
                   {row.levels.map((l) => (
                     <span key={l.level} className={`px-2 py-1 rounded-lg text-[10px] font-bold ${riskColor(l.avgRiskScore)}`}>{l.level}: {l.count}</span>
@@ -242,7 +251,7 @@ export default function ExecutiveDashboard() {
                 </div>
               </div>
             ))}
-            {dashboard.riskHeatmap.length === 0 && <p className="text-center text-xs text-slate-500 italic py-8">No predictions generated yet.</p>}
+            {dashboard.riskHeatmap.length === 0 && <p className="text-center text-xs text-slate-400 italic py-8">No predictions generated yet.</p>}
           </div>
         </SectionCard>
       </div>
@@ -278,8 +287,8 @@ export default function ExecutiveDashboard() {
         <SectionCard title="Location Comparison" icon="📍">
           <div className="space-y-2">
             {dashboard.locationComparison.map((l) => (
-              <div key={l.location} className="flex justify-between text-xs p-2 bg-slate-950/50 rounded-lg">
-                <span className="text-slate-300">{l.location} ({l.departmentCount} depts)</span>
+              <div key={l.location} className="flex justify-between text-xs p-2 bg-slate-50 rounded-lg">
+                <span className="text-slate-600">{l.location} ({l.departmentCount} depts)</span>
                 <span className={`font-bold ${riskColor(l.avgRiskScore).split(' ')[1]}`}>{(l.avgRiskScore * 100).toFixed(0)}%</span>
               </div>
             ))}
@@ -288,19 +297,19 @@ export default function ExecutiveDashboard() {
         <SectionCard title="Manager Comparison" icon="👤">
           <div className="space-y-2 max-h-56 overflow-y-auto">
             {dashboard.managerComparison.slice(0, 8).map((m) => (
-              <div key={m.managerId} className="flex justify-between text-xs p-2 bg-slate-950/50 rounded-lg">
-                <span className="text-slate-300">{m.managerName} ({m.teamSize})</span>
+              <div key={m.managerId} className="flex justify-between text-xs p-2 bg-slate-50 rounded-lg">
+                <span className="text-slate-600">{m.managerName} ({m.teamSize})</span>
                 <span className={`font-bold ${riskColor(m.avgRiskScore).split(' ')[1]}`}>{(m.avgRiskScore * 100).toFixed(0)}%</span>
               </div>
             ))}
           </div>
         </SectionCard>
         <SectionCard title="Business Unit Comparison" icon="🏭">
-          <p className="text-[10px] text-slate-600 mb-2 italic">Business Unit = Department (no separate hierarchy tracked)</p>
+          <p className="text-[10px] text-slate-400 mb-2 italic">Business Unit = Department (no separate hierarchy tracked)</p>
           <div className="space-y-2 max-h-48 overflow-y-auto">
             {dashboard.businessUnitComparison.map((d) => (
-              <div key={d.departmentName} className="flex justify-between text-xs p-2 bg-slate-950/50 rounded-lg">
-                <span className="text-slate-300">{d.departmentName}</span>
+              <div key={d.departmentName} className="flex justify-between text-xs p-2 bg-slate-50 rounded-lg">
+                <span className="text-slate-600">{d.departmentName}</span>
                 <span className={`font-bold ${riskColor(d.avgRiskScore).split(' ')[1]}`}>{(d.avgRiskScore * 100).toFixed(0)}%</span>
               </div>
             ))}
@@ -312,21 +321,21 @@ export default function ExecutiveDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SectionCard title="Intervention Analytics" icon="🎯">
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-xl font-black text-indigo-400">{intervention.overall.totalCreated}</div><div className="text-[10px] text-slate-500">Created</div></div>
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-xl font-black text-emerald-400">{intervention.overall.accepted}</div><div className="text-[10px] text-slate-500">Accepted</div></div>
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-xl font-black text-rose-400">{intervention.overall.rejected}</div><div className="text-[10px] text-slate-500">Rejected</div></div>
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-xl font-black text-amber-400">{intervention.overall.pending}</div><div className="text-[10px] text-slate-500">Pending</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-xl font-black text-indigo-600">{intervention.overall.totalCreated}</div><div className="text-[10px] text-slate-400">Created</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-xl font-black text-emerald-600">{intervention.overall.accepted}</div><div className="text-[10px] text-slate-400">Accepted</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-xl font-black text-rose-600">{intervention.overall.rejected}</div><div className="text-[10px] text-slate-400">Rejected</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-xl font-black text-amber-600">{intervention.overall.pending}</div><div className="text-[10px] text-slate-400">Pending</div></div>
           </div>
-          <p className="text-xs text-slate-400">Success Rate: <span className="text-slate-200 font-semibold">{intervention.overall.successRate != null ? `${(intervention.overall.successRate * 100).toFixed(0)}%` : 'N/A'}</span> · Avg Completion: <span className="text-slate-200 font-semibold">{intervention.overall.avgCompletionTimeHours ?? 'N/A'} hrs</span></p>
+          <p className="text-xs text-slate-500">Success Rate: <span className="text-slate-800 font-semibold">{intervention.overall.successRate != null ? `${(intervention.overall.successRate * 100).toFixed(0)}%` : 'N/A'}</span> · Avg Completion: <span className="text-slate-800 font-semibold">{intervention.overall.avgCompletionTimeHours ?? 'N/A'} hrs</span></p>
         </SectionCard>
         <SectionCard title="ROI Analytics (Estimates)" icon="💰">
           <div className="grid grid-cols-2 gap-3 mb-3">
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-xl font-black text-emerald-400">{roi.employeesRetained}</div><div className="text-[10px] text-slate-500">Retained</div></div>
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-xl font-black text-sky-400">{roi.highValueEmployeesRetained}</div><div className="text-[10px] text-slate-500">High-Value Retained</div></div>
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-lg font-black text-indigo-400">${roi.estimatedHiringCostSavedUsd.toLocaleString()}</div><div className="text-[10px] text-slate-500">Hiring Cost Saved</div></div>
-            <div className="p-3 bg-slate-950/50 rounded-xl text-center"><div className="text-lg font-black text-indigo-400">${roi.estimatedReplacementCostAvoidedUsd.toLocaleString()}</div><div className="text-[10px] text-slate-500">Replacement Avoided</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-xl font-black text-emerald-600">{roi.employeesRetained}</div><div className="text-[10px] text-slate-400">Retained</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-xl font-black text-sky-600">{roi.highValueEmployeesRetained}</div><div className="text-[10px] text-slate-400">High-Value Retained</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-lg font-black text-indigo-600">${roi.estimatedHiringCostSavedUsd.toLocaleString()}</div><div className="text-[10px] text-slate-400">Hiring Cost Saved</div></div>
+            <div className="p-3 bg-slate-50 rounded-xl text-center"><div className="text-lg font-black text-indigo-600">${roi.estimatedReplacementCostAvoidedUsd.toLocaleString()}</div><div className="text-[10px] text-slate-400">Replacement Avoided</div></div>
           </div>
-          <p className="text-[10px] text-slate-600 italic">{roi.assumptions.note}</p>
+          <p className="text-[10px] text-slate-400 italic">{roi.assumptions.note}</p>
         </SectionCard>
       </div>
 
@@ -335,24 +344,24 @@ export default function ExecutiveDashboard() {
         <SectionCard title="Top SHAP Drivers" icon="⚖️">
           <div className="space-y-1.5">
             {dashboard.topShapDrivers.map((f) => (
-              <div key={f.featureKey} className="flex justify-between text-xs"><span className="text-slate-300">{f.displayName}</span><span className="text-slate-500 font-mono">{(f.meanAbsShap ?? 0).toFixed(3)}</span></div>
+              <div key={f.featureKey} className="flex justify-between text-xs"><span className="text-slate-600">{f.displayName}</span><span className="text-slate-400 font-mono">{(f.meanAbsShap ?? 0).toFixed(3)}</span></div>
             ))}
           </div>
         </SectionCard>
         <SectionCard title="Top NLP Topics" icon="💬">
           <div className="space-y-1.5">
             {dashboard.topNlpTopics.map((t) => (
-              <div key={t.topic} className="flex justify-between text-xs"><span className="text-slate-300">{t.topic}</span><span className="text-slate-500 font-mono">{t.count}</span></div>
+              <div key={t.topic} className="flex justify-between text-xs"><span className="text-slate-600">{t.topic}</span><span className="text-slate-400 font-mono">{t.count}</span></div>
             ))}
-            {dashboard.topNlpTopics.length === 0 && <p className="text-center text-xs text-slate-500 italic py-4">No topics analyzed yet.</p>}
+            {dashboard.topNlpTopics.length === 0 && <p className="text-center text-xs text-slate-400 italic py-4">No topics analyzed yet.</p>}
           </div>
         </SectionCard>
         <SectionCard title="Top Knowledge Categories" icon="📚">
           <div className="space-y-1.5">
             {(dashboard.topKnowledgeCategories || []).map((k, i) => (
-              <div key={i} className="text-xs text-slate-300">{k.policy || k.name || JSON.stringify(k)}</div>
+              <div key={i} className="text-xs text-slate-600">{k.policy || k.name || JSON.stringify(k)}</div>
             ))}
-            {(!dashboard.topKnowledgeCategories || dashboard.topKnowledgeCategories.length === 0) && <p className="text-center text-xs text-slate-500 italic py-4">No knowledge queries recorded yet.</p>}
+            {(!dashboard.topKnowledgeCategories || dashboard.topKnowledgeCategories.length === 0) && <p className="text-center text-xs text-slate-400 italic py-4">No knowledge queries recorded yet.</p>}
           </div>
         </SectionCard>
       </div>
@@ -362,23 +371,23 @@ export default function ExecutiveDashboard() {
         {forecast.sufficientData ? (
           <div className="grid grid-cols-3 gap-4">
             {['day30', 'day60', 'day90'].map((key) => (
-              <div key={key} className="p-4 bg-slate-950/50 border border-slate-800 rounded-xl text-center">
-                <div className="text-xs text-slate-500 mb-1">{forecast.forecast[key].days}-Day Forecast</div>
+              <div key={key} className="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                <div className="text-xs text-slate-400 mb-1">{forecast.forecast[key].days}-Day Forecast</div>
                 <div className={`text-2xl font-black ${riskColor(forecast.forecast[key].projectedValue).split(' ')[1]}`}>{(forecast.forecast[key].projectedValue * 100).toFixed(1)}%</div>
-                <div className="text-[10px] text-slate-600">CI: {(forecast.forecast[key].confidenceInterval.lower * 100).toFixed(1)}% – {(forecast.forecast[key].confidenceInterval.upper * 100).toFixed(1)}%</div>
+                <div className="text-[10px] text-slate-400">CI: {(forecast.forecast[key].confidenceInterval.lower * 100).toFixed(1)}% – {(forecast.forecast[key].confidenceInterval.upper * 100).toFixed(1)}%</div>
               </div>
             ))}
-            <div className="col-span-3 text-xs text-slate-400 text-center">Trajectory: <span className="font-bold text-slate-200">{forecast.forecast.riskTrajectory}</span> · Method: {forecast.method} · {forecast.monthsOfHistory} months of history</div>
+            <div className="col-span-3 text-xs text-slate-500 text-center">Trajectory: <span className="font-bold text-slate-800">{forecast.forecast.riskTrajectory}</span> · Method: {forecast.method} · {forecast.monthsOfHistory} months of history</div>
           </div>
         ) : (
-          <p className="text-center text-xs text-slate-500 italic py-6">{forecast.message}</p>
+          <p className="text-center text-xs text-slate-400 italic py-6">{forecast.message}</p>
         )}
       </SectionCard>
 
       {/* Executive Insights */}
       <SectionCard title="Executive Insights" icon="🧠">
         <div className="space-y-3">
-          {insights.length === 0 && <p className="text-center text-xs text-slate-500 italic py-6">No significant patterns detected yet — insights populate as more predictions/decisions accumulate over time.</p>}
+          {insights.length === 0 && <p className="text-center text-xs text-slate-400 italic py-6">No significant patterns detected yet — insights populate as more predictions/decisions accumulate over time.</p>}
           {insights.map((insight, i) => (
             <div key={i} className={`p-4 rounded-2xl border ${SEVERITY_STYLES[insight.severity] || SEVERITY_STYLES.LOW}`}>
               <div className="flex items-center justify-between mb-1">
@@ -397,7 +406,7 @@ export default function ExecutiveDashboard() {
           <button onClick={handleGenerateAlerts} className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg">Scan for New Alerts</button>
         </div>
         <div className="space-y-2">
-          {alerts.length === 0 && <p className="text-center text-xs text-slate-500 italic py-6">No open alerts.</p>}
+          {alerts.length === 0 && <p className="text-center text-xs text-slate-400 italic py-6">No open alerts.</p>}
           {alerts.map((alert) => (
             <div key={alert._id} className={`flex items-center justify-between p-3 rounded-xl border ${SEVERITY_STYLES[alert.severity] || SEVERITY_STYLES.LOW}`}>
               <div>
@@ -405,8 +414,8 @@ export default function ExecutiveDashboard() {
                 <div className="text-[10px] opacity-80">{alert.description}</div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleAlertAction(alert._id, 'review')} className="px-2 py-1 text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 rounded-lg">Mark Reviewed</button>
-                <button onClick={() => handleAlertAction(alert._id, 'dismiss')} className="px-2 py-1 text-[10px] font-semibold bg-slate-800 hover:bg-slate-700 rounded-lg">Dismiss</button>
+                <button onClick={() => handleAlertAction(alert._id, 'review')} className="px-2 py-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 rounded-lg">Mark Reviewed</button>
+                <button onClick={() => handleAlertAction(alert._id, 'dismiss')} className="px-2 py-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 rounded-lg">Dismiss</button>
               </div>
             </div>
           ))}

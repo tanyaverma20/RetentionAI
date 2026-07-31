@@ -123,23 +123,23 @@ function MailIcon() {
 
 function KpiSkeleton() {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl animate-pulse">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card animate-pulse">
       <div className="flex items-center justify-between mb-4">
-        <div className="w-12 h-12 rounded-2xl bg-slate-800" />
-        <div className="w-16 h-5 rounded-full bg-slate-800" />
+        <div className="w-12 h-12 rounded-2xl bg-slate-100" />
+        <div className="w-16 h-5 rounded-full bg-slate-100" />
       </div>
-      <div className="w-24 h-3 rounded bg-slate-800 mb-3" />
-      <div className="w-16 h-8 rounded bg-slate-800" />
+      <div className="w-24 h-3 rounded bg-slate-100 mb-3" />
+      <div className="w-16 h-8 rounded bg-slate-100" />
     </div>
   );
 }
 
 function ChartSkeleton() {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl animate-pulse">
-      <div className="w-40 h-4 rounded bg-slate-800 mb-2" />
-      <div className="w-56 h-3 rounded bg-slate-800 mb-6" />
-      <div className="h-64 rounded-xl bg-slate-800/60" />
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card animate-pulse">
+      <div className="w-40 h-4 rounded bg-slate-100 mb-2" />
+      <div className="w-56 h-3 rounded bg-slate-100 mb-6" />
+      <div className="h-64 rounded-xl bg-slate-100" />
     </div>
   );
 }
@@ -190,6 +190,7 @@ export default function Dashboard() {
   const [decisionStatsError, setDecisionStatsError] = useState('');
   const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
   const [decisionMessage, setDecisionMessage] = useState('');
+  const [decisionElapsedSeconds, setDecisionElapsedSeconds] = useState(0);
 
   const extractErrorMessage = (err, fallback) =>
     err?.response?.data?.error?.message || err?.message || fallback;
@@ -221,6 +222,20 @@ export default function Dashboard() {
   useEffect(() => {
     loadExplainabilityWidgets();
   }, [loadExplainabilityWidgets]);
+
+  // Generating recommendations for the full workforce genuinely takes
+  // several minutes (verified: ~4.5 min for ~1250 employees) — a static
+  // "Generating…" label with no feedback for that long is indistinguishable
+  // from a hang. Ticking the elapsed time gives the user visible proof it's
+  // still actively working.
+  useEffect(() => {
+    if (!isGeneratingDecisions) {
+      setDecisionElapsedSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => setDecisionElapsedSeconds((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [isGeneratingDecisions]);
 
   const handleTrainModel = async () => {
     try {
@@ -337,22 +352,21 @@ export default function Dashboard() {
     <div className="space-y-8">
 
           {/* ── Welcome Banner ── */}
-          <div className="relative overflow-hidden p-8 rounded-3xl bg-gradient-to-r from-indigo-900/70 via-slate-900 to-slate-900 border border-indigo-500/20 shadow-2xl">
-            <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%236366f1\' fill-opacity=\'0.04\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-40 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-gradient-to-l from-indigo-500/10 to-transparent pointer-events-none" />
+          <div className="relative overflow-hidden p-8 rounded-3xl bg-white border border-slate-100 shadow-card">
+            <div className="absolute top-0 right-0 w-72 h-72 bg-indigo-100/50 rounded-full blur-3xl pointer-events-none" />
             <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
               <div>
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-500/30 text-indigo-300 text-xs font-semibold mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold mb-4">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
                   Live Analytics Dashboard
                 </div>
-                <h1 className="text-3xl font-extrabold text-white">
+                <h1 className="text-3xl font-extrabold text-slate-900">
                   Welcome back, {user?.firstName || user?.name?.split(' ')[0] || 'User'}!
                 </h1>
-                <p className="text-slate-300 mt-2 text-sm max-w-xl">
+                <p className="text-slate-500 mt-2 text-sm max-w-xl">
                   Here&apos;s your workforce intelligence overview for RetentionAI.
                   {user?.role && (
-                    <span className="ml-1 font-semibold text-indigo-300">
+                    <span className="ml-1 font-semibold text-indigo-600">
                       Viewing as: {getRoleDisplayName(user.role)}.
                     </span>
                   )}
@@ -360,14 +374,14 @@ export default function Dashboard() {
               </div>
 
               {/* User Profile Summary */}
-              <div className="flex items-center gap-4 bg-slate-900/60 border border-slate-700 rounded-2xl p-4 shrink-0">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-600/30">
+              <div className="relative flex items-center gap-4 bg-slate-50 border border-slate-100 rounded-2xl p-4 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-xl shadow-soft">
                   {(user?.firstName || user?.name || 'U')[0]}
                 </div>
                 <div className="min-w-0">
-                  <p className="font-bold text-white text-sm truncate">{user?.name}</p>
+                  <p className="font-bold text-slate-900 text-sm truncate">{user?.name}</p>
                   <p className="text-slate-400 text-xs truncate">{user?.email}</p>
-                  <span className="mt-1 inline-block px-2 py-0.5 text-[10px] font-mono font-semibold text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+                  <span className="mt-1 inline-block px-2 py-0.5 text-[10px] font-semibold text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full">
                     {user?.role}
                   </span>
                 </div>
@@ -377,7 +391,7 @@ export default function Dashboard() {
 
           {/* ── Error Banner ── */}
           {error && (
-            <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-sm">
+            <div className="p-4 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-sm">
               {error}
             </div>
           )}
@@ -393,8 +407,8 @@ export default function Dashboard() {
           {/* ── KPI Cards ── */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Key Performance Indicators</h2>
-              <span className="text-xs font-mono text-slate-500">Real-time workforce metrics</span>
+              <h2 className="text-lg font-bold text-slate-900">Key Performance Indicators</h2>
+              <span className="text-xs font-mono text-slate-400">Real-time workforce metrics</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
               {loading && !kpis ? (
@@ -420,8 +434,8 @@ export default function Dashboard() {
           {/* ── Charts Grid ── */}
           <section>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Analytics & Workforce Insights</h2>
-              <Link to="/analytics/departments" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+              <h2 className="text-lg font-bold text-slate-900">Analytics & Workforce Insights</h2>
+              <Link to="/analytics/departments" className="text-xs font-semibold text-indigo-600 hover:text-indigo-600 transition-colors">
                 View Department Analytics →
               </Link>
             </div>
@@ -453,10 +467,10 @@ export default function Dashboard() {
           <section>
             {loading && !departmentStats?.length ? (
               <div className="animate-pulse space-y-4">
-                <div className="h-6 w-48 bg-slate-800 rounded" />
+                <div className="h-6 w-48 bg-slate-100 rounded" />
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-48 bg-slate-900 border border-slate-800 rounded-3xl" />
+                    <div key={i} className="h-48 bg-white border border-slate-100 rounded-3xl" />
                   ))}
                 </div>
               </div>
@@ -469,11 +483,11 @@ export default function Dashboard() {
           <section>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-100">🧠 AI Attrition Risk Overview</h2>
-                <p className="text-xs text-slate-400">ML-predicted risk distribution across your workforce</p>
+                <h2 className="text-lg font-bold text-slate-900">🧠 AI Attrition Risk Overview</h2>
+                <p className="text-xs text-slate-500">ML-predicted risk distribution across your workforce</p>
               </div>
               <div className="flex items-center gap-3">
-                {trainMessage && <span className="text-xs text-indigo-400">{trainMessage}</span>}
+                {trainMessage && <span className="text-xs text-indigo-600">{trainMessage}</span>}
                 <button
                   onClick={handleTrainModel}
                   disabled={isTraining}
@@ -485,43 +499,43 @@ export default function Dashboard() {
             </div>
 
             {aiOverviewError && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs">
                 {aiOverviewError}
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               {[
-                { label: 'High Risk', count: riskCounts?.HIGH ?? '–', color: 'rose', desc: 'Likely to leave soon' },
-                { label: 'Medium Risk', count: riskCounts?.MEDIUM ?? '–', color: 'amber', desc: 'Monitor closely' },
-                { label: 'Low Risk', count: riskCounts?.LOW ?? '–', color: 'emerald', desc: 'Stable & engaged' },
-              ].map(({ label, count, color, desc }) => (
-                <div key={label} className={`p-5 bg-slate-900 border border-${color}-500/20 rounded-3xl flex items-center gap-4 shadow-xl`}>
-                  <div className={`w-12 h-12 rounded-2xl bg-${color}-500/10 flex items-center justify-center text-2xl font-black text-${color}-400`}>
+                { label: 'High Risk', count: riskCounts?.HIGH ?? '–', styles: { border: 'border-rose-100', iconBg: 'bg-rose-50', iconText: 'text-rose-600' }, desc: 'Likely to leave soon' },
+                { label: 'Medium Risk', count: riskCounts?.MEDIUM ?? '–', styles: { border: 'border-amber-100', iconBg: 'bg-amber-50', iconText: 'text-amber-600' }, desc: 'Monitor closely' },
+                { label: 'Low Risk', count: riskCounts?.LOW ?? '–', styles: { border: 'border-emerald-100', iconBg: 'bg-emerald-50', iconText: 'text-emerald-600' }, desc: 'Stable & engaged' },
+              ].map(({ label, count, styles, desc }) => (
+                <div key={label} className={`p-5 bg-white border ${styles.border} rounded-3xl flex items-center gap-4 shadow-card`}>
+                  <div className={`w-12 h-12 rounded-2xl ${styles.iconBg} flex items-center justify-center text-2xl font-black ${styles.iconText}`}>
                     {count}
                   </div>
                   <div>
-                    <div className="text-sm font-bold text-slate-200">{label}</div>
-                    <div className="text-xs text-slate-500">{desc}</div>
+                    <div className="text-sm font-bold text-slate-800">{label}</div>
+                    <div className="text-xs text-slate-400">{desc}</div>
                   </div>
                 </div>
               ))}
             </div>
 
             {(!riskCounts) && (
-              <div className="text-center py-6 text-xs text-slate-500 italic">
+              <div className="text-center py-6 text-xs text-slate-400 italic">
                 No predictions available yet. Run <strong>&quot;Run AI Prediction&quot;</strong> on the Employees page to generate risk scores.
               </div>
             )}
 
             {/* Top 10 High Risk Employees Table */}
             {topHighRisk && topHighRisk.length > 0 && (
-              <div className="mt-6 p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                <h3 className="text-md font-bold text-slate-200 mb-4">Top 10 High Risk Employees</h3>
+              <div className="mt-6 p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                <h3 className="text-md font-bold text-slate-800 mb-4">Top 10 High Risk Employees</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="border-b border-slate-800 text-xs uppercase tracking-wider text-slate-500">
+                      <tr className="border-b border-slate-100 text-xs uppercase tracking-wider text-slate-400">
                         <th className="py-3 px-4 font-semibold">Employee</th>
                         <th className="py-3 px-4 font-semibold">Department</th>
                         <th className="py-3 px-4 font-semibold">Risk Score</th>
@@ -532,25 +546,25 @@ export default function Dashboard() {
                         const emp = prediction.employeeId;
                         if (!emp) return null;
                         return (
-                          <tr key={prediction._id} className="border-b border-slate-800/50 hover:bg-slate-800/20 transition-colors">
+                          <tr key={prediction._id} className="border-b border-slate-100 hover:bg-slate-100/20 transition-colors">
                             <td className="py-3 px-4">
                               <Link to={`/employees/${emp._id}`} className="flex items-center gap-3 group">
-                                <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs font-bold text-slate-300">
+                                <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
                                   {emp.firstName.charAt(0)}{emp.lastName.charAt(0)}
                                 </div>
                                 <div>
-                                  <div className="font-semibold text-slate-200 group-hover:text-indigo-400 transition-colors">
+                                  <div className="font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">
                                     {emp.firstName} {emp.lastName}
                                   </div>
-                                  <div className="text-xs text-slate-500">{emp.designation}</div>
+                                  <div className="text-xs text-slate-400">{emp.designation}</div>
                                 </div>
                               </Link>
                             </td>
-                            <td className="py-3 px-4 text-slate-400">
+                            <td className="py-3 px-4 text-slate-500">
                               {emp.departmentId?.name || 'Unknown'}
                             </td>
                             <td className="py-3 px-4">
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-100">
                                 {(prediction.riskScore * 100).toFixed(0)}%
                               </div>
                             </td>
@@ -568,11 +582,11 @@ export default function Dashboard() {
           <section>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-100">⚖️ Explainability</h2>
-                <p className="text-xs text-slate-400">Why the model predicts what it predicts, workforce-wide</p>
+                <h2 className="text-lg font-bold text-slate-900">⚖️ Explainability</h2>
+                <p className="text-xs text-slate-500">Why the model predicts what it predicts, workforce-wide</p>
               </div>
               <div className="flex items-center gap-3">
-                {explainMessage && <span className="text-xs text-amber-400">{explainMessage}</span>}
+                {explainMessage && <span className="text-xs text-amber-600">{explainMessage}</span>}
                 <button
                   onClick={handleGenerateExplanations}
                   disabled={isGeneratingExplanations}
@@ -587,32 +601,32 @@ export default function Dashboard() {
               {globalImportance?.length > 0 ? (
                 <GlobalFeatureImportanceChart data={globalImportance} />
               ) : (
-                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex items-center justify-center text-center text-xs text-slate-500 italic h-full min-h-[16rem]">
+                <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex items-center justify-center text-center text-xs text-slate-400 italic h-full min-h-[16rem]">
                   No global feature importance yet. Train a model first, then reload this page.
                 </div>
               )}
 
-              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
+              <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
                 <div className="mb-4">
-                  <h3 className="text-base font-bold text-slate-100">Department Risk Drivers</h3>
-                  <p className="text-xs text-slate-400">Top attrition-risk factor per department, from generated explanations</p>
+                  <h3 className="text-base font-bold text-slate-900">Department Risk Drivers</h3>
+                  <p className="text-xs text-slate-500">Top attrition-risk factor per department, from generated explanations</p>
                 </div>
                 {departmentDrivers?.length > 0 ? (
                   <div className="space-y-2">
                     {departmentDrivers.map((d) => (
-                      <div key={d.departmentId || d.departmentName} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl">
+                      <div key={d.departmentId || d.departmentName} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl">
                         <div>
-                          <div className="text-sm font-semibold text-slate-200">{d.departmentName}</div>
-                          <div className="text-xs text-slate-500">{d.sampleSize} explanation(s) sampled</div>
+                          <div className="text-sm font-semibold text-slate-800">{d.departmentName}</div>
+                          <div className="text-xs text-slate-400">{d.sampleSize} explanation(s) sampled</div>
                         </div>
-                        <div className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg">
+                        <div className="text-xs font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg">
                           {d.topFeature}
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center text-xs text-slate-500 italic py-8">
+                  <div className="text-center text-xs text-slate-400 italic py-8">
                     No department drivers yet — click <strong>&quot;Generate Explanations&quot;</strong> above to populate this from the current workforce.
                   </div>
                 )}
@@ -624,11 +638,11 @@ export default function Dashboard() {
           <section>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-100">🎭 Employee Intelligence</h2>
-                <p className="text-xs text-slate-400">How the workforce feels — sentiment, emotion, burnout, and concerns from feedback, surveys, and manager notes</p>
+                <h2 className="text-lg font-bold text-slate-900">🎭 Employee Intelligence</h2>
+                <p className="text-xs text-slate-500">How the workforce feels — sentiment, emotion, burnout, and concerns from feedback, surveys, and manager notes</p>
               </div>
               <div className="flex items-center gap-3">
-                {intelligenceMessage && <span className="text-xs text-violet-400">{intelligenceMessage}</span>}
+                {intelligenceMessage && <span className="text-xs text-violet-600">{intelligenceMessage}</span>}
                 <button
                   onClick={handleGenerateIntelligenceBatch}
                   disabled={isGeneratingIntelligence}
@@ -640,13 +654,13 @@ export default function Dashboard() {
             </div>
 
             {intelligenceError && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs">
                 {intelligenceError}
               </div>
             )}
 
             {intelligenceStats && intelligenceStats.totalEmployeesAnalyzed === 0 ? (
-              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl text-center text-xs text-slate-500 italic">
+              <div className="p-6 bg-white border border-slate-100 rounded-3xl text-center text-xs text-slate-400 italic">
                 No Employee Intelligence profiles generated yet. Open an employee&apos;s profile and click <strong>&quot;Analyze Employee Sentiment&quot;</strong> to populate these widgets.
               </div>
             ) : (
@@ -669,41 +683,41 @@ export default function Dashboard() {
                 </div>
 
                 {/* Department Sentiment */}
-                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl md:col-span-2 xl:col-span-1">
-                  <h3 className="text-base font-bold text-slate-100 mb-4">Department Sentiment</h3>
+                <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card md:col-span-2 xl:col-span-1">
+                  <h3 className="text-base font-bold text-slate-900 mb-4">Department Sentiment</h3>
                   <div className="space-y-2">
                     {(intelligenceStats?.departmentBreakdown || []).map((d) => (
-                      <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
-                        <span className="font-semibold text-slate-200">{d.departmentName}</span>
+                      <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                        <span className="font-semibold text-slate-800">{d.departmentName}</span>
                         <div className="flex items-center gap-2 font-mono">
-                          <span className="text-emerald-400">+{d.sentimentCounts.Positive}</span>
-                          <span className="text-slate-500">•{d.sentimentCounts.Neutral}</span>
-                          <span className="text-rose-400">-{d.sentimentCounts.Negative}</span>
+                          <span className="text-emerald-600">+{d.sentimentCounts.Positive}</span>
+                          <span className="text-slate-400">•{d.sentimentCounts.Neutral}</span>
+                          <span className="text-rose-600">-{d.sentimentCounts.Negative}</span>
                         </div>
                       </div>
                     ))}
                     {!(intelligenceStats?.departmentBreakdown?.length) && (
-                      <p className="text-center text-xs text-slate-500 italic py-6">No data yet.</p>
+                      <p className="text-center text-xs text-slate-400 italic py-6">No data yet.</p>
                     )}
                   </div>
                 </div>
 
                 {/* Department Burnout */}
-                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                  <h3 className="text-base font-bold text-slate-100 mb-4">Department Burnout</h3>
+                <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                  <h3 className="text-base font-bold text-slate-900 mb-4">Department Burnout</h3>
                   <div className="space-y-2">
                     {(intelligenceStats?.departmentBreakdown || []).map((d) => (
-                      <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
-                        <span className="font-semibold text-slate-200">{d.departmentName}</span>
+                      <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                        <span className="font-semibold text-slate-800">{d.departmentName}</span>
                         <div className="flex items-center gap-2 font-mono">
-                          <span className="text-emerald-400">L:{d.burnoutCounts.Low}</span>
-                          <span className="text-amber-400">M:{d.burnoutCounts.Medium}</span>
-                          <span className="text-rose-400">H:{d.burnoutCounts.High}</span>
+                          <span className="text-emerald-600">L:{d.burnoutCounts.Low}</span>
+                          <span className="text-amber-600">M:{d.burnoutCounts.Medium}</span>
+                          <span className="text-rose-600">H:{d.burnoutCounts.High}</span>
                         </div>
                       </div>
                     ))}
                     {!(intelligenceStats?.departmentBreakdown?.length) && (
-                      <p className="text-center text-xs text-slate-500 italic py-6">No data yet.</p>
+                      <p className="text-center text-xs text-slate-400 italic py-6">No data yet.</p>
                     )}
                   </div>
                 </div>
@@ -715,16 +729,16 @@ export default function Dashboard() {
           <section>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-100">📚 Knowledge Base</h2>
-                <p className="text-xs text-slate-400">What organizational knowledge is indexed and how it&apos;s being used</p>
+                <h2 className="text-lg font-bold text-slate-900">📚 Knowledge Base</h2>
+                <p className="text-xs text-slate-500">What organizational knowledge is indexed and how it&apos;s being used</p>
               </div>
-              <Link to="/knowledge" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
+              <Link to="/knowledge" className="text-xs font-semibold text-indigo-600 hover:text-indigo-600 transition-colors">
                 Manage Knowledge Base →
               </Link>
             </div>
 
             {knowledgeStatsError && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs">
                 {knowledgeStatsError}
               </div>
             )}
@@ -762,38 +776,38 @@ export default function Dashboard() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                <h3 className="text-base font-bold text-slate-100 mb-4">Most Queried Policies</h3>
+              <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                <h3 className="text-base font-bold text-slate-900 mb-4">Most Queried Policies</h3>
                 {knowledgeStats?.mostSearchedPolicies?.length > 0 ? (
                   <div className="space-y-2">
                     {knowledgeStats.mostSearchedPolicies.map((name, i) => (
-                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-sm">
-                        <span className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-bold flex items-center justify-center">{i + 1}</span>
-                        <span className="text-slate-200">{name}</span>
+                      <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl text-sm">
+                        <span className="w-6 h-6 rounded-lg bg-indigo-50 text-indigo-600 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                        <span className="text-slate-800">{name}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-xs text-slate-500 italic py-8">No queries logged yet.</p>
+                  <p className="text-center text-xs text-slate-400 italic py-8">No queries logged yet.</p>
                 )}
               </div>
 
-              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                <h3 className="text-base font-bold text-slate-100 mb-4">Recent Uploads</h3>
+              <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                <h3 className="text-base font-bold text-slate-900 mb-4">Recent Uploads</h3>
                 {knowledgeStats?.recentUploads?.length > 0 ? (
                   <div className="space-y-2">
                     {knowledgeStats.recentUploads.map((doc) => (
-                      <div key={doc._id} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+                      <div key={doc._id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
                         <div>
-                          <div className="font-semibold text-slate-200">{doc.filename}</div>
-                          <div className="text-slate-500">{doc.documentType?.replace(/_/g, ' ')} • {doc.uploadedBy?.name || 'Unknown'}</div>
+                          <div className="font-semibold text-slate-800">{doc.filename}</div>
+                          <div className="text-slate-400">{doc.documentType?.replace(/_/g, ' ')} • {doc.uploadedBy?.name || 'Unknown'}</div>
                         </div>
-                        <span className="font-mono text-slate-500">{new Date(doc.uploadDate).toLocaleDateString()}</span>
+                        <span className="font-mono text-slate-400">{new Date(doc.uploadDate).toLocaleDateString()}</span>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-xs text-slate-500 italic py-8">No documents uploaded yet.</p>
+                  <p className="text-center text-xs text-slate-400 italic py-8">No documents uploaded yet.</p>
                 )}
               </div>
             </div>
@@ -803,45 +817,47 @@ export default function Dashboard() {
           <section>
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-bold text-slate-100">🎯 AI Recommendations</h2>
-                <p className="text-xs text-slate-400">What HR should do next — combining prediction, SHAP, sentiment, and policy evidence</p>
+                <h2 className="text-lg font-bold text-slate-900">🎯 AI Recommendations</h2>
+                <p className="text-xs text-slate-500">What HR should do next — combining prediction, SHAP, sentiment, and policy evidence</p>
               </div>
               <div className="flex items-center gap-3">
-                {decisionMessage && <span className="text-xs text-fuchsia-400">{decisionMessage}</span>}
+                {decisionMessage && <span className="text-xs text-fuchsia-600">{decisionMessage}</span>}
                 <button
                   onClick={handleGenerateDecisionsBatch}
                   disabled={isGeneratingDecisions}
                   className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
                 >
-                  {isGeneratingDecisions ? 'Generating…' : 'Generate Recommendations'}
+                  {isGeneratingDecisions
+                    ? `Generating… (${Math.floor(decisionElapsedSeconds / 60)}m ${String(decisionElapsedSeconds % 60).padStart(2, '0')}s)`
+                    : 'Generate Recommendations'}
                 </button>
               </div>
             </div>
 
             {decisionStatsError && (
-              <div className="mb-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs">{decisionStatsError}</div>
+              <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs">{decisionStatsError}</div>
             )}
 
             {decisionStats && decisionStats.totalEmployeesWithDecisions === 0 ? (
-              <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl text-center text-xs text-slate-500 italic">
+              <div className="p-6 bg-white border border-slate-100 rounded-3xl text-center text-xs text-slate-400 italic">
                 No recommendations generated yet. Click &quot;Generate Recommendations&quot; above to populate this from the current workforce.
               </div>
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-                  <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl">
-                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Employees with Recommendations</div>
-                    <div className="text-2xl font-black text-slate-100">{decisionStats?.totalEmployeesWithDecisions ?? 0}</div>
+                  <div className="p-5 bg-white border border-slate-100 rounded-3xl">
+                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Employees with Recommendations</div>
+                    <div className="text-2xl font-black text-slate-900">{decisionStats?.totalEmployeesWithDecisions ?? 0}</div>
                   </div>
-                  <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl">
-                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">Recommendation Acceptance Rate</div>
-                    <div className="text-2xl font-black text-emerald-400">
+                  <div className="p-5 bg-white border border-slate-100 rounded-3xl">
+                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Recommendation Acceptance Rate</div>
+                    <div className="text-2xl font-black text-emerald-600">
                       {decisionStats?.acceptanceRate != null ? `${Math.round(decisionStats.acceptanceRate * 100)}%` : '—'}
                     </div>
                   </div>
-                  <div className="p-5 bg-slate-900 border border-slate-800 rounded-3xl">
-                    <div className="text-xs text-slate-500 uppercase tracking-wider mb-1">HR Action Queue</div>
-                    <div className="text-2xl font-black text-amber-400">{decisionStats?.hrActionQueue?.length ?? 0}</div>
+                  <div className="p-5 bg-white border border-slate-100 rounded-3xl">
+                    <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">HR Action Queue</div>
+                    <div className="text-2xl font-black text-amber-600">{decisionStats?.hrActionQueue?.length ?? 0}</div>
                   </div>
                 </div>
 
@@ -852,35 +868,35 @@ export default function Dashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   {/* Critical Employees */}
-                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                    <h3 className="text-base font-bold text-slate-100 mb-4">Critical Employees</h3>
+                  <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                    <h3 className="text-base font-bold text-slate-900 mb-4">Critical Employees</h3>
                     <div className="space-y-2">
                       {(decisionStats?.criticalEmployees || []).length === 0 && (
-                        <p className="text-center text-xs text-slate-500 italic py-6">No critical (high-priority) employees right now.</p>
+                        <p className="text-center text-xs text-slate-400 italic py-6">No critical (high-priority) employees right now.</p>
                       )}
                       {(decisionStats?.criticalEmployees || []).map((e) => (
-                        <Link key={e.employeeId} to={`/employees/${e.employeeId}`} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 hover:border-fuchsia-500/30 rounded-xl text-xs transition-colors">
+                        <Link key={e.employeeId} to={`/employees/${e.employeeId}`} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 hover:border-fuchsia-100 rounded-xl text-xs transition-colors">
                           <div>
-                            <div className="font-semibold text-slate-200">{e.employeeName}</div>
-                            <div className="text-slate-500">{e.departmentName} • {RECOMMENDATION_TYPE_LABELS[e.recommendationType] || e.recommendationType}</div>
+                            <div className="font-semibold text-slate-800">{e.employeeName}</div>
+                            <div className="text-slate-400">{e.departmentName} • {RECOMMENDATION_TYPE_LABELS[e.recommendationType] || e.recommendationType}</div>
                           </div>
-                          <span className="font-mono text-rose-400">{((e.confidence || 0) * 100).toFixed(0)}%</span>
+                          <span className="font-mono text-rose-600">{((e.confidence || 0) * 100).toFixed(0)}%</span>
                         </Link>
                       ))}
                     </div>
                   </div>
 
                   {/* High Priority Actions */}
-                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                    <h3 className="text-base font-bold text-slate-100 mb-4">High Priority Actions</h3>
+                  <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                    <h3 className="text-base font-bold text-slate-900 mb-4">High Priority Actions</h3>
                     <div className="space-y-2">
                       {(decisionStats?.highPriorityActions || []).length === 0 && (
-                        <p className="text-center text-xs text-slate-500 italic py-6">No pending high-priority actions.</p>
+                        <p className="text-center text-xs text-slate-400 italic py-6">No pending high-priority actions.</p>
                       )}
                       {(decisionStats?.highPriorityActions || []).map((e) => (
-                        <Link key={e.decisionId} to={`/employees/${e.employeeId}`} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 hover:border-fuchsia-500/30 rounded-xl text-xs transition-colors">
-                          <span className="font-semibold text-slate-200">{e.employeeName}</span>
-                          <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 font-bold uppercase">{RECOMMENDATION_TYPE_LABELS[e.recommendationType] || e.recommendationType}</span>
+                        <Link key={e.decisionId} to={`/employees/${e.employeeId}`} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 hover:border-fuchsia-100 rounded-xl text-xs transition-colors">
+                          <span className="font-semibold text-slate-800">{e.employeeName}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-rose-50 text-rose-600 border border-rose-100 font-bold uppercase">{RECOMMENDATION_TYPE_LABELS[e.recommendationType] || e.recommendationType}</span>
                         </Link>
                       ))}
                     </div>
@@ -889,36 +905,36 @@ export default function Dashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   {/* Department Recommendations */}
-                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                    <h3 className="text-base font-bold text-slate-100 mb-4">Department Recommendations</h3>
+                  <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                    <h3 className="text-base font-bold text-slate-900 mb-4">Department Recommendations</h3>
                     <div className="space-y-2">
                       {(decisionStats?.departmentBreakdown || []).map((d) => (
-                        <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
-                          <span className="font-semibold text-slate-200">{d.departmentName}</span>
+                        <div key={String(d.departmentId || d.departmentName)} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                          <span className="font-semibold text-slate-800">{d.departmentName}</span>
                           <div className="flex items-center gap-2 font-mono">
-                            <span className="text-rose-400">H:{d.high}</span>
-                            <span className="text-amber-400">M:{d.medium}</span>
-                            <span className="text-emerald-400">L:{d.low}</span>
+                            <span className="text-rose-600">H:{d.high}</span>
+                            <span className="text-amber-600">M:{d.medium}</span>
+                            <span className="text-emerald-600">L:{d.low}</span>
                           </div>
                         </div>
                       ))}
                       {!(decisionStats?.departmentBreakdown?.length) && (
-                        <p className="text-center text-xs text-slate-500 italic py-6">No data yet.</p>
+                        <p className="text-center text-xs text-slate-400 italic py-6">No data yet.</p>
                       )}
                     </div>
                   </div>
 
                   {/* HR Action Queue */}
-                  <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                    <h3 className="text-base font-bold text-slate-100 mb-4">HR Action Queue</h3>
+                  <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                    <h3 className="text-base font-bold text-slate-900 mb-4">HR Action Queue</h3>
                     <div className="space-y-2">
                       {(decisionStats?.hrActionQueue || []).length === 0 && (
-                        <p className="text-center text-xs text-slate-500 italic py-6">Queue is empty — no pending decisions.</p>
+                        <p className="text-center text-xs text-slate-400 italic py-6">Queue is empty — no pending decisions.</p>
                       )}
                       {(decisionStats?.hrActionQueue || []).map((q) => (
-                        <Link key={q.decisionId} to={`/employees/${q.employeeId}`} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 hover:border-fuchsia-500/30 rounded-xl text-xs transition-colors">
-                          <span className="font-semibold text-slate-200">{q.employeeName}</span>
-                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase ${q.priority === 'HIGH' ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20' : q.priority === 'MEDIUM' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'}`}>
+                        <Link key={q.decisionId} to={`/employees/${q.employeeId}`} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 hover:border-fuchsia-100 rounded-xl text-xs transition-colors">
+                          <span className="font-semibold text-slate-800">{q.employeeName}</span>
+                          <span className={`px-2 py-0.5 rounded-full font-bold uppercase ${q.priority === 'HIGH' ? 'bg-rose-50 text-rose-600 border border-rose-100' : q.priority === 'MEDIUM' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'}`}>
                             {RECOMMENDATION_TYPE_LABELS[q.recommendationType] || q.recommendationType}
                           </span>
                         </Link>
@@ -928,19 +944,19 @@ export default function Dashboard() {
                 </div>
 
                 {/* Decision History */}
-                <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl">
-                  <h3 className="text-base font-bold text-slate-100 mb-4">Decision History</h3>
+                <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card">
+                  <h3 className="text-base font-bold text-slate-900 mb-4">Decision History</h3>
                   <div className="space-y-2">
                     {(decisionStats?.decisionHistory || []).length === 0 && (
-                      <p className="text-center text-xs text-slate-500 italic py-6">No decisions generated yet.</p>
+                      <p className="text-center text-xs text-slate-400 italic py-6">No decisions generated yet.</p>
                     )}
                     {(decisionStats?.decisionHistory || []).map((d) => (
-                      <div key={d._id} className="flex items-center justify-between p-3 bg-slate-950/50 border border-slate-800 rounded-xl text-xs">
+                      <div key={d._id} className="flex items-center justify-between p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs">
                         <div>
-                          <span className="font-semibold text-slate-200">{d.employeeId?.firstName} {d.employeeId?.lastName}</span>
-                          <span className="text-slate-500 ml-2">{RECOMMENDATION_TYPE_LABELS[d.recommendationType] || d.recommendationType}</span>
+                          <span className="font-semibold text-slate-800">{d.employeeId?.firstName} {d.employeeId?.lastName}</span>
+                          <span className="text-slate-400 ml-2">{RECOMMENDATION_TYPE_LABELS[d.recommendationType] || d.recommendationType}</span>
                         </div>
-                        <span className="font-mono text-slate-500">{new Date(d.generatedAt).toLocaleDateString()}</span>
+                        <span className="font-mono text-slate-400">{new Date(d.generatedAt).toLocaleDateString()}</span>
                       </div>
                     ))}
                   </div>
@@ -952,8 +968,8 @@ export default function Dashboard() {
           {/* ── Employee Insights ── */}
           <section>
             <div className="mb-4">
-              <h2 className="text-lg font-bold text-slate-100">Workforce Milestones & Insights</h2>
-              <p className="text-xs text-slate-400">Recent joiners, work anniversaries, and upcoming birthdays</p>
+              <h2 className="text-lg font-bold text-slate-900">Workforce Milestones & Insights</h2>
+              <p className="text-xs text-slate-500">Recent joiners, work anniversaries, and upcoming birthdays</p>
             </div>
             {loading && !insights?.recentHires?.length ? (
               <ChartSkeleton />

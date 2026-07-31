@@ -23,28 +23,28 @@ export default function Navbar() {
   const getRoleBadgeStyle = (role) => {
     switch (role) {
       case 'ADMIN':
-        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
+        return 'bg-violet-50 text-violet-600 border-violet-100';
       case 'HR_MANAGER':
-        return 'bg-blue-500/20 text-blue-300 border-blue-500/30';
+        return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'DEPARTMENT_MANAGER':
       case 'DEPT_MANAGER':
-        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+        return 'bg-emerald-50 text-emerald-600 border-emerald-100';
       default:
-        return 'bg-slate-500/20 text-slate-300 border-slate-500/30';
+        return 'bg-slate-100 text-slate-600 border-slate-200';
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-slate-900/90 border-b border-slate-800 shrink-0">
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-white/90 border-b border-slate-100 shrink-0">
       <div className="w-full px-4 sm:px-6 h-14 flex items-center justify-between gap-4">
 
         {/* ── Left: Logo (hidden on dashboard since sidebar shows it) ── */}
         {!isDashboard && (
           <Link to="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-transform duration-200">
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-black text-lg shadow-soft group-hover:scale-105 transition-transform duration-200">
               R
             </div>
-            <span className="text-lg font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-100 to-indigo-200 hidden sm:block">
+            <span className="text-lg font-extrabold text-slate-900 hidden sm:block">
               RetentionAI
             </span>
           </Link>
@@ -52,10 +52,10 @@ export default function Navbar() {
 
         {/* ── Dashboard breadcrumb / system status ── */}
         {isDashboard && (
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+          <div className="flex items-center gap-2 text-xs font-medium text-slate-400">
             <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-emerald-400 font-semibold">Live</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-emerald-600 font-semibold">Live</span>
             </div>
             <span>·</span>
             <span>RetentionAI Analytics Engine</span>
@@ -69,13 +69,13 @@ export default function Navbar() {
               {/* Quick navigation links — only shown when NOT in dashboard (sidebar handles those) */}
               {!isDashboard && (
                 <div className="hidden sm:flex items-center gap-4 mr-2">
-                  <Link to="/dashboard" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                  <Link to="/dashboard" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
                     Dashboard
                   </Link>
-                  <Link to="/departments" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                  <Link to="/departments" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
                     Departments
                   </Link>
-                  <Link to="/employees" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">
+                  <Link to="/employees" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
                     Employees
                   </Link>
                 </div>
@@ -89,25 +89,25 @@ export default function Navbar() {
 
               <NotificationBell />
 
-              <div className="h-4 w-px bg-slate-800 hidden sm:block" />
+              <div className="h-4 w-px bg-slate-200 hidden sm:block" />
 
               {/* User identity */}
               <div className="flex items-center gap-2.5">
                 <div className="text-right hidden md:block">
-                  <div className="text-xs font-semibold text-white leading-tight">{user.name}</div>
-                  <div className="text-[10px] text-slate-500 leading-tight truncate max-w-[140px]">{user.email}</div>
+                  <div className="text-xs font-semibold text-slate-900 leading-tight">{user.name}</div>
+                  <div className="text-[10px] text-slate-400 leading-tight truncate max-w-[140px]">{user.email}</div>
                 </div>
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white font-bold text-sm shadow">
+                <div className="w-8 h-8 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-soft">
                   {(user.name || 'U')[0]}
                 </div>
-                <span className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-semibold border hidden sm:inline ${getRoleBadgeStyle(user.role)}`}>
+                <span className={`text-[10px] px-2 py-0.5 rounded-md font-semibold border hidden sm:inline ${getRoleBadgeStyle(user.role)}`}>
                   {user.role}
                 </span>
               </div>
 
               <button
                 onClick={handleLogout}
-                className="px-3 py-1.5 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-lg transition-all"
+                className="px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg transition-all"
               >
                 Sign Out
               </button>
@@ -115,7 +115,7 @@ export default function Navbar() {
           ) : (
             <Link
               to="/login"
-              className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-md shadow-indigo-600/20 transition-all"
+              className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-soft transition-all"
             >
               Sign In
             </Link>
@@ -125,4 +125,3 @@ export default function Navbar() {
     </header>
   );
 }
-

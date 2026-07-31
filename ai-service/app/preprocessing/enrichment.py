@@ -115,12 +115,35 @@ async def enrich_employee_doc(employee_doc: dict, db) -> dict:
     feedback_count = await db["employeefeedbacks"].count_documents({"employeeId": eid})
     enriched.setdefault("feedback_frequency", float(feedback_count))
 
-    nlp_doc = await db["nlp_insights"].find_one({"employeeId": eid_str}, sort=[("generatedAt", -1)])
-    if nlp_doc:
-        enriched.setdefault("sentiment_score", float(nlp_doc["sentimentScore"]) if nlp_doc.get("sentimentScore") is not None else _NEUTRAL_DEFAULTS["sentiment_score"])
-        enriched.setdefault("burnout_score", float(nlp_doc["burnoutRisk"]) if nlp_doc.get("burnoutRisk") is not None else _NEUTRAL_DEFAULTS["burnout_score"])
-        enriched.setdefault("promotion_frustration_nlp", float(nlp_doc.get("promotionFrustration") or 0.0))
-        enriched.setdefault("manager_conflict_nlp", float(nlp_doc.get("managerConflict") or 0.0))
+    # Root cause fixed here: this queried `nlp_insights` — this service's OWN
+    # collection, written only by the legacy /nlp/analyze(/batch) endpoints,
+    # which nothing in the real "Generate Employee Intelligence" flow
+    # (server/src/services/employeeIntelligenceService.js) ever calls. That
+    # collection has always been empty, so every live prediction/SHAP/
+    # decision call fed the model neutral defaults for 4 of its 28 trained
+    # features (sentiment_score, burnout_score, promotion_frustration_nlp,
+    # manager_conflict_nlp) regardless of the employee's real sentiment or
+    # burnout state — a train/serve skew for exactly the features this
+    # module's own docstring says it exists to prevent. The real, populated
+    # per-employee data lives in Express's `employeeintelligences` collection
+    # (see app/nlp/repository.get_latest_employee_intelligence, fixed the
+    # same way for the Decision Engine's NLP evidence step).
+    ei_doc = await db["employeeintelligences"].find_one({"employeeId": eid}, sort=[("generatedAt", -1)])
+    if ei_doc:
+        enriched.setdefault("sentiment_score", float(ei_doc["sentimentScore"]) if ei_doc.get("sentimentScore") is not None else _NEUTRAL_DEFAULTS["sentiment_score"])
+        # burnoutScore is the 0-1 numeric field on this collection;
+        # burnoutRisk there is a Low/Medium/High string — using it directly
+        # (as the old nlp_insights-shaped code did) would silently corrupt
+        # this numeric feature.
+        enriched.setdefault("burnout_score", float(ei_doc["burnoutScore"]) if ei_doc.get("burnoutScore") is not None else _NEUTRAL_DEFAULTS["burnout_score"])
+        # promotion_frustration_nlp / manager_conflict_nlp are computed
+        # per-text by analyze_hr_text() but never aggregated to the employee
+        # level (see _aggregate_employee_intelligence in
+        # employee_intelligence_routes.py) — genuinely unavailable here, so
+        # these stay at their documented neutral defaults rather than being
+        # fabricated.
+        enriched.setdefault("promotion_frustration_nlp", _NEUTRAL_DEFAULTS["promotion_frustration_nlp"])
+        enriched.setdefault("manager_conflict_nlp", _NEUTRAL_DEFAULTS["manager_conflict_nlp"])
     else:
         enriched.setdefault("sentiment_score", _NEUTRAL_DEFAULTS["sentiment_score"])
         enriched.setdefault("burnout_score", _NEUTRAL_DEFAULTS["burnout_score"])

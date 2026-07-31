@@ -143,17 +143,17 @@ export default function EmployeeFormModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 overflow-hidden bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-3xl my-8 overflow-hidden bg-white border border-slate-100 rounded-2xl shadow-card">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50">
-          <h2 className="text-xl font-bold text-slate-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
+          <h2 className="text-xl font-bold text-slate-900">
             {isEditing ? 'Edit Employee Profile' : 'Add New Employee'}
           </h2>
           <button
             onClick={onClose}
             type="button"
-            className="p-1 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -174,80 +174,80 @@ export default function EmployeeFormModal({
           {/* Row 1: Code & Email */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                Employee Code <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                Employee Code <span className="text-rose-600">*</span>
               </label>
               <input
                 type="text"
                 placeholder="e.g. EMP-001"
                 {...register('employeeCode')}
-                className={`w-full px-3.5 py-2 bg-slate-950 border ${
-                  errors.employeeCode ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-slate-100 uppercase placeholder-slate-500 text-sm focus:outline-none`}
+                className={`w-full px-3.5 py-2 bg-slate-50 border ${
+                  errors.employeeCode ? 'border-rose-500' : 'border-slate-100 focus:border-indigo-500'
+                } rounded-xl text-slate-900 uppercase placeholder-slate-500 text-sm focus:outline-none`}
               />
-              {errors.employeeCode && <p className="mt-1 text-xs text-rose-400">{errors.employeeCode.message}</p>}
+              {errors.employeeCode && <p className="mt-1 text-xs text-rose-600">{errors.employeeCode.message}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                Email Address <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                Email Address <span className="text-rose-600">*</span>
               </label>
               <input
                 type="email"
                 placeholder="john.doe@company.com"
                 {...register('email')}
-                className={`w-full px-3.5 py-2 bg-slate-950 border ${
-                  errors.email ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none`}
+                className={`w-full px-3.5 py-2 bg-slate-50 border ${
+                  errors.email ? 'border-rose-500' : 'border-slate-100 focus:border-indigo-500'
+                } rounded-xl text-slate-900 placeholder-slate-500 text-sm focus:outline-none`}
               />
-              {errors.email && <p className="mt-1 text-xs text-rose-400">{errors.email.message}</p>}
+              {errors.email && <p className="mt-1 text-xs text-rose-600">{errors.email.message}</p>}
             </div>
           </div>
 
           {/* Row 2: Names */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                First Name <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                First Name <span className="text-rose-600">*</span>
               </label>
               <input
                 type="text"
                 placeholder="John"
                 {...register('firstName')}
-                className={`w-full px-3.5 py-2 bg-slate-950 border ${
-                  errors.firstName ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none`}
+                className={`w-full px-3.5 py-2 bg-slate-50 border ${
+                  errors.firstName ? 'border-rose-500' : 'border-slate-100 focus:border-indigo-500'
+                } rounded-xl text-slate-900 placeholder-slate-500 text-sm focus:outline-none`}
               />
-              {errors.firstName && <p className="mt-1 text-xs text-rose-400">{errors.firstName.message}</p>}
+              {errors.firstName && <p className="mt-1 text-xs text-rose-600">{errors.firstName.message}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                Last Name <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                Last Name <span className="text-rose-600">*</span>
               </label>
               <input
                 type="text"
                 placeholder="Doe"
                 {...register('lastName')}
-                className={`w-full px-3.5 py-2 bg-slate-950 border ${
-                  errors.lastName ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none`}
+                className={`w-full px-3.5 py-2 bg-slate-50 border ${
+                  errors.lastName ? 'border-rose-500' : 'border-slate-100 focus:border-indigo-500'
+                } rounded-xl text-slate-900 placeholder-slate-500 text-sm focus:outline-none`}
               />
-              {errors.lastName && <p className="mt-1 text-xs text-rose-400">{errors.lastName.message}</p>}
+              {errors.lastName && <p className="mt-1 text-xs text-rose-600">{errors.lastName.message}</p>}
             </div>
           </div>
 
           {/* Row 3: Department & Designation */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                Department <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                Department <span className="text-rose-600">*</span>
               </label>
               <select
                 {...register('departmentId')}
-                className={`w-full px-3.5 py-2 bg-slate-950 border ${
-                  errors.departmentId ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-slate-100 text-sm focus:outline-none`}
+                className={`w-full px-3.5 py-2 bg-slate-50 border ${
+                  errors.departmentId ? 'border-rose-500' : 'border-slate-100 focus:border-indigo-500'
+                } rounded-xl text-slate-900 text-sm focus:outline-none`}
               >
                 <option value="">Select Department</option>
                 {departments.map((dept) => (
@@ -256,48 +256,48 @@ export default function EmployeeFormModal({
                   </option>
                 ))}
               </select>
-              {errors.departmentId && <p className="mt-1 text-xs text-rose-400">{errors.departmentId.message}</p>}
+              {errors.departmentId && <p className="mt-1 text-xs text-rose-600">{errors.departmentId.message}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                Designation <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                Designation <span className="text-rose-600">*</span>
               </label>
               <input
                 type="text"
                 placeholder="Senior Engineer"
                 {...register('designation')}
-                className={`w-full px-3.5 py-2 bg-slate-950 border ${
-                  errors.designation ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none`}
+                className={`w-full px-3.5 py-2 bg-slate-50 border ${
+                  errors.designation ? 'border-rose-500' : 'border-slate-100 focus:border-indigo-500'
+                } rounded-xl text-slate-900 placeholder-slate-500 text-sm focus:outline-none`}
               />
-              {errors.designation && <p className="mt-1 text-xs text-rose-400">{errors.designation.message}</p>}
+              {errors.designation && <p className="mt-1 text-xs text-rose-600">{errors.designation.message}</p>}
             </div>
           </div>
 
           {/* Row 4: Phone & Work Location */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Phone Number
               </label>
               <input
                 type="text"
                 placeholder="+1 555 019 2831"
                 {...register('phone')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 placeholder-slate-500 text-sm focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Work Location
               </label>
               <input
                 type="text"
                 placeholder="New York Office / Remote"
                 {...register('workLocation')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 placeholder-slate-500 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 placeholder-slate-500 text-sm focus:outline-none"
               />
             </div>
           </div>
@@ -305,26 +305,26 @@ export default function EmployeeFormModal({
           {/* Row 5: Joining Date & Employment Type */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
-                Joining Date <span className="text-rose-400">*</span>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
+                Joining Date <span className="text-rose-600">*</span>
               </label>
               <input
                 type="date"
                 {...register('joiningDate')}
-                className={`w-full px-3.5 py-2 bg-slate-950 border ${
-                  errors.joiningDate ? 'border-rose-500' : 'border-slate-800 focus:border-indigo-500'
-                } rounded-xl text-slate-100 text-sm focus:outline-none`}
+                className={`w-full px-3.5 py-2 bg-slate-50 border ${
+                  errors.joiningDate ? 'border-rose-500' : 'border-slate-100 focus:border-indigo-500'
+                } rounded-xl text-slate-900 text-sm focus:outline-none`}
               />
-              {errors.joiningDate && <p className="mt-1 text-xs text-rose-400">{errors.joiningDate.message}</p>}
+              {errors.joiningDate && <p className="mt-1 text-xs text-rose-600">{errors.joiningDate.message}</p>}
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Employment Type
               </label>
               <select
                 {...register('employmentType')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm focus:outline-none"
               >
                 <option value="FULL_TIME">Full Time</option>
                 <option value="PART_TIME">Part Time</option>
@@ -334,12 +334,12 @@ export default function EmployeeFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Status
               </label>
               <select
                 {...register('status')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm focus:outline-none"
               >
                 <option value="ACTIVE">Active</option>
                 <option value="INACTIVE">Inactive</option>
@@ -352,12 +352,12 @@ export default function EmployeeFormModal({
           {/* Row 6: Gender, DOB, Salary & Manager */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Gender
               </label>
               <select
                 {...register('gender')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm focus:outline-none"
               >
                 <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
                 <option value="MALE">Male</option>
@@ -367,18 +367,18 @@ export default function EmployeeFormModal({
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Date of Birth
               </label>
               <input
                 type="date"
                 {...register('dateOfBirth')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Annual Salary ($)
               </label>
               <input
@@ -387,17 +387,17 @@ export default function EmployeeFormModal({
                 step="5000"
                 placeholder="100000"
                 {...register('salary')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 Direct Manager
               </label>
               <select
                 {...register('managerId')}
-                className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm focus:outline-none"
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm focus:outline-none"
               >
                 <option value="">None</option>
                 {managers
@@ -411,50 +411,50 @@ export default function EmployeeFormModal({
             </div>
           </div>
 
-          <div className="border-t border-slate-800 pt-6 mt-6">
-            <h3 className="text-lg font-bold text-slate-100 mb-4">Address Details</h3>
+          <div className="border-t border-slate-100 pt-6 mt-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Address Details</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-3">
-                <input placeholder="Street Address" {...register('address.street')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+                <input placeholder="Street Address" {...register('address.street')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
               </div>
-              <input placeholder="City" {...register('address.city')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
-              <input placeholder="State / Province" {...register('address.state')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              <input placeholder="City" {...register('address.city')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
+              <input placeholder="State / Province" {...register('address.state')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
               <div className="grid grid-cols-2 gap-4">
-                <input placeholder="Country" {...register('address.country')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
-                <input placeholder="ZIP Code" {...register('address.zip')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+                <input placeholder="Country" {...register('address.country')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
+                <input placeholder="ZIP Code" {...register('address.zip')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
               </div>
             </div>
           </div>
 
-          <div className="border-t border-slate-800 pt-6 mt-6">
-            <h3 className="text-lg font-bold text-slate-100 mb-4">Emergency Contact</h3>
+          <div className="border-t border-slate-100 pt-6 mt-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Emergency Contact</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <input placeholder="Full Name" {...register('emergencyContact.name')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
-              <input placeholder="Phone Number" {...register('emergencyContact.phone')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
-              <input placeholder="Relationship (e.g. Spouse)" {...register('emergencyContact.relation')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+              <input placeholder="Full Name" {...register('emergencyContact.name')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
+              <input placeholder="Phone Number" {...register('emergencyContact.phone')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
+              <input placeholder="Relationship (e.g. Spouse)" {...register('emergencyContact.relation')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
             </div>
           </div>
 
-          <div className="border-t border-slate-800 pt-6 mt-6">
-            <h3 className="text-lg font-bold text-slate-100 mb-4">Additional Info</h3>
+          <div className="border-t border-slate-100 pt-6 mt-6">
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Additional Info</h3>
             <div className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Skills (comma separated)</label>
-                <input placeholder="e.g. React, Node.js, Project Management" {...register('skills')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm" />
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Skills (comma separated)</label>
+                <input placeholder="e.g. React, Node.js, Project Management" {...register('skills')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm" />
               </div>
               <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">Profile Notes / HR Comments</label>
-                <textarea rows={3} placeholder="Add any private notes here..." {...register('profileNotes')} className="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 text-sm"></textarea>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">Profile Notes / HR Comments</label>
+                <textarea rows={3} placeholder="Add any private notes here..." {...register('profileNotes')} className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 text-sm"></textarea>
               </div>
             </div>
           </div>
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
             >
               Cancel
             </button>

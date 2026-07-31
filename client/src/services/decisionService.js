@@ -17,7 +17,17 @@ export const decisionService = {
   },
 
   async generateBatch({ employeeIds, departmentId } = {}) {
-    const response = await api.post('/decisions/batch', { employeeIds, departmentId });
+    // Root cause of the "Generating..." button that never resolved: this
+    // axios instance has no default timeout (see api.js), and generating
+    // recommendations for the full active workforce genuinely takes several
+    // minutes (verified directly against the API: ~4.5 minutes for ~1250
+    // employees, well under Express's own 420s AI_BATCH_TIMEOUT_MS below).
+    // With no client-side bound at all, ANY network hiccup that doesn't
+    // cleanly close the connection would leave the promise — and therefore
+    // the button's loading state — with no guaranteed way to ever settle.
+    // This timeout is set just above Express's own budget so it only ever
+    // fires as a safety net, never preempting a real response.
+    const response = await api.post('/decisions/batch', { employeeIds, departmentId }, { timeout: 450000 });
     return response.data.data;
   },
 

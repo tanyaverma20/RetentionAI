@@ -22,8 +22,8 @@ const DEPT_COLORS = ['#818cf8', '#6366f1', '#4f46e5', '#4338ca', '#3730a3'];
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-slate-950 border border-slate-800 p-3 rounded-xl shadow-2xl text-xs font-sans">
-        <p className="font-bold text-slate-200 mb-1">{label}</p>
+      <div className="bg-slate-50 border border-slate-100 p-3 rounded-xl shadow-card text-xs font-sans">
+        <p className="font-bold text-slate-800 mb-1">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="flex items-center gap-2 font-mono" style={{ color: entry.color || entry.fill }}>
             <span>{entry.name}:</span>
@@ -38,10 +38,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export function EmployeesByDepartmentChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Employees by Department</h3>
-        <p className="text-xs text-slate-400">Headcount distribution across company divisions</p>
+        <h3 className="text-base font-bold text-slate-900">Employees by Department</h3>
+        <p className="text-xs text-slate-500">Headcount distribution across company divisions</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -63,10 +63,10 @@ export function EmployeesByDepartmentChart({ data = [] }) {
 
 export function EmployeesByGenderChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Employees by Gender</h3>
-        <p className="text-xs text-slate-400">Gender diversity & inclusion breakdown</p>
+        <h3 className="text-base font-bold text-slate-900">Employees by Gender</h3>
+        <p className="text-xs text-slate-500">Gender diversity & inclusion breakdown</p>
       </div>
       <div className="h-64 w-full flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
@@ -96,10 +96,10 @@ export function EmployeesByGenderChart({ data = [] }) {
 
 export function EmployeesByEmploymentTypeChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Employment Type Distribution</h3>
-        <p className="text-xs text-slate-400">Full-time, Part-time, Contract, and Intern breakdown</p>
+        <h3 className="text-base font-bold text-slate-900">Employment Type Distribution</h3>
+        <p className="text-xs text-slate-500">Full-time, Part-time, Contract, and Intern breakdown</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -118,10 +118,10 @@ export function EmployeesByEmploymentTypeChart({ data = [] }) {
 export function GlobalFeatureImportanceChart({ data = [] }) {
   const sorted = [...data].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)).slice(0, 10);
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Top Attrition Drivers</h3>
-        <p className="text-xs text-slate-400">Most influential features ranked by mean |SHAP| across the workforce</p>
+        <h3 className="text-base font-bold text-slate-900">Top Attrition Drivers</h3>
+        <p className="text-xs text-slate-500">Most influential features ranked by mean |SHAP| across the workforce</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -139,10 +139,10 @@ export function GlobalFeatureImportanceChart({ data = [] }) {
 
 export function MonthlyHiringTrendChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Monthly Hiring Trend</h3>
-        <p className="text-xs text-slate-400">Employee onboardings over the past 12 months</p>
+        <h3 className="text-base font-bold text-slate-900">Monthly Hiring Trend</h3>
+        <p className="text-xs text-slate-500">Employee onboardings over the past 12 months</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -166,13 +166,13 @@ export function MonthlyHiringTrendChart({ data = [] }) {
 
 export function MonthlyAttritionTrendChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between relative">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between relative">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-base font-bold text-slate-100">Monthly Attrition Trend</h3>
-          <p className="text-xs text-slate-400">Departure benchmark (Placeholder for future ML model outputs)</p>
+          <h3 className="text-base font-bold text-slate-900">Monthly Attrition Trend</h3>
+          <p className="text-xs text-slate-500">Departure benchmark (Placeholder for future ML model outputs)</p>
         </div>
-        <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded-full">
+        <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider text-amber-600 bg-amber-50 border border-amber-100 rounded-full">
           Placeholder ML
         </span>
       </div>
@@ -192,10 +192,10 @@ export function MonthlyAttritionTrendChart({ data = [] }) {
 
 export function ExperienceDistributionChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Employee Experience Distribution</h3>
-        <p className="text-xs text-slate-400">Tenure breakdown by years of service</p>
+        <h3 className="text-base font-bold text-slate-900">Employee Experience Distribution</h3>
+        <p className="text-xs text-slate-500">Tenure breakdown by years of service</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -213,10 +213,10 @@ export function ExperienceDistributionChart({ data = [] }) {
 
 export function PerformanceDistributionChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Performance Distribution</h3>
-        <p className="text-xs text-slate-400">Employee performance rating breakdown</p>
+        <h3 className="text-base font-bold text-slate-900">Performance Distribution</h3>
+        <p className="text-xs text-slate-500">Employee performance rating breakdown</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -234,10 +234,10 @@ export function PerformanceDistributionChart({ data = [] }) {
 
 export function AgeDistributionChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Age Distribution</h3>
-        <p className="text-xs text-slate-400">Generational diversity breakdown</p>
+        <h3 className="text-base font-bold text-slate-900">Age Distribution</h3>
+        <p className="text-xs text-slate-500">Generational diversity breakdown</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -255,10 +255,10 @@ export function AgeDistributionChart({ data = [] }) {
 
 export function LeaveStatisticsChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Leave Statistics</h3>
-        <p className="text-xs text-slate-400">Breakdown of leave types</p>
+        <h3 className="text-base font-bold text-slate-900">Leave Statistics</h3>
+        <p className="text-xs text-slate-500">Breakdown of leave types</p>
       </div>
       <div className="h-64 w-full flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
@@ -279,10 +279,10 @@ export function LeaveStatisticsChart({ data = [] }) {
 
 export function AdvancedTrendsChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">HR Operations Trend</h3>
-        <p className="text-xs text-slate-400">Attendance, Training, and Promotion correlation over time</p>
+        <h3 className="text-base font-bold text-slate-900">HR Operations Trend</h3>
+        <p className="text-xs text-slate-500">Attendance, Training, and Promotion correlation over time</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -309,10 +309,10 @@ const EMOTION_COLORS = ['#6366f1', '#10b981', '#f59e0b', '#f43f5e', '#a855f7', '
 export function SentimentDistributionChart({ data = {} }) {
   const chartData = Object.entries(data).map(([label, count]) => ({ label, count }));
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Sentiment Distribution</h3>
-        <p className="text-xs text-slate-400">Employee feedback/survey sentiment across the workforce</p>
+        <h3 className="text-base font-bold text-slate-900">Sentiment Distribution</h3>
+        <p className="text-xs text-slate-500">Employee feedback/survey sentiment across the workforce</p>
       </div>
       <div className="h-64 w-full flex items-center justify-center">
         <ResponsiveContainer width="100%" height="100%">
@@ -334,10 +334,10 @@ export function SentimentDistributionChart({ data = {} }) {
 export function BurnoutDistributionChart({ data = {} }) {
   const chartData = ['Low', 'Medium', 'High'].map((label) => ({ label, count: data[label] || 0 }));
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Burnout Distribution</h3>
-        <p className="text-xs text-slate-400">Employees by burnout-risk category</p>
+        <h3 className="text-base font-bold text-slate-900">Burnout Distribution</h3>
+        <p className="text-xs text-slate-500">Employees by burnout-risk category</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -362,10 +362,10 @@ export function EmotionDistributionChart({ data = {} }) {
     .map(([label, count]) => ({ label, count }))
     .sort((a, b) => b.count - a.count);
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Emotion Distribution</h3>
-        <p className="text-xs text-slate-400">Dominant emotion across analyzed employees</p>
+        <h3 className="text-base font-bold text-slate-900">Emotion Distribution</h3>
+        <p className="text-xs text-slate-500">Dominant emotion across analyzed employees</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -388,10 +388,10 @@ export function EmotionDistributionChart({ data = {} }) {
 export function TopicFrequencyChart({ data = [], title = 'Top Employee Concerns', subtitle = 'Most frequently mentioned topics' }) {
   const sorted = [...data].sort((a, b) => b.count - a.count).slice(0, 8);
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">{title}</h3>
-        <p className="text-xs text-slate-400">{subtitle}</p>
+        <h3 className="text-base font-bold text-slate-900">{title}</h3>
+        <p className="text-xs text-slate-500">{subtitle}</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -409,10 +409,10 @@ export function TopicFrequencyChart({ data = [], title = 'Top Employee Concerns'
 
 export function SentimentBurnoutTrendChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Sentiment &amp; Burnout Trend</h3>
-        <p className="text-xs text-slate-400">Monthly average sentiment score and burnout score over time</p>
+        <h3 className="text-base font-bold text-slate-900">Sentiment &amp; Burnout Trend</h3>
+        <p className="text-xs text-slate-500">Monthly average sentiment score and burnout score over time</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -432,6 +432,11 @@ export function SentimentBurnoutTrendChart({ data = [] }) {
 // ─── Decision Intelligence (AI Recommendations) charts ─────────────────────
 
 const RECOMMENDATION_TYPE_LABELS = {
+  IMMEDIATE_INTERVENTION: 'Immediate Intervention',
+  RETENTION_MEETING: 'Retention Meeting',
+  PERFORMANCE_IMPROVEMENT_PLAN: 'Performance Improvement Plan',
+  MONITOR_WEEKLY: 'Monitor Weekly',
+  CAREER_DISCUSSION: 'Career Discussion',
   RETENTION_PLAN: 'Retention Plan',
   PROMOTION_REVIEW: 'Promotion Review',
   COMPENSATION_REVIEW: 'Compensation Review',
@@ -453,10 +458,10 @@ export function RecommendationDistributionChart({ data = {} }) {
     .map(([type, count]) => ({ type: RECOMMENDATION_TYPE_LABELS[type] || type, count }))
     .sort((a, b) => b.count - a.count);
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Recommendation Distribution</h3>
-        <p className="text-xs text-slate-400">Current AI recommendations by category (latest per employee)</p>
+        <h3 className="text-base font-bold text-slate-900">Recommendation Distribution</h3>
+        <p className="text-xs text-slate-500">Current AI recommendations by category (latest per employee)</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
@@ -478,10 +483,10 @@ export function RecommendationDistributionChart({ data = {} }) {
 
 export function RecommendationTrendsChart({ data = [] }) {
   return (
-    <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl shadow-xl flex flex-col justify-between">
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
       <div className="mb-4">
-        <h3 className="text-base font-bold text-slate-100">Recommendation Trends</h3>
-        <p className="text-xs text-slate-400">Decisions generated per month</p>
+        <h3 className="text-base font-bold text-slate-900">Recommendation Trends</h3>
+        <p className="text-xs text-slate-500">Decisions generated per month</p>
       </div>
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">

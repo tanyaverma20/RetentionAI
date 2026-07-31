@@ -9,16 +9,16 @@ export default function Home() {
     <div className="space-y-12 py-8">
       {/* Hero Section */}
       <div className="text-center max-w-3xl mx-auto space-y-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-semibold">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold">
           RetentionAI &bull; Enterprise Auth & Security Platform
         </div>
-        <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
+        <h1 className="text-4xl sm:text-6xl font-black text-slate-900 tracking-tight leading-tight">
           AI-Powered Retention Platform with{' '}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-violet-400">
             Zero-Trust Auth
           </span>
         </h1>
-        <p className="text-lg text-slate-300 leading-relaxed">
+        <p className="text-lg text-slate-600 leading-relaxed">
           Production-grade security module featuring JWT access tokens, opaque refresh token rotation, Zod request validation, rate limiting, and fine-grained Role-Based Access Control.
         </p>
 
@@ -40,7 +40,7 @@ export default function Home() {
           )}
           <Link
             to="/forgot-password"
-            className="px-6 py-3.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl border border-slate-700 transition-all text-sm"
+            className="px-6 py-3.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold rounded-xl border border-slate-200 transition-all text-sm"
           >
             Reset Password
           </Link>
@@ -49,32 +49,32 @@ export default function Home() {
 
       {/* Feature Highlights Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-        <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+        <div className="p-6 bg-white border border-slate-100 rounded-2xl space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
             01
           </div>
-          <h3 className="text-lg font-bold text-white">JWT & Token Rotation</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <h3 className="text-lg font-bold text-slate-900">JWT & Token Rotation</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
             Short-lived HS256 JWT access tokens paired with 384-bit CSPRNG opaque refresh tokens stored only as HMAC-SHA-256 digests.
           </p>
         </div>
 
-        <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+        <div className="p-6 bg-white border border-slate-100 rounded-2xl space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
             02
           </div>
-          <h3 className="text-lg font-bold text-white">Zod Validation & RBAC</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <h3 className="text-lg font-bold text-slate-900">Zod Validation & RBAC</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
             Strict runtime payload validation rejecting unknown fields and mass-assignment, coupled with server-enforced role and permission claims.
           </p>
         </div>
 
-        <div className="p-6 bg-slate-900/60 border border-slate-800 rounded-2xl space-y-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">
+        <div className="p-6 bg-white border border-slate-100 rounded-2xl space-y-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
             03
           </div>
-          <h3 className="text-lg font-bold text-white">Rate Limits & Protection</h3>
-          <p className="text-xs text-slate-400 leading-relaxed">
+          <h3 className="text-lg font-bold text-slate-900">Rate Limits & Protection</h3>
+          <p className="text-xs text-slate-500 leading-relaxed">
             Multi-factor IP and email keying preventing brute-force login attempts, enumeration attacks, and spamming.
           </p>
         </div>

@@ -76,25 +76,25 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="relative w-full max-w-2xl my-8 overflow-hidden bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-white/80 backdrop-blur-sm animate-fade-in overflow-y-auto">
+      <div className="relative w-full max-w-2xl my-8 overflow-hidden bg-white border border-slate-100 rounded-2xl shadow-card">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/50">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-white">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+            <div className="p-2 rounded-xl bg-indigo-50 text-indigo-600 border border-indigo-100">
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-100">Universal Data Import</h2>
-              <p className="text-xs text-slate-400">Import HR data records using CSV text or file upload</p>
+              <h2 className="text-xl font-bold text-slate-900">Universal Data Import</h2>
+              <p className="text-xs text-slate-500">Import HR data records using CSV text or file upload</p>
             </div>
           </div>
           <button
             onClick={onClose}
             type="button"
-            className="p-1 text-slate-400 hover:text-slate-200 rounded-lg hover:bg-slate-800 transition-colors"
+            className="p-1 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -103,15 +103,15 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
         </div>
 
         {/* Tab Selection & Sample Action */}
-        <div className="px-6 pt-4 flex items-center justify-between border-b border-slate-800">
+        <div className="px-6 pt-4 flex items-center justify-between border-b border-slate-100">
           <div className="flex gap-4">
             <button
               type="button"
               onClick={() => setActiveTab('text')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-colors ${
                 activeTab === 'text'
-                  ? 'border-indigo-500 text-indigo-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               Paste CSV Content
@@ -121,8 +121,8 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
               onClick={() => setActiveTab('file')}
               className={`pb-3 text-sm font-semibold border-b-2 transition-colors ${
                 activeTab === 'file'
-                  ? 'border-indigo-500 text-indigo-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-slate-500 hover:text-slate-900'
               }`}
             >
               Upload CSV File
@@ -131,7 +131,7 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
           <button
             type="button"
             onClick={handleDownloadSample}
-            className="pb-3 text-xs font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1.5 transition-colors"
+            className="pb-3 text-xs font-semibold text-indigo-600 hover:text-indigo-600 flex items-center gap-1.5 transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -142,13 +142,13 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div className="mb-4">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
               Select Data Collection
             </label>
             <select
               value={collection}
               onChange={(e) => { setCollection(e.target.value); setCsvText(''); }}
-              className="w-full sm:w-1/2 px-3.5 py-2 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-200 text-sm outline-none"
+              className="w-full sm:w-1/2 px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-sm outline-none"
             >
               {COLLECTION_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -158,7 +158,7 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
 
           {activeTab === 'text' ? (
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-1">
                 CSV Raw Text
               </label>
               <textarea
@@ -166,11 +166,11 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
                 value={csvText}
                 onChange={(e) => setCsvText(e.target.value)}
                 placeholder={TEMPLATES[collection]}
-                className="w-full p-3.5 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl text-slate-100 placeholder-slate-600 font-mono text-xs focus:outline-none transition-colors resize-none"
+                className="w-full p-3.5 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-900 placeholder-slate-600 font-mono text-xs focus:outline-none transition-colors resize-none"
               />
             </div>
           ) : (
-            <div className="border-2 border-dashed border-slate-800 hover:border-indigo-500/50 rounded-2xl p-8 text-center bg-slate-950/50 transition-colors">
+            <div className="border-2 border-dashed border-slate-100 hover:border-indigo-100 rounded-2xl p-8 text-center bg-slate-50 transition-colors">
               <input
                 type="file"
                 accept=".csv,text/csv"
@@ -179,18 +179,18 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
                 className="hidden"
               />
               <label htmlFor="csv-file-input" className="cursor-pointer space-y-3 block">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center mx-auto">
                   <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-slate-200">Click to select a CSV file</p>
-                  <p className="text-xs text-slate-500">Supports standard UTF-8 .csv files</p>
+                  <p className="text-sm font-semibold text-slate-800">Click to select a CSV file</p>
+                  <p className="text-xs text-slate-400">Supports standard UTF-8 .csv files</p>
                 </div>
               </label>
               {csvText && (
-                <div className="mt-4 p-2 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-emerald-400 text-xs font-mono">
+                <div className="mt-4 p-2 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-600 text-xs font-mono">
                   CSV Loaded ({csvText.split('\n').length - 1} rows detected)
                 </div>
               )}
@@ -199,10 +199,10 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
 
           {/* Import Summary Results */}
           {importSummary && (
-            <div className="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+            <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
               <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
-                <span className="text-emerald-400">Imported: {importSummary.importedCount}</span>
-                <span className={importSummary.failedCount > 0 ? 'text-rose-400' : 'text-slate-400'}>
+                <span className="text-emerald-600">Imported: {importSummary.importedCount}</span>
+                <span className={importSummary.failedCount > 0 ? 'text-rose-600' : 'text-slate-500'}>
                   Failed: {importSummary.failedCount}
                 </span>
               </div>
@@ -210,7 +210,7 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
               {importSummary.errors && importSummary.errors.length > 0 && (
                 <div className="max-h-32 overflow-y-auto space-y-1">
                   {importSummary.errors.map((err, idx) => (
-                    <div key={idx} className="text-xs text-rose-400 font-mono bg-rose-500/10 p-1.5 rounded border border-rose-500/20">
+                    <div key={idx} className="text-xs text-rose-600 font-mono bg-rose-50 p-1.5 rounded border border-rose-100">
                       Row {err.row}: {err.error}
                     </div>
                   ))}
@@ -218,8 +218,8 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
               )}
 
               {collection === 'employees' && importSummary.importedCount > 0 && (
-                <div className="mt-4 pt-4 border-t border-slate-800">
-                  <p className="text-xs text-slate-400 mb-2">New employees added. Would you like to generate AI attrition predictions for the workforce?</p>
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <p className="text-xs text-slate-500 mb-2">New employees added. Would you like to generate AI attrition predictions for the workforce?</p>
                   <button
                     type="button"
                     onClick={handlePredictBatch}
@@ -234,11 +234,11 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
           )}
 
           {/* Footer Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-semibold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
             >
               Cancel
             </button>

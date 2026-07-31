@@ -35,30 +35,30 @@ export default function ForgotPassword() {
 
   return (
     <div className="flex items-center justify-center min-h-[75vh]">
-      <div className="w-full max-w-md p-8 bg-slate-900/90 border border-slate-800 rounded-2xl shadow-2xl backdrop-blur-xl relative overflow-hidden">
+      <div className="w-full max-w-md p-8 bg-white/90 border border-slate-100 rounded-2xl shadow-card backdrop-blur-xl relative overflow-hidden">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-white tracking-tight">Reset Password</h1>
-          <p className="text-sm text-slate-400 mt-2">
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Reset Password</h1>
+          <p className="text-sm text-slate-500 mt-2">
             Enter your email address and we&apos;ll send reset instructions if an active account exists.
           </p>
         </div>
 
         {submitted ? (
           <div className="text-center space-y-6">
-            <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+            <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
               <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white mb-2">Request Processed</h2>
-              <p className="text-sm text-slate-400">
+              <h2 className="text-xl font-bold text-slate-900 mb-2">Request Processed</h2>
+              <p className="text-sm text-slate-500">
                 If eligible, reset instructions have been generated. Check your inbox or contact your administrator.
               </p>
             </div>
             <Link
               to="/login"
-              className="inline-block w-full py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl transition-all text-sm"
+              className="inline-block w-full py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-xl transition-all text-sm"
             >
               Return to Login
             </Link>
@@ -66,23 +66,23 @@ export default function ForgotPassword() {
         ) : (
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {errorMessage && (
-              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-sm">
+              <div className="p-4 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm">
                 {errorMessage}
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
                 Work Email Address
               </label>
               <input
                 type="email"
                 placeholder="user@example.test"
                 {...register('email')}
-                className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
+                className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
               />
               {errors.email && (
-                <p className="text-xs text-red-400 mt-1.5">{errors.email.message}</p>
+                <p className="text-xs text-red-600 mt-1.5">{errors.email.message}</p>
               )}
             </div>
 
@@ -102,7 +102,7 @@ export default function ForgotPassword() {
             </button>
 
             <div className="text-center pt-2">
-              <Link to="/login" className="text-xs text-slate-400 hover:text-slate-200">
+              <Link to="/login" className="text-xs text-slate-500 hover:text-slate-900">
                 Back to Login
               </Link>
             </div>

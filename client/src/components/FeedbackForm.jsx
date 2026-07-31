@@ -22,17 +22,17 @@ export default function FeedbackForm({ employeeId, onSubmit, onCancel }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 bg-slate-900 p-6 rounded-3xl border border-slate-800">
-      <h2 className="text-xl font-bold text-slate-100">Submit Feedback</h2>
+    <form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-3xl border border-slate-100">
+      <h2 className="text-xl font-bold text-slate-900">Submit Feedback</h2>
       
       <div className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Category</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Category</label>
           <select
             name="category"
             value={formData.category}
             onChange={handleChange}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="MANAGEMENT">Management</option>
             <option value="WORK_ENVIRONMENT">Work Environment</option>
@@ -43,12 +43,12 @@ export default function FeedbackForm({ employeeId, onSubmit, onCancel }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Feedback Visibility</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Feedback Visibility</label>
           <select
             name="visibility"
             value={formData.visibility}
             onChange={handleChange}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           >
             <option value="HR_ONLY">HR Only</option>
             <option value="MANAGER">Manager & HR</option>
@@ -57,35 +57,35 @@ export default function FeedbackForm({ employeeId, onSubmit, onCancel }) {
         </div>
 
         <div>
-          <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">Feedback Details</label>
+          <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">Feedback Details</label>
           <textarea
             name="feedbackText"
             required
             rows={5}
             value={formData.feedbackText}
             onChange={handleChange}
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             placeholder="Please provide your feedback here..."
           />
         </div>
 
-        <label className="flex items-center gap-3 bg-slate-950 p-4 border border-slate-800 rounded-xl cursor-pointer">
+        <label className="flex items-center gap-3 bg-slate-50 p-4 border border-slate-100 rounded-xl cursor-pointer">
           <input
             type="checkbox"
             name="anonymous"
             checked={formData.anonymous}
             onChange={handleChange}
-            className="w-4 h-4 rounded text-indigo-500 bg-slate-800 border-slate-700 focus:ring-indigo-500 focus:ring-offset-slate-900"
+            className="w-4 h-4 rounded text-indigo-500 bg-slate-100 border-slate-200 focus:ring-indigo-500 focus:ring-offset-slate-900"
           />
           <div>
-            <div className="text-sm font-semibold text-slate-200">Submit Anonymously</div>
-            <div className="text-xs text-slate-500">Your name will not be attached to this feedback.</div>
+            <div className="text-sm font-semibold text-slate-800">Submit Anonymously</div>
+            <div className="text-xs text-slate-400">Your name will not be attached to this feedback.</div>
           </div>
         </label>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-slate-800">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-semibold text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl">Cancel</button>
+      <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">Cancel</button>
         <button type="submit" className="px-4 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl">Submit Feedback</button>
       </div>
     </form>
