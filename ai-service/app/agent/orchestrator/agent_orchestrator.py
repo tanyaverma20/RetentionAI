@@ -16,7 +16,7 @@ Workflow per employee:
 
 import asyncio
 import datetime
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 import pandas as pd
 

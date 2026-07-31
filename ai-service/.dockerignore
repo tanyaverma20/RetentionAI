@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+.env
+.env.*
+!.env.example
+tests
+chroma_db
+knowledge_base
+catboost_info
+.git
+.gitignore
+Dockerfile
+.dockerignore

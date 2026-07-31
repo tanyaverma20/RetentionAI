@@ -4,7 +4,7 @@ export const passwordPolicyRegex = {
   uppercase: /[A-Z]/,
   lowercase: /[a-z]/,
   number: /[0-9]/,
-  special: /[!@#$%^&*(),.?":{}|<>_~\-]/,
+  special: /[!@#$%^&*(),.?":{}|<>_~-]/,
 };
 
 export const clientPasswordSchema = z

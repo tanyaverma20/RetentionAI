@@ -7,7 +7,6 @@ Calls the existing prediction_service — does NOT retrain the model.
 
 from app.prediction.prediction_service import prediction_service, ModelNotLoadedException
 from typing import Dict, Any
-import pandas as pd
 
 
 async def run_ml_prediction(employee_doc: Dict[str, Any]) -> Dict[str, Any]:

@@ -1,0 +1,111 @@
+volumes:
+  mongo_data:
+  chroma_data:
+  model_data:
+  knowledge_base_data:
+  uploads_data:
+
+networks:
+  retentionai:
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: retentionai-mongo
+    restart: unless-stopped
+    networks: [retentionai]
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  ai-service:
+    build:
+      context: ./ai-service
+    container_name: retentionai-ai-service
+    restart: unless-stopped
+    networks: [retentionai]
+    ports:
+      - "8000:8000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: retentionai
+      AI_SERVICE_HOST: 0.0.0.0
+      AI_SERVICE_PORT: 8000
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?AI_SERVICE_TOKEN is required}
+      AI_MODELS_OFFLINE: ${AI_MODELS_OFFLINE:-true}
+      MODEL_ARTIFACT_PATH: /app/models/active
+      MODEL_METADATA_PATH: /app/models/active
+      CHROMA_PERSIST_DIRECTORY: /app/chroma_db
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_MODEL_NAME: ${GROQ_MODEL_NAME:-llama-3.1-8b-instant}
+      EMBEDDING_MODEL_NAME: ${EMBEDDING_MODEL_NAME:-all-MiniLM-L6-v2}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - model_data:/app/models/active
+      - chroma_data:/app/chroma_db
+      - knowledge_base_data:/app/knowledge_base
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+
+  server:
+    build:
+      context: ./server
+    container_name: retentionai-server
+    restart: unless-stopped
+    networks: [retentionai]
+    ports:
+      - "5000:5000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: retentionai
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?JWT_ACCESS_SECRET is required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
+      JWT_ACCESS_TTL: ${JWT_ACCESS_TTL:-15m}
+      JWT_REFRESH_TTL: ${JWT_REFRESH_TTL:-7d}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      AI_SERVICE_URL: http://ai-service:8000
+      AI_SERVICE_TOKEN: ${AI_SERVICE_TOKEN:?AI_SERVICE_TOKEN is required}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - uploads_data:/app/uploads
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000/api/v1}
+    container_name: retentionai-client
+    restart: unless-stopped
+    networks: [retentionai]
+    ports:
+      - "80:80"
+    depends_on:
+      server:
+        condition: service_healthy

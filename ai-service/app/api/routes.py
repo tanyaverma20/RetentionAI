@@ -3,14 +3,10 @@ import uuid
 import datetime
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header, status, BackgroundTasks
-from typing import List, Optional
+from typing import Optional
 from app.api.schemas import (
     SinglePredictionRequest, 
     BatchPredictionRequest, 
-    PredictionResult, 
-    BatchPredictionResponse,
-    ModelInfoResponse,
-    ModelMetricsResponse,
     HealthStatusResponse
 )
 from app.prediction.prediction_service import prediction_service, ModelNotLoadedException

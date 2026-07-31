@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchHrRecords, createHrRecord, deleteHrRecord, clearHrError, clearHrSuccess, setHrPage } from '../store/slices/hrSlice';
+import { fetchHrRecords, createHrRecord, clearHrError, clearHrSuccess, setHrPage } from '../store/slices/hrSlice';
 import { fetchEmployees } from '../store/slices/employeeSlice';
 
 function ScoreBar({ label, value, max = 5, color = 'indigo' }) {
@@ -150,7 +150,7 @@ export default function PerformancePage() {
                 {r.improvementAreas?.length > 0 && (<div><p className="text-xs font-semibold text-rose-400 mb-1">Areas for Improvement</p><div className="flex flex-wrap gap-1">{r.improvementAreas.map((s, i) => <span key={i} className="px-2 py-0.5 text-[10px] bg-rose-500/10 text-rose-300 border border-rose-500/20 rounded-full">{s}</span>)}</div></div>)}
               </div>
             )}
-            {r.managerComments && <p className="mt-3 text-xs text-slate-400 italic border-t border-slate-800 pt-3">"{r.managerComments}"</p>}
+            {r.managerComments && <p className="mt-3 text-xs text-slate-400 italic border-t border-slate-800 pt-3">&quot;{r.managerComments}&quot;</p>}
           </div>
         ))}
       </div>

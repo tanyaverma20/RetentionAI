@@ -20,7 +20,7 @@ const departmentFormSchema = z.object({
   isActive: z.boolean().optional().default(true),
 });
 
-export default function DepartmentFormModal({ isOpen, onClose, department, onSubmit, employees = [], loading = false }) {
+export default function DepartmentFormModal({ isOpen, onClose, department, onSubmit, loading = false }) {
   const isEditing = Boolean(department);
 
   const {

@@ -673,7 +673,7 @@ function TabAIInsights({
         ) : (
           <div className="text-center py-8">
             <div className="w-14 h-14 rounded-2xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center mx-auto mb-4 text-2xl">📚</div>
-            <p className="text-slate-400 text-sm mb-4">No knowledge lookups run yet for this employee's role.</p>
+            <p className="text-slate-400 text-sm mb-4">No knowledge lookups run yet for this employee&apos;s role.</p>
             <button onClick={onLoadKnowledgeInsights} disabled={knowledgeLoading}
               className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-sky-600 hover:bg-sky-500 rounded-xl shadow-lg transition-all disabled:opacity-50">
               {knowledgeLoading ? 'Looking up…' : '📚 Load Knowledge Insights'}

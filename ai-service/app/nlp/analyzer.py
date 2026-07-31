@@ -4,7 +4,6 @@ from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
 from langdetect import detect as _detect_lang, LangDetectException
 import spacy
-import collections
 
 # Load NLP Models
 try:

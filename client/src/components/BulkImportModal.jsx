@@ -70,7 +70,7 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
       await dispatch(predictBatchEmployees()).unwrap();
       setIsPredicting(false);
       onClose(); // Close modal on success
-    } catch (err) {
+    } catch {
       setIsPredicting(false);
     }
   };

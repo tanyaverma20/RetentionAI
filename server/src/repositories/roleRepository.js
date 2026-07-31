@@ -104,6 +104,29 @@ export function upsertSystemRoles(roles) {
 }
 
 /**
+ * Merge newly-introduced baseline permissions into existing system roles
+ * without touching any admin-added custom permissions. `upsertSystemRoles`
+ * only writes on first creation ($setOnInsert), so a role seeded in an
+ * earlier sprint never gains permissions added by a later sprint (e.g. the
+ * Sprint 9 workflow permissions) on its own — this closes that gap via a
+ * $addToSet union rather than overwriting the permissions array outright.
+ *
+ * @param {Array<{ name: string, permissions: string[] }>} roles
+ * @returns {Promise<void>}
+ */
+export function syncSystemRolePermissions(roles) {
+  return Promise.all(
+    roles.map((role) => {
+      if (role.permissions.includes('*')) return Promise.resolve();
+      return Role.updateOne(
+        { name: role.name, isSystem: true },
+        { $addToSet: { permissions: { $each: role.permissions } } },
+      );
+    }),
+  );
+}
+
+/**
  * Count the number of users assigned to a given role.
  * Used before deleting a role to ensure it is not in use.
  *

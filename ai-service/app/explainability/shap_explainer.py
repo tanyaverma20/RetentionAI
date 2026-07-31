@@ -26,7 +26,6 @@ import re
 import numpy as np
 import shap
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
 
 # ---------------------------------------------------------------------------
 # Human-readable display name overrides.

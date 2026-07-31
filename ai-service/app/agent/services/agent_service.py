@@ -94,7 +94,7 @@ async def get_recommendation_history(limit: int = 50) -> List[Dict[str, Any]]:
             {}, {"_id": 0}
         ).sort("timestamp", -1).limit(limit)
         return await cursor.to_list(length=limit)
-    except Exception as e:
+    except Exception:
         return []
 
 
@@ -106,7 +106,7 @@ async def get_employee_recommendations(employee_id: str) -> List[Dict[str, Any]]
             {"employeeId": employee_id}, {"_id": 0}
         ).sort("timestamp", -1)
         return await cursor.to_list(length=100)
-    except Exception as e:
+    except Exception:
         return []
 
 
@@ -159,7 +159,7 @@ async def get_agent_statistics() -> Dict[str, Any]:
             "mostCommonActions": common_actions,
             "departmentRiskOverview": dept_overview,
         }
-    except Exception as e:
+    except Exception:
         return {
             "totalRecommendations": 0,
             "highRiskCount": 0,

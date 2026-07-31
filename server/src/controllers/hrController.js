@@ -1,5 +1,6 @@
 import { hrService } from '../services/hrService.js';
 import { hrQuerySchema } from '../validators/hrValidators.js';
+import { AppError } from '../errors/AppError.js';
 
 function extractOrgId(req) {
   // In a real multi-tenant app, this might come from the user's JWT or a domain context.

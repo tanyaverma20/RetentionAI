@@ -26,6 +26,7 @@
 
 import { AppError } from '../errors/AppError.js';
 import { sendError } from '../utils/response.js';
+import { requestLogger } from '../utils/logger.js';
 
 /**
  * 404 Handler for undefined routes.
@@ -116,9 +117,11 @@ export function errorHandler(error, request, response, _next) {
     );
   }
 
-  // 4. Unhandled runtime exceptions (do not leak details)
-  console.error(`[RequestId: ${request.requestId}] Internal Error:`, error?.message || error);
-  
+  // 4. Unhandled runtime exceptions (do not leak details to the client;
+  // the full message/stack is only ever written server-side, via the
+  // structured logger — never echoed back in the response body).
+  requestLogger(request).error('unhandled_exception', { message: error?.message, stack: error?.stack });
+
   return sendError(
     response,
     500,

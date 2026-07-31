@@ -319,7 +319,7 @@ export default function Dashboard() {
                   Welcome back, {user?.firstName || user?.name?.split(' ')[0] || 'User'}!
                 </h1>
                 <p className="text-slate-300 mt-2 text-sm max-w-xl">
-                  Here's your workforce intelligence overview for RetentionAI.
+                  Here&apos;s your workforce intelligence overview for RetentionAI.
                   {user?.role && (
                     <span className="ml-1 font-semibold text-indigo-300">
                       Viewing as: {getRoleDisplayName(user.role)}.
@@ -479,7 +479,7 @@ export default function Dashboard() {
 
             {(!riskCounts) && (
               <div className="text-center py-6 text-xs text-slate-500 italic">
-                No predictions available yet. Run <strong>"Run AI Prediction"</strong> on the Employees page to generate risk scores.
+                No predictions available yet. Run <strong>&quot;Run AI Prediction&quot;</strong> on the Employees page to generate risk scores.
               </div>
             )}
 
@@ -582,7 +582,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="text-center text-xs text-slate-500 italic py-8">
-                    No department drivers yet — click <strong>"Generate Explanations"</strong> above to populate this from the current workforce.
+                    No department drivers yet — click <strong>&quot;Generate Explanations&quot;</strong> above to populate this from the current workforce.
                   </div>
                 )}
               </div>
@@ -616,7 +616,7 @@ export default function Dashboard() {
 
             {intelligenceStats && intelligenceStats.totalEmployeesAnalyzed === 0 ? (
               <div className="p-6 bg-slate-900 border border-slate-800 rounded-3xl text-center text-xs text-slate-500 italic">
-                No Employee Intelligence profiles generated yet. Open an employee's profile and click <strong>"Analyze Employee Sentiment"</strong> to populate these widgets.
+                No Employee Intelligence profiles generated yet. Open an employee&apos;s profile and click <strong>&quot;Analyze Employee Sentiment&quot;</strong> to populate these widgets.
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -685,7 +685,7 @@ export default function Dashboard() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-slate-100">📚 Knowledge Base</h2>
-                <p className="text-xs text-slate-400">What organizational knowledge is indexed and how it's being used</p>
+                <p className="text-xs text-slate-400">What organizational knowledge is indexed and how it&apos;s being used</p>
               </div>
               <Link to="/knowledge" className="text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors">
                 Manage Knowledge Base →

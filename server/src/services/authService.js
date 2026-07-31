@@ -51,6 +51,10 @@ import {
 } from '../repositories/userRepository.js';
 import { comparePassword, hashPassword } from '../utils/password.js';
 import { durationToMilliseconds } from '../utils/duration.js';
+import { recordAudit } from './auditService.js';
+import { logger } from '../utils/logger.js';
+
+const DEFAULT_ORGANIZATION_ID = '60d5ec388832a828f8000000';
 import {
   createAccessToken,
   createPasswordResetToken,
@@ -125,18 +129,24 @@ export async function login({ email, password }) {
   const passwordMatch = user ? await comparePassword(password, user.passwordHash) : false;
 
   if (!user || !passwordMatch) {
+    logger.warn('auth_login_failed', { email, reason: 'invalid_credentials' });
     throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
   }
   if (user.status === 'LOCKED') {
+    logger.warn('auth_login_failed', { email, reason: 'account_locked' });
     throw new AppError(423, 'ACCOUNT_LOCKED', 'This account has been locked. Contact an administrator.');
   }
   if (user.status !== 'ACTIVE' || !user.roleId) {
+    logger.warn('auth_login_failed', { email, reason: 'inactive_or_unroled' });
     throw new AppError(401, 'INVALID_CREDENTIALS', 'Invalid email or password.');
   }
 
   user.lastLoginAt = new Date();
   await updateUser(user);
-  return issueSession(user);
+  const session = await issueSession(user);
+  await recordAudit(user.organizationId || DEFAULT_ORGANIZATION_ID, 'USER_LOGIN', user.id, { context: { email: user.email } });
+  logger.info('auth_login_success', { userId: user.id, email: user.email, role: user.roleId?.name });
+  return session;
 }
 
 /**
@@ -178,6 +188,8 @@ export async function logout(userId, refreshToken) {
   }
 
   await revokeRefreshToken(storedToken);
+  await recordAudit(DEFAULT_ORGANIZATION_ID, 'USER_LOGOUT', userId, {});
+  logger.info('auth_logout', { userId });
 }
 
 /**

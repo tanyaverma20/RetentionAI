@@ -181,7 +181,7 @@ export async function bulkUploadDepartments(fileBuffer) {
       skip_empty_lines: true,
       trim: true,
     });
-  } catch (error) {
+  } catch {
     throw new AppError(400, 'INVALID_CSV', 'Failed to parse CSV file. Please ensure it matches the template.');
   }
 

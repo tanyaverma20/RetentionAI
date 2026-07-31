@@ -1,0 +1,55 @@
+# Production overrides. Apply on top of the base file:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Differences from the base (dev/local) file:
+#   - Mongo is no longer published to the host — only reachable inside the
+#     compose network, closing off the most common accidental-exposure risk.
+#   - Every service gets a memory ceiling so one runaway container (the AI
+#     service's ML/NLP stack is the most likely culprit) can't starve the rest.
+#   - Log output is capped and rotated at the Docker level too.
+
+services:
+  mongo:
+    ports: []
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 2g
+
+  ai-service:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 4g
+
+  server:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1g
+
+  client:
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 256m

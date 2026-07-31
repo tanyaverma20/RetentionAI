@@ -19,7 +19,6 @@
  */
 
 import { Router } from 'express';
-import { z } from 'zod';
 import { ROLE_NAMES } from '../config/roles.js';
 import * as userController from '../controllers/userController.js';
 import { AppError } from '../errors/AppError.js';

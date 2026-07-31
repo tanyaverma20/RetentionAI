@@ -35,7 +35,7 @@ import asyncio
 import collections
 import datetime
 import os
-from typing import Any, Optional
+from typing import Optional
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header, status

@@ -1,92 +1,106 @@
 # RetentionAI
 
-RetentionAI is an AI-powered HR analytics platform for employee attrition-risk analysis and evidence-based retention support. This repository currently contains only the application foundation: frontend and service health checks, configuration, documentation, and the planned module layout.
+RetentionAI is a production-ready, enterprise employee-retention platform:
+ML attrition prediction, SHAP explainability, NLP-driven employee
+intelligence, a RAG-backed HR knowledge base, AI-generated decision
+recommendations, an executive workforce dashboard, and a full HR
+workflow-automation suite (interventions, tasks, approvals, notifications,
+audit) — all wired into one HRMS covering employees, departments,
+attendance, performance, training, and promotions.
 
-## Tech Stack
+**Version:** 1.0.0 · See [CHANGELOG.md](./CHANGELOG.md) for release notes.
 
-- Frontend: React, Vite, Tailwind CSS, Redux Toolkit, React Router, Axios, Recharts, React Hook Form, and Zod.
-- Backend: Node.js, Express, JWT, bcrypt, Mongoose, Zod, and supporting security middleware.
-- AI service: Python, FastAPI, Pandas, NumPy, scikit-learn, XGBoost, Joblib, SHAP, DistilBERT, VADER, LangChain, ChromaDB, and Groq.
-- Deployment targets: Vercel, Render, and MongoDB Atlas.
+## Architecture
+
+```text
+React (client)  →  Express API (server)  →  MongoDB
+                          ↓
+                  FastAPI AI Service (ai-service)
+                          ↓
+        Prediction → SHAP → Employee Intelligence (NLP)
+                → Knowledge Intelligence (RAG) → Decision Intelligence
+                          ↓
+              Executive Dashboard  →  Workflow Automation
+```
+
+See [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md) for the full diagram and
+component breakdown.
 
 ## Repository Structure
 
 ```text
-client/       React/Vite frontend
-server/       Express backend with health route
-ai-service/   FastAPI AI service with health route
-docs/         Approved architecture and design documents
-datasets/     Sanitized/anonymized dataset locations
-models/       Versioned model-artifact locations
-uploads/      Local development upload staging
-scripts/      Repeatable development and operations scripts
-tests/        Cross-service, integration, E2E, and manual test assets
+client/             React 18 + Vite + Redux Toolkit + Tailwind frontend
+server/             Express API: HRMS, auth/RBAC, workflow automation, executive dashboard
+ai-service/         FastAPI: prediction, SHAP, NLP, RAG, decision engine
+docs/               Architecture, API, deployment, and testing documentation
+docs/deployment/    Platform-specific deployment guides (Render, Railway, AWS, Azure, DigitalOcean, Docker VPS)
+scripts/ops/        Database backup/restore scripts
+server/scripts/     DB consistency check, load test harness
+datasets/, models/  Training data and versioned model artifacts (gitignored)
+uploads/            Local file storage (attachments, reports, documents — gitignored)
+.github/workflows/  CI pipeline (lint, test, build, Docker build)
+docker-compose.yml  One-command local/production stack (all 4 services)
 ```
 
-## Setup Instructions
+## Quickstart — Docker (recommended)
 
-Prerequisites: Node.js 20 or later, npm 10 or later, and Python 3.11 or later.
+```bash
+cp .env.example .env   # fill in real secrets — see docs/deployment/README.md
+docker compose up -d --build
+```
 
-```powershell
-# Frontend
-cd client
-npm install
-Copy-Item .env.example .env
-npm run dev
+Frontend: `http://localhost` · API: `http://localhost:5000/api/v1` · API docs: `http://localhost:5000/api-docs` · AI service docs: `http://localhost:8000/docs`
 
-# Backend (separate terminal)
-cd server
-npm install
-Copy-Item .env.example .env
-npm run dev
+## Quickstart — Manual (development)
+
+Prerequisites: Node.js 20+, npm 10+, Python 3.11+, MongoDB (local or Atlas).
+
+```bash
+# Backend
+cd server && npm install && cp .env.example .env && npm run dev
 
 # AI service (separate terminal)
-cd ai-service
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-Copy-Item .env.example .env
+cd ai-service && python -m venv .venv && .venv\Scripts\activate
+pip install -r requirements.txt && cp .env.example .env
 uvicorn app.main:app --reload --port 8000
+
+# Frontend (separate terminal)
+cd client && npm install && cp .env.example .env && npm run dev
 ```
 
-The frontend starts on the Vite address shown in the terminal. The backend health check is available at `http://localhost:5000/health`; the AI-service health check is available at `http://localhost:8000/health`.
+Health checks: `GET /health` (fast liveness) and `GET /health/deep` (Mongo,
+AI service, memory/CPU, pipeline latency) on both the Express server (5000)
+and the AI service (8000).
 
-## Installation Commands
+## Documentation
 
-```powershell
-# Frontend
-cd client
-npm install
+| Doc | Covers |
+|---|---|
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System diagram, data flow, service responsibilities |
+| [INSTALLATION.md](./docs/INSTALLATION.md) | Detailed local setup, all three services |
+| [deployment/](./docs/deployment/) | Render, Railway, AWS EC2, Azure, DigitalOcean, Docker VPS guides |
+| API docs (`/api-docs`) | Live Swagger UI — every Express endpoint, schemas, examples |
+| AI service docs (`/docs`) | FastAPI's auto-generated OpenAPI UI |
+| [DATABASE.md](./docs/DATABASE.md) | Collections, relationships, indexes, backup/restore |
+| [AI-PIPELINE.md](./docs/AI-PIPELINE.md) | Prediction → SHAP → Intelligence → Knowledge → Decision flow |
+| [ADMIN-MANUAL.md](./docs/ADMIN-MANUAL.md) | Role matrix, admin operations, automation jobs |
+| [DEVELOPER-GUIDE.md](./docs/DEVELOPER-GUIDE.md) | Codebase conventions, adding a new endpoint/model |
+| [TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md) | Common failure modes and fixes |
+| [Security-Audit-Report.md](./docs/Security-Audit-Report.md) | Sprint 10 security hardening review |
+| [Load-Testing-Report.md](./docs/Load-Testing-Report.md) | Benchmark results and known scaling limits |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Branching, commit style, PR checklist |
 
-# Backend
-cd server
-npm install
+## Testing
 
-# AI service
-cd ai-service
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
+```bash
+cd server && npm test          # unit + integration (node --test)
+cd ai-service && pytest        # ML/SHAP/NLP/RAG/decision engine
+cd client && npm run build     # type/build check (no separate test suite yet — see Developer Guide)
 ```
 
-## Git Initialization
+CI runs lint + tests + builds + Docker image builds on every push/PR — see
+[.github/workflows/ci.yml](./.github/workflows/ci.yml).
 
-```powershell
-git init
-git add .
-git commit -m "chore(repo): initialize retentionai foundation"
-git branch -M main
-git checkout -b develop
-```
+## License
 
-## Development Workflow
-
-1. Read the documents in `docs/` before implementing a feature.
-2. Create a focused branch from `develop` using the conventions in the Repository Development Blueprint.
-3. Keep frontend, backend, and AI-service responsibilities separate.
-4. Run formatting, linting, and the relevant tests before opening a pull request.
-5. Do not commit secrets, real employee data, uploads, model binaries, or provider credentials.
-
-See [Repository Development Blueprint](docs/Repository-Development-Blueprint.md), [SRS](docs/SRS.md), [SDD](docs/SDD.md), [Database Design](docs/Database-Design.md), and [Backend API Design](docs/Backend-API-Design.md).
-
-Authentication module details are documented in the [Authentication Guide](docs/guides/authentication.md).
+[MIT](./LICENSE)

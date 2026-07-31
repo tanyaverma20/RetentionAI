@@ -6,7 +6,7 @@ Calls the existing nlp repository — does NOT rebuild the NLP pipeline.
 """
 
 from app.nlp.repository import get_employee_insights
-from typing import Dict, Any, List
+from typing import Dict, Any
 
 
 async def run_nlp_insights(employee_id: str) -> Dict[str, Any]:

@@ -23,7 +23,6 @@ from __future__ import annotations
 import datetime
 from typing import Any
 
-import numpy as np
 import pandas as pd
 
 from app.explainability.shap_explainer import shap_cache
@@ -143,66 +142,22 @@ def build_narrative(
 # Main local explanation function
 # ---------------------------------------------------------------------------
 
-def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
+def _build_explanation(
+    employee_doc: dict,
+    risk_score: float,
+    risk_level: str,
+    confidence: float,
+    shap_vals,
+    base_value: float,
+    top_n: int = 10,
+) -> dict:
     """
-    Generate a local SHAP explanation for one employee.
-
-    Parameters
-    ----------
-    employee_doc : raw employee dict (same schema as MongoDB document / API body)
-    top_n        : number of top contributors to return in each direction
-
-    Returns
-    -------
-    dict with keys:
-        employeeId, riskScore, riskLevel, confidence,
-        baseValue, shapValues (list),
-        topPositiveContributors, topNegativeContributors,
-        allFeatures,
-        narrative, generatedAt
+    Builds the full explanation payload (feature breakdown + narrative) from
+    an already-computed risk score / SHAP row. Split out of explain_employee()
+    so the same per-employee formatting logic can be reused by the batch path
+    below without duplicating it — the model/SHAP computation itself (the
+    expensive part) is what differs between the two callers, not this.
     """
-    if not shap_cache.is_ready:
-        raise RuntimeError("SHAP explainer is not initialised. Call shap_cache.initialise() first.")
-
-    from app.prediction.prediction_service import prediction_service, ModelNotLoadedException
-
-    bundle = prediction_service.model_bundle
-    if bundle is None:
-        raise ModelNotLoadedException("No active model bundle loaded.")
-
-    # 1. Transform employee features
-    df = pd.DataFrame([employee_doc])
-    scaler = bundle["scaler"]
-    encoders = bundle["encoders"]
-    X = transform_inference(df, scaler, encoders)  # shape (1, n_features) — n_features = len(shap_cache.feature_names)
-
-    # 2. Predict probability
-    model = bundle["model"]
-    if hasattr(model, "predict_proba"):
-        risk_score = float(model.predict_proba(X)[0, 1])
-    else:
-        risk_score = float(model.predict(X)[0])
-
-    # 3. Risk level & confidence — anchored on the Phase 7 recall-optimized
-    # threshold (see app/training/trainer.py's optimize_threshold()), the
-    # same bucketing prediction_service.py's predict_single() applies, so
-    # /explain and /predict never disagree on an employee's risk level.
-    threshold = bundle.get("threshold", 0.5)
-    medium_cutoff = threshold * 0.6
-    if risk_score < medium_cutoff:
-        risk_level = "LOW"
-    elif risk_score < threshold:
-        risk_level = "MEDIUM"
-    else:
-        risk_level = "HIGH"
-
-    confidence = risk_score if risk_score > 0.5 else (1.0 - risk_score)
-
-    # 4. SHAP values
-    shap_vals = shap_cache.compute_shap_values(X)[0]  # shape (n_features,)
-    base_value = shap_cache.get_expected_value()
-
-    # 5. Build per-feature dicts
     feature_keys = shap_cache.feature_names
     display_names = shap_cache.display_names
     categorical_keys = shap_cache.categorical_keys
@@ -279,3 +234,119 @@ def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
         "narrative":               narrative,
         "generatedAt":             datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
+
+
+def _risk_level_for(risk_score: float, threshold: float) -> str:
+    # Anchored on the Phase 7 recall-optimized threshold (see
+    # app/training/trainer.py's optimize_threshold()), the same bucketing
+    # prediction_service.py's predict_single() applies, so /explain and
+    # /predict never disagree on an employee's risk level.
+    medium_cutoff = threshold * 0.6
+    if risk_score < medium_cutoff:
+        return "LOW"
+    if risk_score < threshold:
+        return "MEDIUM"
+    return "HIGH"
+
+
+def explain_employee(employee_doc: dict, top_n: int = 10) -> dict:
+    """
+    Generate a local SHAP explanation for one employee.
+
+    Parameters
+    ----------
+    employee_doc : raw employee dict (same schema as MongoDB document / API body)
+    top_n        : number of top contributors to return in each direction
+
+    Returns
+    -------
+    dict with keys:
+        employeeId, riskScore, riskLevel, confidence,
+        baseValue, shapValues (list),
+        topPositiveContributors, topNegativeContributors,
+        allFeatures,
+        narrative, generatedAt
+    """
+    if not shap_cache.is_ready:
+        raise RuntimeError("SHAP explainer is not initialised. Call shap_cache.initialise() first.")
+
+    from app.prediction.prediction_service import prediction_service, ModelNotLoadedException
+
+    bundle = prediction_service.model_bundle
+    if bundle is None:
+        raise ModelNotLoadedException("No active model bundle loaded.")
+
+    df = pd.DataFrame([employee_doc])
+    scaler = bundle["scaler"]
+    encoders = bundle["encoders"]
+    X = transform_inference(df, scaler, encoders)  # shape (1, n_features)
+
+    model = bundle["model"]
+    if hasattr(model, "predict_proba"):
+        risk_score = float(model.predict_proba(X)[0, 1])
+    else:
+        risk_score = float(model.predict(X)[0])
+
+    threshold = bundle.get("threshold", 0.5)
+    risk_level = _risk_level_for(risk_score, threshold)
+    confidence = risk_score if risk_score > 0.5 else (1.0 - risk_score)
+
+    shap_vals = shap_cache.compute_shap_values(X)[0]  # shape (n_features,)
+    base_value = shap_cache.get_expected_value()
+
+    return _build_explanation(employee_doc, risk_score, risk_level, confidence, shap_vals, base_value, top_n)
+
+
+def explain_employees_batch(employee_docs: list[dict], top_n: int = 10) -> list[dict]:
+    """
+    Vectorized batch counterpart to explain_employee() — computes feature
+    transform, model inference, and SHAP values ONCE for the whole batch
+    (one (N, n_features) matrix operation) instead of once per employee.
+
+    Why this exists: explain_employee() builds a 1-row DataFrame and calls
+    transform_inference/model.predict_proba/shap_cache.compute_shap_values
+    per employee. Calling POST /explain/batch with no filter processes every
+    ACTIVE employee (~1470 in the seeded dataset); at ~0.05s/employee of pure
+    per-call Python/pandas/SHAP overhead, that's 70-100+ seconds — well past
+    Express's 30s timeout, which is the direct cause of the "Generate
+    Explanations" 503 AI_SERVICE_UNAVAILABLE error. Pandas/sklearn/SHAP are
+    all vectorized for batch input; doing the same three calls ONCE across
+    every row removes nearly all of that per-call overhead. Every other
+    caller (explain_employee, used by /explain/{employeeId} and /explain)
+    is untouched and behaves exactly as before.
+    """
+    if not shap_cache.is_ready:
+        raise RuntimeError("SHAP explainer is not initialised. Call shap_cache.initialise() first.")
+    if not employee_docs:
+        return []
+
+    from app.prediction.prediction_service import prediction_service, ModelNotLoadedException
+
+    bundle = prediction_service.model_bundle
+    if bundle is None:
+        raise ModelNotLoadedException("No active model bundle loaded.")
+
+    df = pd.DataFrame(employee_docs)
+    scaler = bundle["scaler"]
+    encoders = bundle["encoders"]
+    X = transform_inference(df, scaler, encoders)  # shape (N, n_features)
+
+    model = bundle["model"]
+    if hasattr(model, "predict_proba"):
+        risk_scores = model.predict_proba(X)[:, 1]
+    else:
+        risk_scores = model.predict(X)
+
+    threshold = bundle.get("threshold", 0.5)
+    shap_vals_batch = shap_cache.compute_shap_values(X)  # shape (N, n_features)
+    base_value = shap_cache.get_expected_value()
+
+    results = []
+    for i, employee_doc in enumerate(employee_docs):
+        risk_score = float(risk_scores[i])
+        risk_level = _risk_level_for(risk_score, threshold)
+        confidence = risk_score if risk_score > 0.5 else (1.0 - risk_score)
+        results.append(
+            _build_explanation(employee_doc, risk_score, risk_level, confidence, shap_vals_batch[i], base_value, top_n)
+        )
+    return results

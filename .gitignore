@@ -34,7 +34,12 @@ models/archive/*
 *.joblib
 *.pkl
 *.log
+logs/
 chroma_data/
+uploads/attachments/*
+!uploads/attachments/.gitkeep
+uploads/profile-pictures/*
+!uploads/profile-pictures/.gitkeep
 
 # Tooling and operating system files
 .DS_Store

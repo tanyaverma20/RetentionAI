@@ -49,4 +49,10 @@ const predictionHistorySchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
+// Sprint 8 — Executive risk-trend/forecasting aggregations filter by
+// organizationId + employeeId (a scoped subset) and range on predictedAt;
+// this compound index lets that $match run as an index scan instead of a
+// collection scan as history accumulates.
+predictionHistorySchema.index({ organizationId: 1, employeeId: 1, predictedAt: -1 });
+
 export const PredictionHistory = mongoose.model('PredictionHistory', predictionHistorySchema);

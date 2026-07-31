@@ -1,12 +1,15 @@
 {
   "name": "retentionai-server",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "node --env-file=.env --watch src/server.js",
     "start": "node --env-file=.env src/server.js",
     "test": "node --env-file=.env --test tests/*.test.js",
+    "db:check": "node --env-file=.env scripts/check-consistency.js",
+    "db:backup": "bash ../scripts/ops/backup.sh",
+    "db:restore": "bash ../scripts/ops/restore.sh",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
@@ -14,8 +17,10 @@
   "dependencies": {
     "axios": "^1.18.1",
     "bcrypt": "^5.1.1",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
     "csv-parse": "^7.0.1",
+    "docx": "^9.7.1",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
@@ -24,10 +29,15 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.9.3",
     "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.19.1",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0",
     "zod": "^3.24.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "autocannon": "^8.0.0",
     "eslint": "^9.17.0",
     "globals": "^15.14.0",
     "mongodb-memory-server": "^11.2.0",

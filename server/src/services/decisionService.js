@@ -4,6 +4,8 @@ import { Decision, STATUS_VALUES } from '../models/Decision.js';
 import { Employee } from '../models/Employee.js';
 import { toAiServiceError } from '../utils/aiServiceError.js';
 import { AppError } from '../errors/AppError.js';
+import { recordAudit } from './auditService.js';
+import { logger } from '../utils/logger.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
@@ -72,7 +74,16 @@ class DecisionService {
       });
     }
 
-    return Decision.create(mapDecisionToDoc(employeeId, organizationId, data, userId));
+    const decision = await Decision.create(mapDecisionToDoc(employeeId, organizationId, data, userId));
+    logger.info('decision_generated', { employeeId, recommendationType: decision.recommendationType, priority: decision.priority, userId });
+    if (userId) {
+      await recordAudit(organizationId, 'RECOMMENDATION_GENERATED', userId, {
+        entityType: 'EMPLOYEE',
+        entityId: employeeId,
+        context: { decisionId: decision._id, recommendationType: decision.recommendationType },
+      });
+    }
+    return decision;
   }
 
   /**
@@ -148,9 +159,16 @@ class DecisionService {
     if (!decision) {
       throw new AppError(404, 'DECISION_NOT_FOUND', 'Decision not found.');
     }
+    const fromStatus = decision.status;
     decision.status = status;
     decision.statusHistory.push({ status, changedBy: changedByUserId, changedAt: new Date(), note });
     await decision.save();
+    await recordAudit(decision.organizationId, 'RECOMMENDATION_STATUS_CHANGED', changedByUserId, {
+      entityType: 'EMPLOYEE',
+      entityId: decision.employeeId,
+      changes: { old: fromStatus, new: status },
+      context: { decisionId: decision._id, note },
+    });
     return decision;
   }
 

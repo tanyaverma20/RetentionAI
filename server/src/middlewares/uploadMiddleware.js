@@ -32,6 +32,7 @@ const __dirname = path.dirname(__filename);
 const UPLOADS_ROOT = path.resolve(__dirname, '../../../uploads');
 const PROFILE_PICTURES_DIR = path.join(UPLOADS_ROOT, 'profile-pictures');
 const KNOWLEDGE_DOCUMENTS_DIR = path.join(UPLOADS_ROOT, 'documents');
+const WORKFLOW_ATTACHMENTS_DIR = path.join(UPLOADS_ROOT, 'attachments');
 
 // Ensure directories exist on startup
 if (!fs.existsSync(PROFILE_PICTURES_DIR)) {
@@ -39,6 +40,9 @@ if (!fs.existsSync(PROFILE_PICTURES_DIR)) {
 }
 if (!fs.existsSync(KNOWLEDGE_DOCUMENTS_DIR)) {
   fs.mkdirSync(KNOWLEDGE_DOCUMENTS_DIR, { recursive: true });
+}
+if (!fs.existsSync(WORKFLOW_ATTACHMENTS_DIR)) {
+  fs.mkdirSync(WORKFLOW_ATTACHMENTS_DIR, { recursive: true });
 }
 
 // ─── Allowed MIME types ──────────────────────────────────────────────────────
@@ -173,4 +177,66 @@ export function getKnowledgeDocumentAbsolutePath(relativeFilePath) {
   return path.join(UPLOADS_ROOT, relativeFilePath);
 }
 
-export { PROFILE_PICTURES_DIR, KNOWLEDGE_DOCUMENTS_DIR };
+// ─── Workflow attachments (Sprint 9 Part 10) ────────────────────────────────
+// Tasks, Interventions, Reports, and Comments can each carry attachments.
+// Same safe-filename-via-generated-ObjectId pattern as knowledge documents.
+
+const ALLOWED_ATTACHMENT_MIME_TYPES = new Set([
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'text/csv',
+  'application/vnd.ms-excel', // some browsers report .csv as this
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+]);
+const ALLOWED_ATTACHMENT_EXTENSIONS = new Set(['.pdf', '.docx', '.csv', '.jpg', '.jpeg', '.png', '.webp', '.gif']);
+
+export function assignAttachmentId(req, _res, next) {
+  req.attachmentId = new mongoose.Types.ObjectId();
+  next();
+}
+
+const attachmentStorage = multer.diskStorage({
+  destination(_req, _file, cb) {
+    cb(null, WORKFLOW_ATTACHMENTS_DIR);
+  },
+  filename(req, file, cb) {
+    const ext = path.extname(file.originalname).toLowerCase() || '.bin';
+    cb(null, `${req.attachmentId}${ext}`);
+  },
+});
+
+function attachmentFileFilter(_req, file, cb) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (ALLOWED_ATTACHMENT_MIME_TYPES.has(file.mimetype) && ALLOWED_ATTACHMENT_EXTENSIONS.has(ext)) {
+    cb(null, true);
+  } else {
+    cb(new AppError(400, 'INVALID_FILE_TYPE', 'Only PDF, DOCX, CSV, and image files are allowed.'), false);
+  }
+}
+
+export const uploadAttachment = multer({
+  storage: attachmentStorage,
+  fileFilter: attachmentFileFilter,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+}).single('file');
+
+export function handleAttachmentUpload(req, res, next) {
+  uploadAttachment(req, res, (err) => {
+    if (!err) return next();
+    if (err instanceof AppError) return next(err);
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return next(new AppError(400, 'FILE_TOO_LARGE', 'Attachment must be under 10 MB.'));
+    }
+    return next(new AppError(400, 'UPLOAD_ERROR', err.message || 'File upload failed.'));
+  });
+}
+
+export function getAttachmentAbsolutePath(relativeFilePath) {
+  return path.join(UPLOADS_ROOT, relativeFilePath);
+}
+
+export { PROFILE_PICTURES_DIR, KNOWLEDGE_DOCUMENTS_DIR, WORKFLOW_ATTACHMENTS_DIR };

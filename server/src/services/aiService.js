@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { env } from '../config/env.js';
 import { Prediction } from '../models/Prediction.js';
-import { PredictionHistory } from '../models/PredictionHistory.js';
 
 const aiClient = axios.create({
   baseURL: env.aiService.url,

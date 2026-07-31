@@ -48,7 +48,6 @@ test('Employee management endpoints support full lifecycle, CSV bulk import, and
   await ensureSystemRoles();
 
   const adminRole = await Role.findOne({ name: 'ADMIN' });
-  const hrManagerRole = await Role.findOne({ name: 'HR_MANAGER' });
 
   const admin = await User.create({
     name: 'HR Admin',

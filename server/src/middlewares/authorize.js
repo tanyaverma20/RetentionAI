@@ -31,6 +31,9 @@
  */
 
 import { AppError } from '../errors/AppError.js';
+import { recordAudit } from '../services/auditService.js';
+
+const DEFAULT_ORGANIZATION_ID = '60d5ec388832a828f8000000';
 
 /**
  * Authorize the request based on the user's role or permissions.
@@ -69,6 +72,9 @@ export function authorize(...requirements) {
     }
 
     if (!isAuthorized) {
+      recordAudit(DEFAULT_ORGANIZATION_ID, 'RBAC_DENIED', auth.userId, {
+        context: { role: auth.role, requirements, path: request.originalUrl, method: request.method },
+      });
       return next(
         new AppError(403, 'FORBIDDEN', 'You do not have permission to perform this action.'),
       );

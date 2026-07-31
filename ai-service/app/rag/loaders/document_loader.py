@@ -71,7 +71,6 @@ def load_documents(directory: str) -> List[Document]:
 
     # Support multiple formats
     for file_path in glob.glob(os.path.join(directory, "**/*.*"), recursive=True):
-        ext = file_path.rsplit(".", 1)[-1].lower()
         try:
             docs = load_single_document(file_path)
             documents.extend(docs)

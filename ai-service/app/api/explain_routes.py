@@ -20,16 +20,16 @@ Token verification is bypassed when AI_SERVICE_TOKEN is unconfigured (dev mode).
 from __future__ import annotations
 
 import os
+import asyncio
 from typing import Optional
 
-import numpy as np
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header, status, Query
 
 from app.api.explain_schemas import ExplainRequest, ExplainBatchRequest
 from app.preprocessing.enrichment import enrich_employee_doc
 from app.explainability.shap_explainer import shap_cache
-from app.explainability.local_explainer import explain_employee
+from app.explainability.local_explainer import explain_employee, explain_employees_batch
 from app.explainability.global_explainer import compute_global_importance
 from app.explainability.plot_generator import (
     generate_waterfall_plot,
@@ -184,8 +184,12 @@ async def explain_batch(request: ExplainBatchRequest):
     department, or (when neither filter is given) every ACTIVE employee.
     Mirrors the filtering behaviour of POST /predict/batch in routes.py.
 
-    Individual failures do not abort the batch — they are counted and skipped
-    so one bad record can't block explanations for the rest of the workforce.
+    Per-employee enrichment failures do not abort the batch — they are
+    counted and skipped so one bad record can't block explanations for the
+    rest of the workforce. The SHAP computation itself now runs as a single
+    vectorized call across all successfully-enriched employees (see comment
+    below); if that call raises, the whole request fails with a 500 rather
+    than degrading gracefully per-employee.
     """
     if not shap_cache.is_ready:
         _shap_not_ready()
@@ -210,16 +214,46 @@ async def explain_batch(request: ExplainBatchRequest):
 
     employees = [emp async for emp in db["employees"].find(query)]
 
-    explanations = []
+    # Root cause of the "Generate Explanations" 503 (AI_SERVICE_UNAVAILABLE):
+    # with no employeeIds/departmentId filter — exactly what the button sends
+    # — this processes every ACTIVE employee (~1470 in the seeded dataset).
+    # explain_employee() builds a 1-row DataFrame and calls
+    # transform_inference/model.predict_proba/shap_cache.compute_shap_values
+    # PER employee, even though all three are vectorized and already support
+    # an (N, n_features) batch matrix (shap_cache.compute_shap_values's own
+    # docstring: "Return SHAP values for the given feature matrix X... shape
+    # (n_samples, n_features)"). Calling them once per row instead of once
+    # for the whole batch was measured directly against this endpoint at
+    # ~0.05s/employee of pure per-call overhead — ~1470 employees is
+    # 70-100+ seconds, well past Express's 30s axios timeout, so Express's
+    # request timed out with no response ever received, which is exactly
+    # what maps to AI_SERVICE_UNAVAILABLE. Fix below: enrich concurrently
+    # (genuine async I/O, bounded so Mongo isn't hit with 1470 requests at
+    # once), then run ONE vectorized explain_employees_batch() call across
+    # every successfully-enriched employee instead of one call per employee.
+    # explain_employee() (the single-employee function, used by
+    # /explain/{employeeId} and /explain) is untouched.
+    semaphore = asyncio.Semaphore(50)
+
+    async def _enrich_one(emp):
+        async with semaphore:
+            return await enrich_employee_doc(_serialize(emp), db)
+
+    enrich_results = await asyncio.gather(*(_enrich_one(emp) for emp in employees), return_exceptions=True)
+
+    enriched_docs = []
     failed_count = 0
-    for emp in employees:
-        try:
-            serialized = _serialize(emp)
-            serialized = await enrich_employee_doc(serialized, db)
-            explanations.append(explain_employee(serialized))
-        except Exception as exc:
-            print(f"Failed to explain employee {emp.get('_id')}: {exc}")
+    for emp, result in zip(employees, enrich_results):
+        if isinstance(result, Exception):
+            print(f"Failed to enrich employee {emp.get('_id')}: {result}")
             failed_count += 1
+        else:
+            enriched_docs.append(result)
+
+    try:
+        explanations = await asyncio.to_thread(explain_employees_batch, enriched_docs)
+    except Exception as exc:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Batch SHAP computation failed: {exc}")
 
     return {
         "success": True,

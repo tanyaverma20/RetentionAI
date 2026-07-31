@@ -1,5 +1,6 @@
 import { explainService } from '../services/explainService.js';
 import { AppError } from '../errors/AppError.js';
+import { recordAudit } from '../services/auditService.js';
 
 // Mirrors hrController.js's extractOrgId / aiController.js — req.auth (set by
 // authenticate.js) does not carry organizationId in this single-tenant MVP.
@@ -16,6 +17,9 @@ export const explainSingle = async (req, res, next) => {
     const { id } = req.params;
     const forceRefresh = req.query.refresh === 'true';
     const result = await explainService.explainSingle(id, extractOrgId(req), forceRefresh);
+    if (req.auth?.userId) {
+      await recordAudit(extractOrgId(req), 'SHAP_GENERATED', req.auth.userId, { entityType: 'EMPLOYEE', entityId: id });
+    }
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(new AppError(error.statusCode || 502, error.code || 'EXPLAIN_SERVICE_ERROR', error.message));

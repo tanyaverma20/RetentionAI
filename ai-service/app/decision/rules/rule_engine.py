@@ -27,7 +27,7 @@ evaluated independently; only their declared priority breaks ties).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List
 
 # ---------------------------------------------------------------------------
 # Fixed recommendation taxonomy — the only categories a Decision may carry.

@@ -1,6 +1,7 @@
 import { SYSTEM_ROLES } from '../config/roles.js';
-import { upsertSystemRoles } from '../repositories/roleRepository.js';
+import { upsertSystemRoles, syncSystemRolePermissions } from '../repositories/roleRepository.js';
 
-export function ensureSystemRoles() {
-  return upsertSystemRoles(SYSTEM_ROLES);
+export async function ensureSystemRoles() {
+  await upsertSystemRoles(SYSTEM_ROLES);
+  await syncSystemRolePermissions(SYSTEM_ROLES);
 }

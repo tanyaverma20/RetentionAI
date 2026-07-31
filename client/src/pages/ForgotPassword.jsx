@@ -39,7 +39,7 @@ export default function ForgotPassword() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-extrabold text-white tracking-tight">Reset Password</h1>
           <p className="text-sm text-slate-400 mt-2">
-            Enter your email address and we'll send reset instructions if an active account exists.
+            Enter your email address and we&apos;ll send reset instructions if an active account exists.
           </p>
         </div>
 

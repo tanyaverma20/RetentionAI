@@ -158,7 +158,7 @@ export default function Departments() {
           </div>
           <h3 className="text-xl font-bold text-slate-200">No departments found</h3>
           <p className="text-slate-400 text-sm max-w-sm mx-auto mt-1">
-            Get started by creating your company's first department using the button above.
+            Get started by creating your company&apos;s first department using the button above.
           </p>
         </div>
       ) : (

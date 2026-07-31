@@ -1,5 +1,10 @@
 import React from 'react';
+import { useSelector } from 'react-redux';
 import { Link, useLocation } from 'react-router-dom';
+
+const EXECUTIVE_ROLES = ['ADMIN', 'HR_DIRECTOR', 'CHRO', 'CEO'];
+const WORKFLOW_ROLES = ['ADMIN', 'HR_MANAGER', 'HR_ANALYST', 'DEPARTMENT_MANAGER', 'HR_DIRECTOR', 'CHRO'];
+const AUDIT_ROLES = ['ADMIN', 'HR_MANAGER', 'HR_DIRECTOR', 'CHRO'];
 
 const navGroups = [
   {
@@ -127,8 +132,64 @@ const navGroups = [
 
 export default function Sidebar() {
   const location = useLocation();
+  const { user } = useSelector((state) => state.auth);
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+
+  const groups = [...navGroups];
+
+  if (WORKFLOW_ROLES.includes(user?.role)) {
+    groups.push({
+      label: 'Workflow',
+      items: [
+        {
+          to: '/workflow',
+          icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>,
+          label: 'HR Operations',
+        },
+        {
+          to: '/interventions',
+          icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
+          label: 'Interventions',
+        },
+        {
+          to: '/tasks',
+          icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 12l2 2 4-4" /></svg>,
+          label: 'Tasks',
+        },
+      ],
+    });
+  }
+
+  if (AUDIT_ROLES.includes(user?.role)) {
+    groups.push({
+      label: 'Compliance',
+      items: [
+        {
+          to: '/audit',
+          icon: <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+          label: 'Audit Log',
+        },
+      ],
+    });
+  }
+
+  if (EXECUTIVE_ROLES.includes(user?.role)) {
+    groups.push({
+      label: 'Executive',
+      items: [
+        {
+          to: '/executive',
+          icon: (
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          ),
+          label: 'Executive Center',
+        },
+      ],
+    });
+  }
 
   return (
     <aside className="w-64 shrink-0 hidden lg:flex flex-col bg-slate-900/60 border-r border-slate-800 backdrop-blur-md h-full">
@@ -149,7 +210,7 @@ export default function Sidebar() {
 
       {/* Navigation Groups */}
       <nav className="flex-1 px-3 py-4 space-y-6 overflow-y-auto">
-        {navGroups.map((group) => (
+        {groups.map((group) => (
           <div key={group.label}>
             <p className="px-3 text-[10px] font-mono font-bold uppercase tracking-widest text-slate-600 mb-2">
               {group.label}

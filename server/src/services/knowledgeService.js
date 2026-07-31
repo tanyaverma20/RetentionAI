@@ -5,6 +5,7 @@ import { Employee } from '../models/Employee.js';
 import { getKnowledgeDocumentAbsolutePath } from '../middlewares/uploadMiddleware.js';
 import { toAiServiceError } from '../utils/aiServiceError.js';
 import { AppError } from '../errors/AppError.js';
+import { logger } from '../utils/logger.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
@@ -137,12 +138,12 @@ class KnowledgeService {
       // fails — an orphaned Chroma entry is recoverable via reindex-all;
       // a document stuck forever in the admin list because the AI service
       // was briefly down is a worse outcome.
-      console.error(`Failed to delete vector chunks for document ${documentId}:`, err.message);
+      logger.error('knowledge_vector_cleanup_failed', { documentId: String(documentId), message: err.message });
     }
 
     const absolutePath = getKnowledgeDocumentAbsolutePath(doc.filePath);
     fs.unlink(absolutePath, (err) => {
-      if (err) console.error(`Failed to remove file ${absolutePath}:`, err.message);
+      if (err) logger.error('knowledge_file_delete_failed', { absolutePath, message: err.message });
     });
 
     await KnowledgeDocument.deleteOne({ _id: documentId });
@@ -224,7 +225,7 @@ class KnowledgeService {
       const response = await aiClient.get('/knowledge/statistics');
       aiStats = response.data;
     } catch (err) {
-      console.error('Failed to fetch AI-service knowledge statistics:', err.message);
+      logger.error('knowledge_statistics_fetch_failed', { message: err.message });
     }
 
     const [documentsIndexedCount, recentUploads] = await Promise.all([

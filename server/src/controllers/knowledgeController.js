@@ -1,6 +1,7 @@
 import { knowledgeService } from '../services/knowledgeService.js';
 import { AppError } from '../errors/AppError.js';
 import { sendSuccess } from '../utils/response.js';
+import { recordAudit } from '../services/auditService.js';
 
 // Mirrors hrController.js's extractOrgId — req.auth (set by authenticate.js)
 // does not carry organizationId in this single-tenant MVP.
@@ -98,6 +99,10 @@ export async function queryKnowledge(request, response, next) {
       topK,
       documentType,
       filterDocument,
+    });
+    await recordAudit(extractOrgId(request), 'KNOWLEDGE_REFERENCED', request.auth.userId, {
+      entityType: 'KNOWLEDGE_DOCUMENT',
+      context: { question, documentType },
     });
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {

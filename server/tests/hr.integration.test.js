@@ -13,7 +13,6 @@ let mongoServer;
 let adminToken;
 let employeeId;
 let orgId;
-let adminId;
 
 describe('HR Analytics Integration Tests', () => {
   before(async () => {
@@ -35,7 +34,6 @@ describe('HR Analytics Integration Tests', () => {
     });
 
     adminToken = generateAccessToken(admin._id);
-    adminId = admin._id;
 
     orgId = new mongoose.Types.ObjectId();
     const emp = await Employee.create({

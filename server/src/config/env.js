@@ -18,12 +18,45 @@ const envSchema = z.object({
   AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
 });
 
+const PLACEHOLDER_VALUES = new Set([
+  'replace-with-at-least-32-random-characters',
+  'replace-with-at-least-32-different-random-characters',
+  'replace-with-a-service-token',
+]);
+
 const parsedEnv = envSchema.safeParse(process.env);
 
 if (!parsedEnv.success) {
   throw new Error(
     `Invalid environment configuration: ${parsedEnv.error.issues.map((issue) => issue.path.join('.')).join(', ')}`,
   );
+}
+
+// Production-only checks: values that are structurally valid (right type,
+// right length) but are still the example placeholder, or otherwise unsafe
+// to run a real deployment with. Kept separate from the schema above so
+// `development`/`test` can keep using the same example secrets everyone
+// already has in their local .env without being blocked.
+if (parsedEnv.data.NODE_ENV === 'production') {
+  const productionErrors = [];
+  if (PLACEHOLDER_VALUES.has(parsedEnv.data.JWT_ACCESS_SECRET)) {
+    productionErrors.push('JWT_ACCESS_SECRET is still the example placeholder value.');
+  }
+  if (PLACEHOLDER_VALUES.has(parsedEnv.data.JWT_REFRESH_SECRET)) {
+    productionErrors.push('JWT_REFRESH_SECRET is still the example placeholder value.');
+  }
+  if (parsedEnv.data.JWT_ACCESS_SECRET === parsedEnv.data.JWT_REFRESH_SECRET) {
+    productionErrors.push('JWT_ACCESS_SECRET and JWT_REFRESH_SECRET must be different values.');
+  }
+  if (PLACEHOLDER_VALUES.has(parsedEnv.data.AI_SERVICE_TOKEN)) {
+    productionErrors.push('AI_SERVICE_TOKEN is still the example placeholder value.');
+  }
+  if (parsedEnv.data.CORS_ORIGINS.includes('*')) {
+    productionErrors.push('CORS_ORIGINS must not be "*" in production.');
+  }
+  if (productionErrors.length > 0) {
+    throw new Error(`Refusing to start in production with unsafe configuration:\n- ${productionErrors.join('\n- ')}`);
+  }
 }
 
 export const env = {

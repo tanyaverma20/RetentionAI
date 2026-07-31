@@ -509,7 +509,7 @@ export async function getEmployeeInsights(filter = {}) {
 /**
  * Get HR specific metrics like Attendance Summary and Average Working Hours.
  */
-export async function getHrMetrics(filter = {}) {
+export async function getHrMetrics(_filter = {}) {
   const attendanceAgg = await Attendance.aggregate([
     {
       $group: {
@@ -577,9 +577,8 @@ export async function getHrMetrics(filter = {}) {
  * Aggregates advanced charts for the dashboard: Attendance Trend, Performance Distribution,
  * Leave Statistics, Training Completion trend, and Promotion History.
  */
-export async function getAdvancedCharts(filter = {}) {
-  const match = buildMatchFilter(filter);
-  
+export async function getAdvancedCharts(_filter = {}) {
+
   // Performance Distribution (1-5 scale)
   const performanceDistribution = await Performance.aggregate([
     {

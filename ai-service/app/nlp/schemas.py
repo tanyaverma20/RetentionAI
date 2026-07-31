@@ -1,6 +1,5 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
-from datetime import datetime
 
 class NLPAnalyzeRequest(BaseModel):
     employeeId: str

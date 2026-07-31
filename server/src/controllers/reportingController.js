@@ -6,21 +6,32 @@ import { TrainingHistory } from '../models/TrainingHistory.js';
 import { PromotionHistory } from '../models/PromotionHistory.js';
 import { AppError } from '../errors/AppError.js';
 import { parse } from 'json2csv';
+import { recordAudit } from '../services/auditService.js';
+import { logger } from '../utils/logger.js';
+
+function extractOrgId(request) {
+  return request.headers['x-organization-id'] || '60d5ec388832a828f8000000';
+}
 
 /**
  * Helper function to send CSV response
  */
-function sendCsvResponse(response, data, filename) {
+function sendCsvResponse(response, data, filename, request) {
   if (!data || data.length === 0) {
     return response.status(404).json({ success: false, message: 'No records found to export' });
   }
 
   try {
     const csv = parse(data);
+    if (request?.auth?.userId) {
+      recordAudit(extractOrgId(request), 'REPORT_EXPORTED', request.auth.userId, { context: { report: filename } });
+    }
+    logger.info('report_exported', { report: filename, rowCount: data.length, userId: request?.auth?.userId });
     response.header('Content-Type', 'text/csv');
     response.attachment(`${filename}_${new Date().toISOString().split('T')[0]}.csv`);
     return response.send(csv);
   } catch (error) {
+    logger.error('report_export_failed', { report: filename, message: error.message });
     throw new AppError(500, 'EXPORT_FAILED', 'Failed to generate CSV export');
   }
 }
@@ -43,7 +54,7 @@ export async function exportEmployeeSummary(request, response, next) {
       EmploymentType: emp.employmentType,
     }));
 
-    return sendCsvResponse(response, data, 'Employee_Summary');
+    return sendCsvResponse(response, data, 'Employee_Summary', request);
   } catch (error) {
     return next(error);
   }
@@ -66,7 +77,7 @@ export async function exportDepartmentSummary(request, response, next) {
       };
     }));
 
-    return sendCsvResponse(response, data, 'Department_Summary');
+    return sendCsvResponse(response, data, 'Department_Summary', request);
   } catch (error) {
     return next(error);
   }
@@ -90,7 +101,7 @@ export async function exportAttendanceReport(request, response, next) {
       LeaveType: rec.leaveType,
     }));
 
-    return sendCsvResponse(response, data, 'Attendance_Report');
+    return sendCsvResponse(response, data, 'Attendance_Report', request);
   } catch (error) {
     return next(error);
   }
@@ -111,7 +122,7 @@ export async function exportPerformanceReport(request, response, next) {
       PromotionRecommended: rec.promotionRecommendation ? 'Yes' : 'No',
     }));
 
-    return sendCsvResponse(response, data, 'Performance_Report');
+    return sendCsvResponse(response, data, 'Performance_Report', request);
   } catch (error) {
     return next(error);
   }
@@ -134,7 +145,7 @@ export async function exportTrainingReport(request, response, next) {
       Score: rec.score,
     }));
 
-    return sendCsvResponse(response, data, 'Training_Report');
+    return sendCsvResponse(response, data, 'Training_Report', request);
   } catch (error) {
     return next(error);
   }
@@ -155,7 +166,7 @@ export async function exportPromotionReport(request, response, next) {
       SalaryIncreasePercent: rec.salaryIncreasePercentage,
     }));
 
-    return sendCsvResponse(response, data, 'Promotion_Report');
+    return sendCsvResponse(response, data, 'Promotion_Report', request);
   } catch (error) {
     return next(error);
   }

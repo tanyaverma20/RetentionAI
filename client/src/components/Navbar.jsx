@@ -2,6 +2,8 @@ import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { logoutUser } from '../store/slices/authSlice';
+import NotificationBell from './NotificationBell';
+import GlobalSearchBar from './GlobalSearchBar';
 
 const DASHBOARD_PATHS = ['/dashboard', '/analytics', '/departments', '/employees'];
 
@@ -78,6 +80,14 @@ export default function Navbar() {
                   </Link>
                 </div>
               )}
+
+              {isDashboard && (
+                <div className="hidden md:block w-56">
+                  <GlobalSearchBar />
+                </div>
+              )}
+
+              <NotificationBell />
 
               <div className="h-4 w-px bg-slate-800 hidden sm:block" />
 
