@@ -1,2 +1,7 @@
 .vercel
 .env*
+# Keep the committed templates — the bare `.env*` above (written by
+# `vercel link`) would otherwise stop tracking them, and this file's rules
+# take precedence over the root .gitignore for everything under client/.
+!.env.example
+!production.env.example

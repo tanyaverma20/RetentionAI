@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { describeUnsafeOriginPattern } from './corsOrigins.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
@@ -51,8 +52,15 @@ if (parsedEnv.data.NODE_ENV === 'production') {
   if (PLACEHOLDER_VALUES.has(parsedEnv.data.AI_SERVICE_TOKEN)) {
     productionErrors.push('AI_SERVICE_TOKEN is still the example placeholder value.');
   }
-  if (parsedEnv.data.CORS_ORIGINS.includes('*')) {
-    productionErrors.push('CORS_ORIGINS must not be "*" in production.');
+  // A wildcard entry is permitted (deploy-per-URL platforms need it — see
+  // config/corsOrigins.js) but only when it pins enough literal text to be
+  // unforgeable by a third party. A bare "*", or a whole-domain "*.host"
+  // pattern, still refuses to boot.
+  for (const origin of parsedEnv.data.CORS_ORIGINS.split(',')) {
+    const unsafe = describeUnsafeOriginPattern(origin);
+    if (unsafe) {
+      productionErrors.push(`CORS_ORIGINS entry ${unsafe}`);
+    }
   }
   if (productionErrors.length > 0) {
     throw new Error(`Refusing to start in production with unsafe configuration:\n- ${productionErrors.join('\n- ')}`);

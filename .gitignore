@@ -47,3 +47,8 @@ uploads/profile-pictures/*
 Thumbs.db
 .idea/
 .vscode/
+
+.vercel
+.env*
+!.env.example
+!production.env.example

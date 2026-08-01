@@ -7,6 +7,8 @@ import swaggerUi from 'swagger-ui-express';
 import { fileURLToPath } from 'url';
 import { openApiSpec } from './docs/openapi.js';
 import { env } from './config/env.js';
+import { createOriginMatcher } from './config/corsOrigins.js';
+import { AppError } from './errors/AppError.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { requestId } from './middlewares/requestId.js';
 import { metricsMiddleware } from './middlewares/metrics.js';
@@ -52,11 +54,19 @@ app.use((request, response, next) => {
   const middleware = request.path.startsWith('/api-docs') ? relaxedHelmetForDocs : strictHelmet;
   return middleware(request, response, next);
 });
+const isAllowedOrigin = createOriginMatcher(env.corsOrigins);
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || env.corsOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('Origin is not allowed by CORS.'));
+      if (!origin || isAllowedOrigin(origin)) return callback(null, true);
+      // A plain Error here would fall through to the generic 500 handler,
+      // which reports a misconfigured allowlist as "an unexpected error
+      // occurred" — indistinguishable from a real server fault, and the
+      // browser hides the body from the page anyway. An AppError gives the
+      // operator a 403 with a searchable code the moment they curl it.
+      return callback(
+        new AppError(403, 'CORS_ORIGIN_NOT_ALLOWED', 'Origin is not allowed by CORS.'),
+      );
     },
     // PUT is required for /api/v1/hr/:collection/:id updates — omitting it
     // silently breaks that endpoint for cross-origin browser clients only

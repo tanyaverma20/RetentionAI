@@ -30,7 +30,7 @@ don't match exactly across services:
 | `JWT_REFRESH_SECRET` | **Yes** | — | **Secret.** 32+ random chars. Distinct from `JWT_ACCESS_SECRET`. |
 | `JWT_ACCESS_TTL` | No | `15m` | |
 | `JWT_REFRESH_TTL` | No | `7d` | |
-| `CORS_ORIGINS` | **Yes** | — | Comma-separated exact origins (scheme+host). Rejected at startup in production if it contains `*`. |
+| `CORS_ORIGINS` | **Yes** | — | Comma-separated origins (scheme+host). An entry may use `*` to match within one DNS label — required for platforms that mint a hostname per deploy, e.g. `https://myapp-*-myteam.vercel.app` covers every Vercel per-deployment URL for that project. A bare `*`, or a whole-domain wildcard like `https://*.vercel.app` (which would trust every tenant on that platform), is refused at startup in production. See `server/src/config/corsOrigins.js`. |
 | `BCRYPT_SALT_ROUNDS` | No | `12` | |
 | `PASSWORD_RESET_TTL_MINUTES` | No | `30` | |
 | `AI_SERVICE_URL` | No | `http://127.0.0.1:8000` | Set to the deployed AI service's URL in production. |
