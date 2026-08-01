@@ -1,0 +1,94 @@
+# Render Blueprint — deploys the Express API and FastAPI AI Service as two
+# independent Docker-based web services, each built from its own existing
+# production Dockerfile (server/Dockerfile, ai-service/Dockerfile).
+#
+# The database is NOT defined here — this project uses an external MongoDB
+# Atlas cluster (see MONGODB_URI below), not a Render-managed database.
+#
+# Usage: https://dashboard.render.com/blueprints → "New Blueprint Instance" →
+# point at this repo. Render will read this file and provision both services.
+# Every `sync: false` value must be filled in manually in the Render
+# dashboard after the blueprint is created — these are secrets and are
+# deliberately not stored in this file or in git.
+
+services:
+  - type: web
+    name: retentionai-server
+    runtime: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: starter
+    region: oregon
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: retentionai
+      - key: JWT_ACCESS_SECRET
+        sync: false
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: JWT_ACCESS_TTL
+        value: 15m
+      - key: JWT_REFRESH_TTL
+        value: 7d
+      - key: CORS_ORIGINS
+        sync: false
+      - key: AI_SERVICE_URL
+        fromService:
+          type: web
+          name: retentionai-ai-service
+          property: host
+      - key: AI_SERVICE_TOKEN
+        sync: false
+      - key: AI_SERVICE_TIMEOUT_MS
+        value: 10000
+      - key: LOG_LEVEL
+        value: info
+
+  - type: web
+    name: retentionai-ai-service
+    runtime: docker
+    dockerfilePath: ./ai-service/Dockerfile
+    dockerContext: ./ai-service
+    plan: standard
+    region: oregon
+    healthCheckPath: /health
+    disk:
+      name: retentionai-ai-data
+      mountPath: /app/models
+      sizeGB: 5
+    envVars:
+      - key: AI_SERVICE_ENV
+        value: production
+      - key: AI_SERVICE_HOST
+        value: 0.0.0.0
+      - key: AI_SERVICE_PORT
+        value: 8000
+      - key: AI_SERVICE_TOKEN
+        sync: false
+      - key: AI_MODELS_OFFLINE
+        value: true
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB_NAME
+        value: retentionai
+      - key: MODEL_ARTIFACT_PATH
+        value: /app/models/active
+      - key: MODEL_METADATA_PATH
+        value: /app/models/active
+      - key: CHROMA_PERSIST_DIRECTORY
+        value: /app/chroma_db
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL_NAME
+        value: llama-3.1-8b-instant
+      - key: EMBEDDING_MODEL_NAME
+        value: all-MiniLM-L6-v2
+      - key: LOG_LEVEL
+        value: info

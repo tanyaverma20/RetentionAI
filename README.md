@@ -72,13 +72,30 @@ Health checks: `GET /health` (fast liveness) and `GET /health/deep` (Mongo,
 AI service, memory/CPU, pipeline latency) on both the Express server (5000)
 and the AI service (8000).
 
+## Deployment
+
+Recommended production architecture: **Vercel** (React client) + **Render**
+(Express API and FastAPI AI service, both Docker-based) + **MongoDB Atlas**
+(database). Deployment configs are already in the repo:
+
+- [`client/vercel.json`](./client/vercel.json) — Vercel build/SPA-routing config
+- [`render.yaml`](./render.yaml) — Render Blueprint for both backend services
+- [`server/Procfile`](./server/Procfile) / [`ai-service/Procfile`](./ai-service/Procfile) — for Railway/Heroku-style buildpack deploys as an alternative to Docker
+
+Full step-by-step walkthrough (accounts needed, exact dashboard steps, env
+var wiring): [docs/deployment/PRODUCTION-DEPLOYMENT-GUIDE.md](./docs/deployment/PRODUCTION-DEPLOYMENT-GUIDE.md).
+Every environment variable across all three services, and which ones must
+match exactly across services: [docs/ENVIRONMENT-VARIABLES.md](./docs/ENVIRONMENT-VARIABLES.md).
+
 ## Documentation
 
 | Doc | Covers |
 |---|---|
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | System diagram, data flow, service responsibilities |
 | [INSTALLATION.md](./docs/INSTALLATION.md) | Detailed local setup, all three services |
+| [deployment/PRODUCTION-DEPLOYMENT-GUIDE.md](./docs/deployment/PRODUCTION-DEPLOYMENT-GUIDE.md) | Recommended architecture, step-by-step Vercel + Render + Atlas walkthrough |
 | [deployment/](./docs/deployment/) | Render, Railway, AWS EC2, Azure, DigitalOcean, Docker VPS guides |
+| [ENVIRONMENT-VARIABLES.md](./docs/ENVIRONMENT-VARIABLES.md) | Every env var across all 3 services, cross-service consistency requirements |
 | API docs (`/api-docs`) | Live Swagger UI — every Express endpoint, schemas, examples |
 | AI service docs (`/docs`) | FastAPI's auto-generated OpenAPI UI |
 | [DATABASE.md](./docs/DATABASE.md) | Collections, relationships, indexes, backup/restore |
