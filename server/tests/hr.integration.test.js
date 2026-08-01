@@ -7,7 +7,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import { User } from '../src/models/User.js';
 import { Role } from '../src/models/Role.js';
 import { Employee } from '../src/models/Employee.js';
-import { generateAccessToken } from '../src/utils/tokens.js';
+import { createAccessToken } from '../src/utils/tokens.js';
 
 let mongoServer;
 let adminToken;
@@ -33,9 +33,9 @@ describe('HR Analytics Integration Tests', () => {
       status: 'ACTIVE',
     });
 
-    adminToken = generateAccessToken(admin._id);
-
     orgId = new mongoose.Types.ObjectId();
+    adminToken = createAccessToken({ id: admin._id.toString(), role: { name: role.name }, organizationId: orgId });
+
     const emp = await Employee.create({
       organizationId: orgId,
       employeeCode: 'EMP-HR-01',
@@ -94,5 +94,69 @@ describe('HR Analytics Integration Tests', () => {
     assert.strictEqual(res.status, 200);
     assert.ok(res.body.data.attendance);
     assert.ok(res.body.data.performance);
+  });
+
+  // Regression tests for the hand-rolled `.split(',')`/`.split('\n')` CSV
+  // parser previously used by bulkImportRecords, which silently misaligned
+  // columns on any quoted comma or embedded newline instead of failing
+  // loudly — replaced with csv-parse/sync (the same library already used by
+  // departmentService.js/seedDemoData.js). A regression here would show up
+  // as a validation failure (misaligned columns hit the category enum) or a
+  // truncated/garbled feedbackText, not a crash.
+  it('bulk-import should correctly parse a CSV field with a quoted comma', async () => {
+    const feedbackDate = new Date().toISOString();
+    const csvText =
+      `employeeId,feedbackDate,feedbackText,category\n` +
+      `${employeeId.toString()},${feedbackDate},"Great team, but workload is heavy",WORK_ENVIRONMENT`;
+
+    const importRes = await request(app)
+      .post('/api/v1/hr/feedback/bulk-import')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('x-organization-id', orgId.toString())
+      .send({ csvText });
+
+    assert.strictEqual(importRes.status, 200);
+    assert.strictEqual(importRes.body.data.importedCount, 1);
+    assert.strictEqual(importRes.body.data.failedCount, 0);
+
+    const listRes = await request(app)
+      .get('/api/v1/hr/feedback')
+      .query({ employeeId: employeeId.toString() })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('x-organization-id', orgId.toString());
+
+    const record = listRes.body.data.find((r) => r.feedbackText?.includes('Great team'));
+    assert.ok(record, 'expected the imported feedback record to be present');
+    assert.strictEqual(record.feedbackText, 'Great team, but workload is heavy');
+    assert.strictEqual(record.category, 'WORK_ENVIRONMENT');
+  });
+
+  it('bulk-import should correctly parse a CSV field with an embedded newline', async () => {
+    const noteDate = new Date().toISOString();
+    const managerId = new mongoose.Types.ObjectId().toString();
+    const csvText =
+      `employeeId,managerId,noteDate,observation,recommendation\n` +
+      `${employeeId.toString()},${managerId},${noteDate},"Line one\nLine two",Monitor closely`;
+
+    const importRes = await request(app)
+      .post('/api/v1/hr/notes/bulk-import')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('x-organization-id', orgId.toString())
+      .send({ csvText });
+
+    assert.strictEqual(importRes.status, 200);
+    assert.strictEqual(importRes.body.data.importedCount, 1);
+    assert.strictEqual(importRes.body.data.failedCount, 0);
+
+    const listRes = await request(app)
+      .get('/api/v1/hr/notes')
+      .query({ employeeId: employeeId.toString() })
+      .set('Authorization', `Bearer ${adminToken}`)
+      .set('x-organization-id', orgId.toString());
+
+    const record = listRes.body.data.find((r) => r.observation?.includes('Line one'));
+    assert.ok(record, 'expected the imported manager-note record to be present');
+    assert.strictEqual(record.observation, 'Line one\nLine two');
+    assert.strictEqual(record.recommendation, 'Monitor closely');
   });
 });

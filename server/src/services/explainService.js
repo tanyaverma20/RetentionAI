@@ -247,7 +247,15 @@ class ExplainService {
         $group: {
           _id: { departmentId: '$employee.departmentId', feature: '$shapArr.k' },
           departmentName: { $first: { $ifNull: ['$department.name', 'Unassigned'] } },
-          avgShap: { $avg: '$shapArr.v' },
+          // Mean ABSOLUTE SHAP, matching the global feature-importance
+          // methodology (global_explainer.py's mean|SHAP|). A raw signed
+          // average lets a small-magnitude but one-directional feature
+          // (e.g. a binary field whose SHAP sign rarely flips) outrank a
+          // feature with much larger swings that cancel out in the mean —
+          // which is why "gender" was outranking Overtime Hours/Job
+          // Satisfaction here despite ranking near the bottom of the
+          // workforce-wide |SHAP| importance chart.
+          avgShap: { $avg: { $abs: '$shapArr.v' } },
           sampleSize: { $sum: 1 },
         },
       },

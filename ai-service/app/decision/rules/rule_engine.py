@@ -127,6 +127,22 @@ def _low_performance(e: Dict[str, Any]) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Burnout thresholds — grounded in the REAL observed burnoutScore
+# distribution (queried directly from the employeeintelligences collection),
+# not arbitrary round numbers. The original 0.5/0.6/0.7 cutoffs used below
+# were all unreachable: this workforce's real burnoutScore distribution is
+# p50=0.27, p75=0.30, p90=0.35, p95=0.38, p99=max=0.46 — nobody has ever
+# scored above 0.46, so any rule gated on >=0.5 or higher could never fire,
+# no matter how genuinely burnt out an employee was relative to their peers.
+# ELEVATED sits at the real 75th percentile; CRITICAL sits just under the
+# real ceiling (~p99), so it stays meaningfully selective while remaining
+# reachable by this population's most burnt-out real employees.
+# ---------------------------------------------------------------------------
+ELEVATED_BURNOUT = 0.30
+CRITICAL_BURNOUT = 0.40
+
+
+# ---------------------------------------------------------------------------
 # Rules — ordered most-specific first. The first rule whose condition is
 # true wins (deterministic, auditable — no ambiguity about which rule fired).
 # ---------------------------------------------------------------------------
@@ -139,7 +155,7 @@ RULES: List[Rule] = [
         condition=lambda e: (
             _is_very_high_risk(e)
             and _negative_sentiment(e)
-            and e.get("burnoutRisk", 0) >= 0.6
+            and e.get("burnoutRisk", 0) >= CRITICAL_BURNOUT
         ),
         reasoning="Very high attrition risk combined with negative sentiment and high burnout is a crisis-level combination — it requires immediate manager intervention rather than a routine retention conversation.",
     ),
@@ -149,7 +165,7 @@ RULES: List[Rule] = [
         priority="HIGH",
         condition=lambda e: (
             _is_high_risk(e)
-            and e.get("burnoutRisk", 0) >= 0.5
+            and e.get("burnoutRisk", 0) >= ELEVATED_BURNOUT
             and e.get("promotionOverdue", False)
         ),
         reasoning="High attrition risk combined with high burnout and an overdue promotion cycle strongly indicates the employee is being held back from career progression.",
@@ -180,7 +196,8 @@ RULES: List[Rule] = [
         recommendation_type="WORKLOAD_ADJUSTMENT",
         priority="HIGH",
         condition=lambda e: (
-            e.get("burnoutRisk", 0) >= 0.5
+            _is_medium_or_high_risk(e)
+            and e.get("burnoutRisk", 0) >= ELEVATED_BURNOUT
             and (_has_topic(e, "Workload") or e.get("engagementRisk", 0) >= 0.5)
         ),
         reasoning="High burnout combined with workload-related feedback indicates the employee's current workload is unsustainable.",
@@ -189,7 +206,7 @@ RULES: List[Rule] = [
         name="critical_burnout",
         recommendation_type="WELLBEING_SUPPORT",
         priority="HIGH",
-        condition=lambda e: e.get("burnoutRisk", 0) >= 0.7,
+        condition=lambda e: e.get("burnoutRisk", 0) >= CRITICAL_BURNOUT,
         reasoning="Burnout risk is at a critical level regardless of other factors — well-being support is the immediate priority.",
     ),
     Rule(

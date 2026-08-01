@@ -91,8 +91,14 @@ def _compute_next_review_date(risk_level: str) -> str:
 
 
 def _get_tenure_string(employee_doc: Dict) -> str:
+    # Same tz-aware/tz-naive fix as decision_service._compute_tenure_months —
+    # a JSON-serialized joiningDate ("...Z" suffix) parses as tz-aware,
+    # which can't be subtracted from the tz-naive pd.Timestamp.now(),
+    # silently sending "Unknown" to the LLM prompt for every real employee.
     try:
         joining = pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01"))
+        if joining.tzinfo is not None:
+            joining = joining.tz_localize(None)
         months = (pd.Timestamp.now() - joining).days / 30.43
         return f"{months:.0f} months"
     except Exception:

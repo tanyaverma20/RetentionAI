@@ -1,6 +1,6 @@
 import os
-from fastapi import APIRouter, HTTPException, BackgroundTasks
-from typing import List
+from typing import List, Optional
+from fastapi import APIRouter, Depends, HTTPException, Header, BackgroundTasks, status
 import asyncio
 import hashlib
 
@@ -27,6 +27,23 @@ router = APIRouter(prefix="/nlp", tags=["NLP"])
 # may run before we give up and return a clear timeout error instead of
 # hanging the request indefinitely.
 INFERENCE_TIMEOUT_SECONDS = float(os.getenv("NLP_INFERENCE_TIMEOUT_SECONDS", "30"))
+
+
+# Mirrors verify_auth_token in routes.py / explain_routes.py /
+# employee_intelligence_routes.py — this router was missing it entirely,
+# leaving raw employee sentiment/burnout read+write reachable with no auth.
+async def verify_auth_token(authorization: Optional[str] = Header(None)):
+    expected = os.getenv("AI_SERVICE_TOKEN")
+    if not expected or expected == "replace-with-a-service-token":
+        return True
+    if not authorization:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Missing Authorization header")
+    parts = authorization.split()
+    if len(parts) != 2 or parts[0].lower() != "bearer":
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid Authorization header format")
+    if parts[1] != expected:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token")
+    return True
 
 def _text_hash(text: str) -> str:
     return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
@@ -85,7 +102,7 @@ async def process_single_record(record: NLPAnalyzeRequest) -> NLPInsightsRespons
         generatedAt=analysis["generatedAt"]
     )
 
-@router.post("/analyze", response_model=NLPInsightsResponse)
+@router.post("/analyze", response_model=NLPInsightsResponse, dependencies=[Depends(verify_auth_token)])
 async def analyze_text(request: NLPAnalyzeRequest, background_tasks: BackgroundTasks):
     """
     Analyzes a single text record and saves the result to MongoDB.
@@ -105,7 +122,7 @@ async def analyze_text(request: NLPAnalyzeRequest, background_tasks: BackgroundT
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"NLP Analysis failed: {str(e)}")
 
-@router.post("/analyze/batch", response_model=NLPBatchResponse)
+@router.post("/analyze/batch", response_model=NLPBatchResponse, dependencies=[Depends(verify_auth_token)])
 async def analyze_batch(request: NLPBatchAnalyzeRequest, background_tasks: BackgroundTasks):
     """
     Analyzes a batch of text records.
@@ -137,7 +154,7 @@ async def analyze_batch(request: NLPBatchAnalyzeRequest, background_tasks: Backg
         insights=insights
     )
 
-@router.get("/employee/{employeeId}", response_model=List[NLPInsightsResponse])
+@router.get("/employee/{employeeId}", response_model=List[NLPInsightsResponse], dependencies=[Depends(verify_auth_token)])
 async def get_employee_nlp_insights(employeeId: str):
     """
     Retrieves all stored NLP insights for a given employee.
@@ -148,7 +165,7 @@ async def get_employee_nlp_insights(employeeId: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch insights: {str(e)}")
 
-@router.get("/dashboard", response_model=DashboardStatistics)
+@router.get("/dashboard", response_model=DashboardStatistics, dependencies=[Depends(verify_auth_token)])
 async def get_nlp_dashboard():
     """
     Retrieves aggregated NLP statistics for the HR dashboard.
@@ -159,7 +176,7 @@ async def get_nlp_dashboard():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch dashboard stats: {str(e)}")
 
-@router.get("/statistics", response_model=DashboardStatistics)
+@router.get("/statistics", response_model=DashboardStatistics, dependencies=[Depends(verify_auth_token)])
 async def get_nlp_statistics():
     """
     Alias for dashboard stats.

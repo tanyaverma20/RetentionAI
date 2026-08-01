@@ -12,7 +12,7 @@ catboost==1.2.10
 joblib==1.4.2
 shap==0.52.0
 matplotlib==3.10.8
-transformers>=4.44.2
+transformers==5.14.1
 torch==2.8.0
 vaderSentiment==3.3.2
 spacy==3.8.14
@@ -20,10 +20,10 @@ langdetect==1.0.9
 langchain==0.3.14
 langchain-community==0.3.14
 langchain-groq==0.2.3
-sentence-transformers>=3.3.1
-chromadb>=0.6.3
-pymongo>=4.17.0
-motor>=3.7.1
+sentence-transformers==5.6.1
+chromadb==1.5.9
+pymongo==4.17.0
+motor==3.7.1
 nltk==3.9.1
 pypdf==5.1.0
 docx2txt==0.8

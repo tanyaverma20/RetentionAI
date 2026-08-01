@@ -13,6 +13,11 @@ const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit'
 const TABS = ['Overview', 'Timeline', 'AI Insights', 'Attendance', 'Performance', 'Surveys', 'Feedback', 'Notes'];
 
 const RECOMMENDATION_TYPE_LABELS = {
+  IMMEDIATE_INTERVENTION: 'Immediate Intervention',
+  RETENTION_MEETING: 'Retention Meeting',
+  PERFORMANCE_IMPROVEMENT_PLAN: 'Performance Improvement Plan',
+  MONITOR_WEEKLY: 'Monitor Weekly',
+  CAREER_DISCUSSION: 'Career Discussion',
   RETENTION_PLAN: 'Retention Plan',
   PROMOTION_REVIEW: 'Promotion Review',
   COMPENSATION_REVIEW: 'Compensation Review',

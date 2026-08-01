@@ -1,3 +1,4 @@
+import { parse } from 'csv-parse/sync';
 import { hrService } from '../services/hrService.js';
 import { hrQuerySchema } from '../validators/hrValidators.js';
 import { AppError } from '../errors/AppError.js';
@@ -87,25 +88,27 @@ export async function bulkImportRecords(req, res, next) {
     const { csvText } = req.body;
     if (!csvText) throw new AppError(400, 'BAD_REQUEST', 'csvText is required for bulk import');
 
-    const lines = csvText.split('\n').filter(l => l.trim() !== '');
-    if (lines.length < 2) throw new AppError(400, 'BAD_REQUEST', 'CSV must have at least a header and one data row');
-
-    const headers = lines[0].split(',').map(h => h.trim());
-    const records = [];
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      const record = {};
-      headers.forEach((h, idx) => {
-        let val = values[idx];
-        if (val === 'true') val = true;
-        if (val === 'false') val = false;
-        if (val !== undefined && val !== '') {
-           record[h] = val;
-        }
-      });
-      records.push(record);
+    // A hand-rolled `split(',')`/`split('\n')` parser here previously broke
+    // on any quoted field containing a comma or embedded newline (e.g. a
+    // feedback/note column) — reusing the same csv-parse/sync library
+    // already relied on elsewhere (departmentService.js, seedDemoData.js)
+    // handles RFC 4180 quoting correctly instead of silently misaligning columns.
+    let rawRecords;
+    try {
+      rawRecords = parse(csvText, { columns: true, skip_empty_lines: true, trim: true });
+    } catch (err) {
+      throw new AppError(400, 'BAD_REQUEST', `Invalid CSV: ${err.message}`);
     }
+    if (rawRecords.length === 0) throw new AppError(400, 'BAD_REQUEST', 'CSV must have at least a header and one data row');
+
+    const records = rawRecords.map((row) => {
+      const record = {};
+      for (const [key, value] of Object.entries(row)) {
+        if (value === '') continue;
+        record[key] = value === 'true' ? true : value === 'false' ? false : value;
+      }
+      return record;
+    });
 
     let importedCount = 0;
     let failedCount = 0;

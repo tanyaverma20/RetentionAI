@@ -1,6 +1,15 @@
 import mongoose from 'mongoose';
 
 const RECOMMENDATION_TYPES = [
+  // New tiered categories (ai-service/app/decision/rules/rule_engine.py) —
+  // must be kept in sync with that taxonomy, or Mongoose silently rejects
+  // any Decision carrying one of these (insertMany's ordered:false then
+  // drops just that document, undercounting `processed` with no error).
+  'IMMEDIATE_INTERVENTION',
+  'RETENTION_MEETING',
+  'PERFORMANCE_IMPROVEMENT_PLAN',
+  'MONITOR_WEEKLY',
+  'CAREER_DISCUSSION',
   'RETENTION_PLAN',
   'PROMOTION_REVIEW',
   'COMPENSATION_REVIEW',

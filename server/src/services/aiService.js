@@ -124,7 +124,8 @@ class AIService {
       .limit(10)
       .populate({
         path: 'employeeId',
-        select: 'firstName lastName employeeCode designation departmentId profilePicture'
+        select: 'firstName lastName employeeCode designation departmentId profilePicture',
+        populate: { path: 'departmentId', select: 'name code' },
       });
 
     return { counts, topHighRisk };

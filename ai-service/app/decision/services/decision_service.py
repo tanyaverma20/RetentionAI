@@ -40,8 +40,27 @@ from app.utils.database import get_db
 
 def _compute_tenure_months(employee_doc: Dict[str, Any]) -> float:
     # Mirrors agent_orchestrator.py's own _get_tenure_string() calculation.
+    #
+    # Root cause fixed here: employeeData always arrives over HTTP as JSON,
+    # where a joiningDate serializes to a "...Z"-suffixed ISO string (e.g.
+    # from JS Date.toISOString()). pandas parses that as a TIMEZONE-AWARE
+    # Timestamp, while pd.Timestamp.now() is timezone-NAIVE — subtracting
+    # the two raises "Cannot subtract tz-naive and tz-aware datetime-like
+    # objects", silently caught by the except below, returning 0.0 for
+    # EVERY real employee. Verified directly: _compute_tenure_months on a
+    # real 67.7-month-tenure employee's joiningDate returned 0.0, while an
+    # employee_doc missing joiningDate (falls back to the naive literal
+    # "2020-01-01" default) correctly returned a nonzero value — proving
+    # the failure was specifically the aware/naive mismatch, not a general
+    # parsing problem. This silently made every employee look like a
+    # brand-new hire to the rule engine (tenureMonths < 6 always true) and
+    # made "promotionOverdue"/tenure>=24 conditions always false, so
+    # new_hire_mentorship over-fired while role_mismatch_long_tenure and
+    # high_risk_burnout_promotion_overdue could never fire at all.
     try:
         joining = pd.to_datetime(employee_doc.get("joiningDate", "2020-01-01"))
+        if joining.tzinfo is not None:
+            joining = joining.tz_localize(None)
         return round((pd.Timestamp.now() - joining).days / 30.43, 1)
     except Exception:
         return 0.0
@@ -254,12 +273,30 @@ async def generate_batch_decisions(employees: List[Dict[str, Any]], user_id: str
     per-key concurrency ceilings while comfortably clearing that budget.
     """
     semaphore = asyncio.Semaphore(20)
+    # Hard per-employee ceiling. Root cause this closes: the per-employee
+    # try/except below only isolates EXCEPTIONS — it does nothing if a single
+    # employee's call (a DB query, the LLM call, SHAP) simply never returns.
+    # Reproduced directly: a full ~1250-employee run that used to complete in
+    # ~4.5 minutes took over 14 minutes and still hadn't responded after
+    # adding the two extra performance/survey DB lookups per employee (see
+    # _fetch_performance_and_engagement above) — with 20 concurrent slots,
+    # even a handful of employees whose calls stall (instead of cleanly
+    # failing) can occupy every slot indefinitely and stop the whole batch
+    # from ever finishing. Wrapping each unit of work in asyncio.wait_for
+    # guarantees the batch's total wall time is bounded by
+    # ceil(len(employees) / 20) * PER_EMPLOYEE_TIMEOUT_SECONDS no matter what
+    # stalls, converting a stall into the same handled "isolated failure"
+    # path immediately below instead of an unbounded hang.
+    PER_EMPLOYEE_TIMEOUT_SECONDS = 45
 
     async def _generate_one(emp: Dict[str, Any]) -> Dict[str, Any]:
         emp_user_id = emp.get("userId") or user_id
         async with semaphore:
             try:
-                return await generate_decision(emp["employeeId"], emp["employeeData"], emp_user_id)
+                return await asyncio.wait_for(
+                    generate_decision(emp["employeeId"], emp["employeeData"], emp_user_id),
+                    timeout=PER_EMPLOYEE_TIMEOUT_SECONDS,
+                )
             except Exception as e:
                 return {
                     "employeeId": emp.get("employeeId"),

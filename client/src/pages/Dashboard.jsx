@@ -258,6 +258,9 @@ export default function Dashboard() {
       const res = await aiService.trainModel();
       setTrainMessage(res?.message || 'Training started.');
 
+      // /ai/train's background task only trains the model — polling
+      // getModelInfo() and watching trainedAt change is sufficient to know
+      // when it's done.
       const POLL_INTERVAL_MS = 5000;
       const MAX_POLLS = 60; // 5 minutes
       for (let i = 0; i < MAX_POLLS; i++) {
@@ -270,7 +273,7 @@ export default function Dashboard() {
             return;
           }
         } catch {
-          // Model not loaded yet — still training, keep polling.
+          // Model not ready yet — still training, keep polling.
         }
       }
       setTrainMessage('Training is taking longer than expected — it may still be running in the background. Check back shortly.');
@@ -590,7 +593,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleGenerateExplanations}
                   disabled={isGeneratingExplanations}
-                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isGeneratingExplanations ? 'Generating…' : 'Generate Explanations'}
                 </button>
@@ -646,7 +649,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleGenerateIntelligenceBatch}
                   disabled={isGeneratingIntelligence}
-                  className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isGeneratingIntelligence ? 'Analyzing…' : 'Generate Employee Intelligence'}
                 </button>
@@ -825,7 +828,7 @@ export default function Dashboard() {
                 <button
                   onClick={handleGenerateDecisionsBatch}
                   disabled={isGeneratingDecisions}
-                  className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 bg-fuchsia-600 hover:bg-fuchsia-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {isGeneratingDecisions
                     ? `Generating… (${Math.floor(decisionElapsedSeconds / 60)}m ${String(decisionElapsedSeconds % 60).padStart(2, '0')}s)`

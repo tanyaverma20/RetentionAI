@@ -73,6 +73,14 @@ const explanationSchema = new mongoose.Schema(
   }
 );
 
+// Matches the two "latest explanation for this employee" lookups in
+// explainService.js (the cache check in explainSingle and
+// getStoredExplanation), both of which do
+// `findOne({ employeeId }).sort({ generatedAt: -1 })` — the same query
+// shape Decision.js/EmployeeIntelligence.js already index for their own
+// insert-per-generation history pattern.
+explanationSchema.index({ employeeId: 1, generatedAt: -1 });
+
 const Explanation = mongoose.model('Explanation', explanationSchema);
 
 export default Explanation;

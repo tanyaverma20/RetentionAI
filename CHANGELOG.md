@@ -2,6 +2,19 @@
 
 All notable changes to RetentionAI are documented here.
 
+## [1.0.1] — Production Readiness Audit Fixes
+
+Findings and fixes from a full production-readiness audit (frontend, backend,
+AI service, database, security, deployment). No new user-facing features.
+
+**Fixed**
+- `hrController.js`'s `bulkImportRecords` used a hand-rolled `split(',')`/`split('\n')` CSV parser that silently corrupted any row with a quoted comma or an embedded newline (e.g. a feedback/note field), misaligning every column after it instead of failing loudly. Replaced with `csv-parse/sync`, the same library already used correctly elsewhere in the codebase (`departmentService.js`, `seedDemoData.js`). Added regression tests covering both cases.
+- `ai-service/app/api/nlp_routes.py` had no authentication on any of its 5 endpoints (`/nlp/analyze`, `/analyze/batch`, `/employee/{id}`, `/dashboard`, `/statistics`), unlike every sibling router, leaving raw employee sentiment/burnout data readable and writable with no bearer token. Fixed by applying the same `verify_auth_token` dependency used by every other router. Added regression tests asserting all 5 endpoints reject missing/invalid tokens with 401.
+- `Explanation` collection was missing the `{employeeId: 1, generatedAt: -1}` compound index its siblings (`Decision`, `EmployeeIntelligence`) already have for the same "latest record per employee" query shape used by `explainService.js`.
+
+**Removed**
+- 4 unused UI primitive components (`Badge.jsx`, `Button.jsx`, `Card.jsx`, `SegmentedControl.jsx`) built during the design-system phase but never actually imported anywhere in the app.
+
 ## [1.0.0] — Sprint 10: Production Release, DevOps, Security & Enterprise Finalization
 
 First production-ready release. No new user-facing features — this release
