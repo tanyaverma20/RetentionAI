@@ -71,9 +71,10 @@ app.use(express.json({ limit: '1mb' }));
 app.use(sanitizeInput);
 
 // Static file serving for uploads (profile pictures, etc.)
+// Must match UPLOADS_ROOT in middlewares/uploadMiddleware.js — <server-root>/uploads.
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-app.use('/uploads', express.static(path.resolve(__dirname, '../../uploads')));
+app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
 
 app.get('/api-docs.json', (_req, res) => res.json(openApiSpec));
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteTitle: 'RetentionAI API Docs' }));

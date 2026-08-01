@@ -28,8 +28,16 @@ import { AppError } from '../errors/AppError.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ─── Upload directory (relative to project root, not this file) ─────────────
-const UPLOADS_ROOT = path.resolve(__dirname, '../../../uploads');
+// ─── Upload directory (relative to the server package root, not this file) ──
+// Must resolve to <server-root>/uploads in every runtime: locally that's
+// server/uploads; in the Docker image (built with `server/` as the build
+// context, see server/Dockerfile) WORKDIR is /app, so this resolves to
+// /app/uploads — the exact directory the Dockerfile creates and chowns to
+// the non-root `retentionai` user, and the exact path docker-compose.yml
+// mounts a volume at. A path that walks up one level further (as this used
+// to) escapes /app entirely and hits the container's read-only root
+// filesystem, crashing on startup with EACCES.
+const UPLOADS_ROOT = path.resolve(__dirname, '../../uploads');
 const PROFILE_PICTURES_DIR = path.join(UPLOADS_ROOT, 'profile-pictures');
 const KNOWLEDGE_DOCUMENTS_DIR = path.join(UPLOADS_ROOT, 'documents');
 const WORKFLOW_ATTACHMENTS_DIR = path.join(UPLOADS_ROOT, 'attachments');

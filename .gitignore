@@ -36,6 +36,7 @@ models/archive/*
 *.log
 logs/
 chroma_data/
+chroma_db/
 uploads/attachments/*
 !uploads/attachments/.gitkeep
 uploads/profile-pictures/*
