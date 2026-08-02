@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 import { fetchAiFeatureImportance } from '../store/slices/analyticsSlice';
-import api from '../services/api';
+import AuthenticatedImage from '../components/AuthenticatedImage';
 
 export default function AiAnalytics() {
   const dispatch = useDispatch();
@@ -97,11 +97,11 @@ export default function AiAnalytics() {
             </p>
           </div>
           <div className="flex-1 bg-white rounded-2xl overflow-hidden flex items-center justify-center p-4">
-            <img 
-              src={`${api.defaults.baseURL}/analytics/ai/plots/global/summaryBeeswarm?n_samples=100`} 
-              alt="Global SHAP Summary Plot" 
+            <AuthenticatedImage
+              path="/analytics/ai/plots/global/summaryBeeswarm?n_samples=100"
+              alt="Global SHAP Summary Plot"
               className="max-w-full h-auto object-contain mix-blend-multiply"
-              onError={(e) => { e.target.style.display = 'none'; }}
+              fallbackLabel="Summary plot unavailable"
             />
           </div>
         </section>
@@ -126,12 +126,11 @@ export default function AiAnalytics() {
             </select>
           </div>
           <div className="flex-1 bg-white rounded-2xl overflow-hidden flex items-center justify-center p-4">
-            <img 
-              src={`${api.defaults.baseURL}/analytics/ai/plots/global/dependence?feature=${featureForDependence}&n_samples=100`} 
-              alt="Global SHAP Dependence Plot" 
+            <AuthenticatedImage
+              path={`/analytics/ai/plots/global/dependence?feature=${featureForDependence}&n_samples=100`}
+              alt="Global SHAP Dependence Plot"
               className="max-w-full h-auto object-contain mix-blend-multiply"
-              key={featureForDependence} // force remount/reload on change
-              onError={(e) => { e.target.style.display = 'none'; }}
+              fallbackLabel="Dependence plot unavailable"
             />
           </div>
         </section>
