@@ -1,21 +1,27 @@
-# RetentionAI — AI Service, lite build.
+# RetentionAI — AI Service, LITE build.
 #
-# Same application code as Dockerfile, built against requirements-lite.txt so
-# the image fits a 512 MB free-tier container (~265 MB of imports versus ~496
-# MB for the full stack, before model weights). app/features.py detects the
-# missing libraries at startup and serves 503 on the NLP and RAG routes;
-# prediction, SHAP explainability and decision recommendations are unaffected.
+# Read this before assuming a root Dockerfile builds the whole project: it
+# does not. Each service owns its image (server/Dockerfile,
+# client/Dockerfile, ai-service/Dockerfile). This file builds only the AI
+# service, and it sits at the repository root for two converging reasons:
 #
-# Deployed as the `retentionai-ai-service` free-plan service in render.yaml.
-# Switch back to Dockerfile once the host has memory for the full stack — no
-# application code differs between the two.
+#   1. It needs a repo-root build context. The trained model bundle lives in
+#      models/active/, outside ai-service/, and a free-plan service gets no
+#      persistent disk to hold it — so the bundle has to be baked into the
+#      image, which means COPYing from above ai-service/.
+#   2. Render's CLI cannot set a service's Dockerfile path (neither
+#      `services create` nor `services update` exposes it; only `--image`),
+#      so a CLI-created service looks for ./Dockerfile at the context root.
+#      Putting the file anywhere else would require a manual dashboard edit
+#      on every rebuild of the service.
 #
-# NOTE: this builds from the REPOSITORY ROOT, not ai-service/, because the
-# trained model bundle lives in models/active/ at the top level. The full
-# Dockerfile can use ai-service/ as its context since Render mounts a
-# persistent disk there for the artifact; a free plan has no disk, so the
-# bundle must be baked in, which means reaching outside ai-service/.
-#   docker build -f ai-service/Dockerfile.lite .
+# Same application code as the full image, built against requirements-lite.txt
+# so it fits a 512 MB container: ~265 MB of imports versus ~496 MB for the
+# full stack, before any model weights load. app/features.py detects the
+# absent libraries and serves 503 on the NLP and RAG routes; prediction, SHAP
+# explainability and decision recommendations are unaffected.
+#
+# Build locally with:  docker build -f Dockerfile .
 
 # 3.12, not 3.11: shap 0.52.0 declares Requires-Python >=3.12, so a 3.11 base
 # fails at pip-install time with "No matching distribution". (ai-service/
