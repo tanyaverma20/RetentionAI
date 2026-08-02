@@ -50,6 +50,14 @@ RUN pip install --no-cache-dir -r requirements-lite.txt
 
 RUN addgroup --system retentionai && adduser --system --ingroup retentionai retentionai
 
+# `adduser --system` gives the account no home directory, so matplotlib falls
+# back to /nonexistent/.config/matplotlib, fails with EACCES, and rebuilds its
+# font cache into a fresh temp dir on every single boot:
+#   "Matplotlib created a temporary cache directory ... generated new fontManager"
+# That is a few seconds added to every cold start, which on a free plan that
+# sleeps after ~15 minutes idle is paid on most requests, not rarely.
+ENV MPLCONFIGDIR=/tmp/matplotlib
+
 COPY ai-service/app ./app
 COPY ai-service/train_model.py ai-service/seed_ml_data.py ./
 # The trained attrition bundle. prediction_service.py reads
