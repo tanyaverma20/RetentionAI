@@ -33,6 +33,16 @@ models/archive/*
 !models/archive/.gitkeep
 *.joblib
 *.pkl
+# Must sit AFTER the blanket *.joblib above — git applies the last matching
+# rule, so an earlier negation would be silently overridden.
+#
+# The active attrition bundle is committed (20 KB) so the free-tier lite image
+# can bake it in: Render builds from git and a free service gets no persistent
+# disk to hold a trained artifact. Trained on the public IBM HR attrition
+# dataset; the file holds model parameters, not employee records. A retrained
+# bundle must be committed too, or the deployed service keeps serving the old
+# one. See ai-service/Dockerfile.lite.
+!models/active/attrition_model.joblib
 *.log
 logs/
 chroma_data/

@@ -1,0 +1,44 @@
+# Lite dependency set — prediction, SHAP explainability and the decision
+# engine, without the local inference stack.
+#
+# Measured RSS after importing this set: ~265 MB, versus ~496 MB for the full
+# requirements.txt (before any model weights load). That difference is what
+# makes the service fit a 512 MB free-tier container.
+#
+# Omitted, and why each is safe to omit here:
+#   torch, transformers        — only the NLP emotion/zero-shot classifiers
+#   sentence-transformers      — only RAG embeddings
+#   chromadb                   — only the RAG vector store
+#   spacy, nltk, vaderSentiment, langdetect — NLP preprocessing only
+#   pypdf, docx2txt, unstructured, markdown — document ingestion for RAG only
+#
+# app/features.py detects their absence and swaps the NLP/RAG routes for a 503
+# stub, so a lite deployment reports what it cannot do instead of failing at
+# import time. Keep the shared pins below in lockstep with requirements.txt —
+# a version skew between the two images would be invisible until runtime.
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+python-dotenv==1.0.1
+pydantic-settings==2.7.1
+psutil==7.0.0
+
+# Prediction + explainability
+pandas==2.2.3
+numpy==2.2.1
+scikit-learn==1.6.0
+xgboost==2.1.3
+lightgbm==4.5.0
+catboost==1.2.10
+joblib==1.4.2
+shap==0.52.0
+matplotlib==3.10.8
+
+# Decision engine. The reasoning chain calls Groq's hosted API, so no local
+# model is involved — langchain-core arrives as a langchain-groq dependency.
+langchain==0.3.14
+langchain-groq==0.2.3
+
+# Persistence
+pymongo==4.17.0
+motor==3.7.1

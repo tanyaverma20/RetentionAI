@@ -22,8 +22,26 @@ import pandas as pd
 
 from app.agent.tools.ml_tool import run_ml_prediction
 from app.agent.tools.shap_tool import run_shap_explanation
-from app.agent.tools.nlp_tool import run_nlp_insights
-from app.agent.tools.rag_tool import run_rag_retrieval
+from app.features import NLP_AVAILABLE, RAG_AVAILABLE
+
+# The NLP and RAG tools pull in torch/transformers/sentence-transformers, which
+# a lite image does not ship (see app/features.py). Recommendations still run
+# without them: the evidence bundle below reads every field through
+# .get(key, default), so absent signals fall back to the same neutral values
+# used when an employee simply has no feedback text or no indexed policies.
+# The LLM then reasons from ML + SHAP evidence alone — degraded, but a real
+# recommendation rather than an error.
+if NLP_AVAILABLE:
+    from app.agent.tools.nlp_tool import run_nlp_insights
+else:
+    async def run_nlp_insights(employee_id: str) -> Dict[str, Any]:  # noqa: ARG001
+        return {}
+
+if RAG_AVAILABLE:
+    from app.agent.tools.rag_tool import run_rag_retrieval
+else:
+    def run_rag_retrieval(query: str, top_k: int = 3) -> Dict[str, Any]:  # noqa: ARG001
+        return {}
 from app.preprocessing.enrichment import enrich_employee_doc
 from app.utils.database import get_db
 from app.agent.chains.reasoning_chain import run_reasoning_chain

@@ -1,0 +1,42 @@
+# Applies only to builds that use the repository root as their context —
+# currently just ai-service/Dockerfile.lite, which needs to reach both
+# ai-service/ and models/active/. The server, client and full ai-service
+# images build from their own subdirectory and use their own .dockerignore.
+#
+# Without this, the root context uploads the entire monorepo (client bundles,
+# datasets, docs, git history) to the builder on every deploy.
+
+.git
+.github
+.claude
+.agents
+.mypy_cache
+.vercel
+
+client
+server
+dataset-generator
+datasets
+docs
+scripts
+tests
+uploads
+deploy
+
+**/node_modules
+**/__pycache__
+**/.pytest_cache
+**/.ruff_cache
+**/catboost_info
+**/chroma_db
+**/*.log
+
+# Secrets never belong in a build context, even transiently.
+**/.env
+**/.env.*
+!**/.env.example
+
+# The lite image needs models/active only; archived bundles and plots are
+# dead weight in the context.
+models/archive
+models/active/plots

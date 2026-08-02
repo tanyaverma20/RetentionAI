@@ -67,19 +67,28 @@ logger = logging.getLogger(__name__)
 
 from app.api.routes import router as prediction_router
 from app.api.explain_routes import router as explain_router
-from app.api.nlp_routes import router as nlp_router
-from app.api.employee_intelligence_routes import router as employee_intelligence_router
-from app.api.rag_routes import router as rag_router
 from app.api.agent_routes import router as agent_router
 from app.api.decision_routes import router as decision_router
 from app.config import validate_startup_config
+from app.features import NLP_AVAILABLE, RAG_AVAILABLE, log_enabled_features
 from app.utils.database import connect_db, disconnect_db, get_db, db_instance
 from app.utils.metrics import metrics_middleware, get_metrics_snapshot
 from app.utils.migrations import migrate_prediction_history_collection
 from app.prediction.prediction_service import prediction_service
 from app.explainability.shap_explainer import shap_cache
-from app.nlp.analyzer import get_emotion_classifier, get_zeroshot_classifier
-from app.rag.vectorstore.chroma_store import get_vectorstore
+
+# The NLP and RAG modules import torch/transformers/sentence-transformers/
+# ChromaDB at module level, so on a lite image these imports would raise
+# ImportError and take the whole process down at startup. Guarding them here
+# is what lets one codebase produce both images — see app/features.py for why
+# capability is probed rather than configured.
+if NLP_AVAILABLE:
+    from app.api.nlp_routes import router as nlp_router
+    from app.api.employee_intelligence_routes import router as employee_intelligence_router
+    from app.nlp.analyzer import get_emotion_classifier, get_zeroshot_classifier
+if RAG_AVAILABLE:
+    from app.api.rag_routes import router as rag_router
+    from app.rag.vectorstore.chroma_store import get_vectorstore
 
 STARTUP_STEP_TIMEOUT_SECONDS = 60
 
@@ -88,6 +97,7 @@ STARTUP_STEP_TIMEOUT_SECONDS = 60
 async def lifespan(app: FastAPI):
     # ── Startup ──────────────────────────────────────────────────────────
     logger.info("Starting up RetentionAI AI Service")
+    log_enabled_features()
 
     # Fatal config errors (missing service token, missing LLM key in
     # production) intentionally are NOT wrapped in try/except like the
@@ -121,11 +131,11 @@ async def lifespan(app: FastAPI):
             logger.warning("Skipping SHAP initialisation — no model bundle available.")
 
     def _load_nlp_models():
-        get_emotion_classifier()
-        get_zeroshot_classifier()
+        get_emotion_classifier()  # noqa: F821 — only defined when NLP_AVAILABLE
+        get_zeroshot_classifier()  # noqa: F821
 
     def _load_vectorstore():
-        get_vectorstore()
+        get_vectorstore()  # noqa: F821 — only defined when RAG_AVAILABLE
 
     async def _run_guarded(sync_fn, step_name):
         try:
@@ -136,12 +146,17 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.exception(f"{step_name} failed")
 
-    logger.info("Loading prediction model, SHAP explainer, NLP models, and vectorstore (concurrently)")
-    await asyncio.gather(
-        _run_guarded(_load_model_and_shap, "Prediction model + SHAP explainer"),
-        _run_guarded(_load_nlp_models, "NLP models (Transformers)"),
-        _run_guarded(_load_vectorstore, "ChromaDB vectorstore"),
-    )
+    # On a lite image the NLP/vectorstore chains have nothing to load — the
+    # libraries aren't installed — so only the steps this build can actually
+    # perform are scheduled.
+    startup_steps = [_run_guarded(_load_model_and_shap, "Prediction model + SHAP explainer")]
+    if NLP_AVAILABLE:
+        startup_steps.append(_run_guarded(_load_nlp_models, "NLP models (Transformers)"))
+    if RAG_AVAILABLE:
+        startup_steps.append(_run_guarded(_load_vectorstore, "ChromaDB vectorstore"))
+
+    logger.info(f"Running {len(startup_steps)} startup load step(s) concurrently")
+    await asyncio.gather(*startup_steps)
 
     yield
 
@@ -222,14 +237,23 @@ async def health_deep():
     }
 
 
-# Register routers
+# Register routers. Prediction, explainability, agent and decision routes are
+# present in every build; NLP and RAG are swapped for a 503 stub when this
+# image lacks their dependencies (see app/api/unavailable_routes.py).
 app.include_router(prediction_router)
 app.include_router(explain_router)
-app.include_router(nlp_router)
-app.include_router(employee_intelligence_router)
-app.include_router(rag_router)
 app.include_router(agent_router)
 app.include_router(decision_router)
+
+if NLP_AVAILABLE:
+    app.include_router(nlp_router)
+    app.include_router(employee_intelligence_router)
+if RAG_AVAILABLE:
+    app.include_router(rag_router)
+if not (NLP_AVAILABLE and RAG_AVAILABLE):
+    from app.api.unavailable_routes import register_unavailable
+
+    app.include_router(register_unavailable(nlp=NLP_AVAILABLE, rag=RAG_AVAILABLE))
 
 
 if __name__ == "__main__":

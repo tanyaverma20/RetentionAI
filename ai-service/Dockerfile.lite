@@ -1,0 +1,56 @@
+# RetentionAI — AI Service, lite build.
+#
+# Same application code as Dockerfile, built against requirements-lite.txt so
+# the image fits a 512 MB free-tier container (~265 MB of imports versus ~496
+# MB for the full stack, before model weights). app/features.py detects the
+# missing libraries at startup and serves 503 on the NLP and RAG routes;
+# prediction, SHAP explainability and decision recommendations are unaffected.
+#
+# Deployed as the `retentionai-ai-service` free-plan service in render.yaml.
+# Switch back to Dockerfile once the host has memory for the full stack — no
+# application code differs between the two.
+#
+# NOTE: this builds from the REPOSITORY ROOT, not ai-service/, because the
+# trained model bundle lives in models/active/ at the top level. The full
+# Dockerfile can use ai-service/ as its context since Render mounts a
+# persistent disk there for the artifact; a free plan has no disk, so the
+# bundle must be baked in, which means reaching outside ai-service/.
+#   docker build -f ai-service/Dockerfile.lite .
+
+# 3.12, not 3.11: shap 0.52.0 declares Requires-Python >=3.12, so a 3.11 base
+# fails at pip-install time with "No matching distribution". (ai-service/
+# Dockerfile still pins 3.11 against the same shap version and has the same
+# latent failure — it has never been built successfully.)
+FROM python:3.12-slim AS runtime
+WORKDIR /app
+
+# No build-essential here: every wheel in requirements-lite.txt ships prebuilt
+# for linux/amd64, and compiling from source is the single largest contributor
+# to build time on a free plan.
+RUN apt-get update && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY ai-service/requirements-lite.txt .
+RUN pip install --no-cache-dir -r requirements-lite.txt
+
+RUN addgroup --system retentionai && adduser --system --ingroup retentionai retentionai
+
+COPY ai-service/app ./app
+COPY ai-service/train_model.py ai-service/seed_ml_data.py ./
+# The trained attrition bundle. prediction_service.py reads
+# MODEL_ARTIFACT_PATH and falls back to the newest *.joblib in it; without an
+# artifact the service starts but every prediction fails. Committed to the
+# repo (see the negation in .gitignore) precisely so this COPY works on
+# Render, which builds from git and gives a free service no persistent disk.
+COPY models/active ./models/active
+RUN mkdir -p /app/chroma_db /app/knowledge_base /app/models/active \
+    && chown -R retentionai:retentionai /app
+USER retentionai
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD curl -fsS http://127.0.0.1:8000/health || exit 1
+
+# Render injects PORT; fall back to 8000 for local runs and compose.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
