@@ -33,7 +33,16 @@ WORKDIR /app
 # No build-essential here: every wheel in requirements-lite.txt ships prebuilt
 # for linux/amd64, and compiling from source is the single largest contributor
 # to build time on a free plan.
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
+#
+# libgomp1 is NOT optional, despite that. LightGBM and XGBoost link against
+# the GNU OpenMP runtime and dlopen it at import time; python:*-slim does not
+# include it. The full image gets it transitively from build-essential, so
+# dropping that here removed a runtime dependency along with the compiler —
+# the container built fine and then died on startup with
+#   OSError: libgomp.so.1: cannot open shared object file
+# from `import lightgbm` inside app/training/trainer.py.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY ai-service/requirements-lite.txt .
