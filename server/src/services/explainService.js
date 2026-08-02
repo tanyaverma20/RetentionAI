@@ -199,6 +199,31 @@ class ExplainService {
   }
 
   /**
+   * Fetch a rendered global SHAP plot as raw PNG bytes.
+   *
+   * Deliberately not using the FastAPI /plots/global endpoint, which returns
+   * absolute paths inside the AI service's container: this process cannot
+   * read those, and streaming the bytes is the only thing that works once the
+   * two services are deployed separately.
+   *
+   * @param {'summaryBeeswarm'|'summaryBar'|'dependence'} plotType
+   * @param {string} feature   Feature for the dependence plot; ignored by the others.
+   * @param {number} nSamples
+   * @returns {Promise<Buffer>}
+   */
+  async getGlobalPlotImage(plotType, feature = 'salary', nSamples = 100) {
+    try {
+      const response = await aiClient.get(`/plots/global/${plotType}/image`, {
+        params: { feature, n_samples: nSamples },
+        responseType: 'arraybuffer',
+      });
+      return Buffer.from(response.data);
+    } catch (err) {
+      throw toExplainError(err, 'Global plot generation failed');
+    }
+  }
+
+  /**
    * Get an explanation from MongoDB for a given employee.
    * Returns null if not found.
    */

@@ -25,6 +25,7 @@ from typing import Optional
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Header, status, Query
+from fastapi.responses import FileResponse
 
 from app.api.explain_schemas import ExplainRequest, ExplainBatchRequest
 from app.preprocessing.enrichment import enrich_employee_doc
@@ -330,6 +331,61 @@ async def get_global_plots(
         raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, str(exc))
 
     return {"success": True, "data": paths}
+
+
+# ---------------------------------------------------------------------------
+# GET /plots/global/{plot_type}/image
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/plots/global/{plot_type}/image",
+    summary="Stream a generated global SHAP plot as a PNG",
+    dependencies=[Depends(verify_auth_token)],
+    response_class=FileResponse,
+)
+async def get_global_plot_image(
+    plot_type: str,
+    feature: str = Query("salary", description="Feature name for dependence plot"),
+    n_samples: int = Query(100, ge=10, le=500),
+):
+    """
+    Returns the PNG bytes rather than a filesystem path.
+
+    /plots/global reports absolute paths, which only works for a caller that
+    shares this container's filesystem. The Node API runs as a separate
+    service and was calling response.sendFile() on a path that does not exist
+    on its own disk — unservable by construction once the two are deployed
+    apart. This endpoint closes that gap by streaming the file itself.
+    """
+    if not shap_cache.is_ready:
+        _shap_not_ready()
+
+    generators = {
+        "summaryBeeswarm": lambda m: generate_summary_plot(m),
+        "summaryBar": lambda m: generate_bar_plot(m),
+        "dependence": lambda m: generate_dependence_plot(m, feature),
+    }
+    if plot_type not in generators:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            f"Unknown plot type '{plot_type}'. Expected one of: {', '.join(generators)}",
+        )
+
+    try:
+        shap_matrix = shap_cache.compute_shap_values(
+            shap_cache.background_data[: min(n_samples, len(shap_cache.background_data))]
+        )
+        path = generators[plot_type](shap_matrix)
+    except Exception as exc:
+        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, str(exc))
+
+    if not os.path.isfile(path):
+        raise HTTPException(
+            status.HTTP_500_INTERNAL_SERVER_ERROR,
+            f"Plot was generated but no file exists at {path}",
+        )
+
+    return FileResponse(path, media_type="image/png", filename=f"{plot_type}.png")
 
 
 # ---------------------------------------------------------------------------

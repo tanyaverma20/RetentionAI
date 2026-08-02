@@ -10,6 +10,7 @@
 
 import * as analyticsService from '../services/analyticsService.js';
 import { aiService } from '../services/aiService.js';
+import { explainService } from '../services/explainService.js';
 import { sendSuccess } from '../utils/response.js';
 import { AppError } from '../errors/AppError.js';
 
@@ -99,8 +100,18 @@ export async function getTrainingAnalytics(request, response, next) {
 
 export async function getAiFeatureImportance(request, response, next) {
   try {
-    const nSamples = request.query.n_samples ? parseInt(request.query.n_samples, 10) : 100;
-    const importance = await aiService.getGlobalFeatureImportance(nSamples);
+    // Delegates to explainService, which owns the FastAPI /feature-importance
+    // call. This previously called aiService.getGlobalFeatureImportance(),
+    // which has never existed on AIService — the route returned a 500
+    // ("aiService.getGlobalFeatureImportance is not a function") for every
+    // caller. It went unnoticed because the AI service was never deployed, so
+    // the route failed with a plausible-looking AI_SERVICE_UNAVAILABLE before
+    // ever reaching the missing method.
+    //
+    // n_samples is accepted for API compatibility but not forwarded: the
+    // FastAPI endpoint computes importance over its own fixed background
+    // sample and takes no such parameter.
+    const importance = await explainService.getGlobalFeatureImportance();
     return sendSuccess(response, 200, importance, request.requestId);
   } catch (error) {
     return next(error);
@@ -113,18 +124,21 @@ export async function getAiGlobalPlot(request, response, next) {
     const feature = request.query.feature || 'salary';
     const nSamples = request.query.n_samples ? parseInt(request.query.n_samples, 10) : 100;
 
-    const plots = await aiService.getGlobalPlots(feature, nSamples);
-    const plotPath = plots[plotType];
-
-    if (!plotPath) {
+    // Previously: aiService.getGlobalPlots() (a method that does not exist)
+    // followed by response.sendFile(plotPath). Both were broken — the second
+    // more subtly, since the path returned by the AI service points into
+    // *its* container, so sendFile could only ever have worked when both
+    // services shared a filesystem. The AI service now streams the PNG and
+    // this proxies the bytes through.
+    const ALLOWED_PLOT_TYPES = new Set(['summaryBeeswarm', 'summaryBar', 'dependence']);
+    if (!ALLOWED_PLOT_TYPES.has(plotType)) {
       throw new AppError(404, 'PLOT_NOT_FOUND', `Plot type ${plotType} not found.`);
     }
 
-    return response.sendFile(plotPath, (err) => {
-      if (err) {
-        next(new AppError(404, 'PLOT_READ_ERROR', 'Failed to read plot file.'));
-      }
-    });
+    const image = await explainService.getGlobalPlotImage(plotType, feature, nSamples);
+    response.setHeader('Content-Type', 'image/png');
+    response.setHeader('Cache-Control', 'private, max-age=300');
+    return response.send(image);
   } catch (error) {
     return next(error);
   }
