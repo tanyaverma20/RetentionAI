@@ -73,4 +73,19 @@ describe('describeUnsafeOriginPattern', () => {
   it('rejects a wildcard host with no literal text at all', () => {
     assert.notEqual(describeUnsafeOriginPattern('https://*'), null);
   });
+
+  // Regression: a wildcard flush against one edge of its DNS label (no
+  // literal on that side) is exploitable on a shared platform domain just
+  // like `*.vercel.app` is — anyone can register a project/team name that
+  // supplies the missing side. Only requiring literal text on BOTH sides of
+  // the star (as the accepted "pins a team segment" case above does) closes
+  // this. Confirmed exploitable pre-fix: createOriginMatcher(['https://retention-*.vercel.app'])
+  // matched 'https://retention-anything-attackerteam.vercel.app'.
+  it('rejects a suffix-only wildcard with no literal after the star', () => {
+    assert.notEqual(describeUnsafeOriginPattern('https://retention-*.vercel.app'), null);
+  });
+
+  it('rejects a prefix-only wildcard with no literal before the star', () => {
+    assert.notEqual(describeUnsafeOriginPattern('https://*-tanya-b0e5.vercel.app'), null);
+  });
 });

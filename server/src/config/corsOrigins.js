@@ -94,6 +94,27 @@ export function describeUnsafeOriginPattern(pattern) {
     );
   }
 
+  // A wildcard that sits flush against either edge of its DNS label — e.g.
+  // "myapp-*.vercel.app" (no literal after the star) or "*-myteam.vercel.app"
+  // (no literal before it) — is just as exploitable as `*.vercel.app`: on a
+  // shared platform domain, anyone can register a project/team name that
+  // supplies the missing side, since nothing in the pattern is anchored to
+  // an account the operator actually controls. Requiring literal text on
+  // BOTH sides of the star within its own label (as
+  // "retention-*-myteam.vercel.app" does) is what ties the pattern to a
+  // hostname shape only the operator's own project+team can produce.
+  const wildcardLabel = host.split('.').find((label) => label.includes('*'));
+  if (wildcardLabel && (wildcardLabel.startsWith('*') || wildcardLabel.endsWith('*'))) {
+    return (
+      `"${normalised}" has a wildcard with no literal text on one side of it ` +
+      'within its hostname label. On a shared platform domain (e.g. ' +
+      'vercel.app), anyone can register a name that supplies the missing ' +
+      'side. Pin literal text on BOTH sides of the "*" within that label ' +
+      '(e.g. "https://myapp-*-myteam.vercel.app") so the pattern cannot ' +
+      'match hostnames belonging to someone else.'
+    );
+  }
+
   return null;
 }
 

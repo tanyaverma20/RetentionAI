@@ -4,7 +4,12 @@
 # cache reuse (requirements installed before app code is copied) rather than
 # final image size.
 
-FROM python:3.11-slim AS runtime
+# 3.12, not 3.11: shap 0.52.0 declares Requires-Python >=3.12 — a 3.11 base
+# fails at `pip install -r requirements.txt` with "No matching distribution
+# found for shap==0.52.0". This image has never built successfully with the
+# 3.11 base (confirmed via `pip show shap` → Requires-Python: >=3.12). Same
+# fix already applied to the lite build's Dockerfile at the repo root.
+FROM python:3.12-slim AS runtime
 WORKDIR /app
 
 # build-essential is required to compile a handful of scientific-Python
