@@ -2,6 +2,7 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import EmployeeIntelligence from '../models/EmployeeIntelligence.js';
 import { toAiServiceError } from '../utils/aiServiceError.js';
+import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
@@ -79,37 +80,46 @@ class EmployeeIntelligenceService {
     if (employeeIds?.length) payload.employeeIds = employeeIds;
     else if (departmentId) payload.departmentId = departmentId;
 
-    let profiles;
+    // Claims the single process-wide AI-heavy-job slot (see
+    // aiConcurrencyGate.js) — see decisionService.js/explainService.js for
+    // the production incident this prevents. Throws a 429 immediately if
+    // another heavy job is already running, rather than letting them stack.
+    acquireAiSlot('Generate Employee Intelligence (batch)');
     try {
-      const response = await aiClient.post('/employee-intelligence/batch', payload, {
-        timeout: AI_BATCH_TIMEOUT_MS,
-      });
-      profiles = response.data?.profiles || [];
-    } catch (err) {
-      throw toAiServiceError(err, 'Batch Employee Intelligence generation failed', {
-        notReadyMessage: 'The NLP models are not ready yet. Please try again shortly.',
-      });
+      let profiles;
+      try {
+        const response = await aiClient.post('/employee-intelligence/batch', payload, {
+          timeout: AI_BATCH_TIMEOUT_MS,
+        });
+        profiles = response.data?.profiles || [];
+      } catch (err) {
+        throw toAiServiceError(err, 'Batch Employee Intelligence generation failed', {
+          notReadyMessage: 'The NLP models are not ready yet. Please try again shortly.',
+        });
+      }
+
+      if (profiles.length === 0) {
+        return { processed: 0 };
+      }
+
+      const docs = profiles.map((p) => mapProfileToDoc(p.employeeId, organizationId, p));
+
+      // `ordered: false` keeps one bad record from aborting the batch, but
+      // Mongoose then resolves even when documents fail validation — it just
+      // returns the subset that made it in. Report what was actually written
+      // rather than what we intended to write, so a silent drop can't be
+      // mistaken for success (this is exactly how the SHAP batch reported
+      // "processed: 1254" while persisting zero rows).
+      const inserted = await EmployeeIntelligence.insertMany(docs, { ordered: false });
+      const skipped = docs.length - inserted.length;
+      if (skipped > 0) {
+        console.warn(`generateBatch: ${skipped}/${docs.length} Employee Intelligence profiles were rejected on insert.`);
+      }
+
+      return { processed: inserted.length, skipped };
+    } finally {
+      releaseAiSlot();
     }
-
-    if (profiles.length === 0) {
-      return { processed: 0 };
-    }
-
-    const docs = profiles.map((p) => mapProfileToDoc(p.employeeId, organizationId, p));
-
-    // `ordered: false` keeps one bad record from aborting the batch, but
-    // Mongoose then resolves even when documents fail validation — it just
-    // returns the subset that made it in. Report what was actually written
-    // rather than what we intended to write, so a silent drop can't be
-    // mistaken for success (this is exactly how the SHAP batch reported
-    // "processed: 1254" while persisting zero rows).
-    const inserted = await EmployeeIntelligence.insertMany(docs, { ordered: false });
-    const skipped = docs.length - inserted.length;
-    if (skipped > 0) {
-      console.warn(`generateBatch: ${skipped}/${docs.length} Employee Intelligence profiles were rejected on insert.`);
-    }
-
-    return { processed: inserted.length, skipped };
   }
 
   /**

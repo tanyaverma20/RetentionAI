@@ -2,6 +2,7 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { Prediction } from '../models/Prediction.js';
+import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
 const aiClient = axios.create({
   baseURL: env.aiService.url,
@@ -32,12 +33,32 @@ function toServiceError(error, fallbackMessage) {
   return err;
 }
 
+// /train fires a FastAPI BackgroundTasks job and returns almost immediately
+// — unlike explainBatch/decisionService.generateBatch, this call doesn't
+// stay open for the duration of the real work, so acquireAiSlot/
+// releaseAiSlot can't simply bracket the request the way they do there
+// (the slot would free again seconds later, while the ai-service is still
+// mid-training). Training has been measured at ~90s end-to-end in
+// production (see Dashboard.jsx's poll comment); hold the slot for a fixed
+// window comfortably above that instead, so a batch job kicked off right
+// after Train Model still gets rejected with AI_PIPELINE_BUSY rather than
+// landing on the ai-service while it's mid-training.
+const TRAIN_SLOT_HOLD_MS = 3 * 60 * 1000; // 3 min — ~2x the measured ~90s.
+
 class AIService {
   async trainModel() {
+    acquireAiSlot('Train Model');
     try {
       const response = await aiClient.post('/train', {}, { timeout: 30000 });
+      // Training itself continues in the ai-service background after this
+      // resolves — release on a timer, not in `finally`, so the slot stays
+      // held for the real work instead of just this quick POST.
+      setTimeout(releaseAiSlot, TRAIN_SLOT_HOLD_MS);
       return response.data;
     } catch (error) {
+      // The job never actually started — free the slot immediately rather
+      // than blocking other work for 3 minutes over a request that failed.
+      releaseAiSlot();
       throw toServiceError(error, 'Failed to start training model');
     }
   }

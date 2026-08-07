@@ -1,11 +1,13 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
+import { randomUUID } from 'crypto';
 import { Decision, STATUS_VALUES } from '../models/Decision.js';
 import { Employee } from '../models/Employee.js';
 import { toAiServiceError } from '../utils/aiServiceError.js';
 import { AppError } from '../errors/AppError.js';
 import { recordAudit } from './auditService.js';
 import { logger } from '../utils/logger.js';
+import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
@@ -56,6 +58,36 @@ async function pollDecisionBatchJob(jobId) {
   e.statusCode = 504;
   e.code = 'AI_SERVICE_TIMEOUT';
   throw e;
+}
+
+// ── Express-level batch job store ─────────────────────────────────────────
+// Why this exists: chunking (below) fixed the ai-service container crash on
+// the full workforce, but a direct production test after that fix still
+// failed — not with an HTTP error, but with a bare `fetch failed` at exactly
+// t=304s, no status code, no body. That is not this app's timeout (nothing
+// here is configured anywhere near 304s); it is Render's own platform proxy
+// severing a connection it considers held open too long, while Express was
+// still mid-`await` inside the controller for what projects to ~870s total
+// across ~5 chunks. Chunking alone cannot fix this: the outer HTTP
+// request/response cycle itself cannot survive the platform's connection
+// ceiling no matter how the work inside it is subdivided.
+//
+// The fix is the same shape already used for /explain/batch and the
+// ai-service's own /decision/batch: the client-facing endpoint returns a
+// jobId immediately (this returns in milliseconds — no network calls before
+// responding), the chunked work in generateBatch() runs in the background
+// via a fire-and-forget promise, and the client polls
+// GET /decisions/batch/status/:jobId until it sees 'completed' or 'failed'.
+// No single leg of that round trip is ever held open longer than one poll
+// interval, so the platform's connection ceiling is never in play.
+const _BATCH_JOBS = new Map();
+const _JOB_TTL_MS = 30 * 60 * 1000; // 30 min — long enough to cover polling, short enough not to leak memory across many runs.
+
+function _pruneOldJobs() {
+  const cutoff = Date.now() - _JOB_TTL_MS;
+  for (const [id, job] of _BATCH_JOBS) {
+    if (job.startedAt.getTime() < cutoff) _BATCH_JOBS.delete(id);
+  }
 }
 
 function mapDecisionToDoc(employeeId, organizationId, data, userId) {
@@ -164,71 +196,121 @@ class DecisionService {
     let processed = 0;
     let failed = 0;
 
-    for (let start = 0; start < employees.length; start += CHUNK_SIZE) {
-      const chunk = employees.slice(start, start + CHUNK_SIZE);
+    // Claims the single process-wide AI-heavy-job slot (see
+    // aiConcurrencyGate.js) — verified via production logs that a batch
+    // explain running at the same moment as a batch decision run is exactly
+    // what crashed the ai-service container (two heavy jobs' memory
+    // footprints landing on it together). Throws a 429 immediately if
+    // another heavy job (train / explain-batch / employee-intelligence
+    // batch) is already running, rather than letting them stack.
+    acquireAiSlot('Generate Recommendations (batch)');
+    try {
+      for (let start = 0; start < employees.length; start += CHUNK_SIZE) {
+        const chunk = employees.slice(start, start + CHUNK_SIZE);
 
-      let rawDecisions;
-      try {
-        const response = await aiClient.post('/decision/batch', {
-          employees: chunk.map((e) => ({
-            employeeId: String(e._id),
-            employeeData: e,
-            userId: String(userId || 'system'),
-          })),
-        });
+        let rawDecisions;
+        try {
+          const response = await aiClient.post('/decision/batch', {
+            employees: chunk.map((e) => ({
+              employeeId: String(e._id),
+              employeeData: e,
+              userId: String(userId || 'system'),
+            })),
+          });
 
-        const jobId = response.data?.jobId;
-        if (!jobId) {
-          throw new Error('No job ID returned from AI service');
+          const jobId = response.data?.jobId;
+          if (!jobId) {
+            throw new Error('No job ID returned from AI service');
+          }
+
+          rawDecisions = await pollDecisionBatchJob(jobId);
+        } catch (err) {
+          // Surface the failure, but only after keeping whatever earlier
+          // chunks already wrote — reporting how far it got is far more
+          // useful than failing the whole run silently.
+          logger.error('decision_batch_chunk_failed', {
+            chunkStart: start,
+            chunkSize: chunk.length,
+            processedBeforeFailure: processed,
+            error: err.message,
+          });
+          if (processed > 0) {
+            const e = new Error(
+              `Batch decision generation stopped after ${processed}/${employees.length} employees: ${err.message}`,
+            );
+            e.statusCode = err.statusCode || 502;
+            e.code = err.code || 'AI_SERVICE_ERROR';
+            throw e;
+          }
+          throw toAiServiceError(err, 'Batch decision generation failed', {
+            notReadyMessage: 'The Decision Engine is not ready yet. Please try again shortly.',
+          });
         }
 
-        rawDecisions = await pollDecisionBatchJob(jobId);
-      } catch (err) {
-        // Surface the failure, but only after keeping whatever earlier
-        // chunks already wrote — reporting how far it got is far more
-        // useful than failing the whole run silently.
-        logger.error('decision_batch_chunk_failed', {
+        const docs = [];
+        for (const d of rawDecisions) {
+          if (d.error) {
+            failed += 1;
+            continue;
+          }
+          docs.push(mapDecisionToDoc(d.employeeId, organizationId, d, userId));
+        }
+
+        if (docs.length > 0) {
+          await Decision.insertMany(docs, { ordered: false });
+          processed += docs.length;
+        }
+
+        logger.info('decision_batch_chunk_done', {
           chunkStart: start,
-          chunkSize: chunk.length,
-          processedBeforeFailure: processed,
-          error: err.message,
-        });
-        if (processed > 0) {
-          const e = new Error(
-            `Batch decision generation stopped after ${processed}/${employees.length} employees: ${err.message}`,
-          );
-          e.statusCode = err.statusCode || 502;
-          e.code = err.code || 'AI_SERVICE_ERROR';
-          throw e;
-        }
-        throw toAiServiceError(err, 'Batch decision generation failed', {
-          notReadyMessage: 'The Decision Engine is not ready yet. Please try again shortly.',
+          chunkProcessed: docs.length,
+          totalProcessed: processed,
+          totalCount: employees.length,
         });
       }
 
-      const docs = [];
-      for (const d of rawDecisions) {
-        if (d.error) {
-          failed += 1;
-          continue;
-        }
-        docs.push(mapDecisionToDoc(d.employeeId, organizationId, d, userId));
-      }
-
-      if (docs.length > 0) {
-        await Decision.insertMany(docs, { ordered: false });
-        processed += docs.length;
-      }
-
-      logger.info('decision_batch_chunk_done', {
-        chunkStart: start,
-        chunkProcessed: docs.length,
-        totalProcessed: processed,
-        totalCount: employees.length,
-      });
+      return { processed, failed, totalCount: employees.length };
+    } finally {
+      releaseAiSlot();
     }
+  }
 
-    return { processed, failed, totalCount: employees.length };
+  /**
+   * Kicks off generateBatch() in the background and returns a jobId
+   * immediately. See the _BATCH_JOBS comment above for why this exists —
+   * the request/response cycle for this call must stay short (it does no
+   * chunk work itself), unlike the synchronous generateBatch() it wraps.
+   */
+  startBatchJob(organizationId, employeeIds, departmentId, userId) {
+    _pruneOldJobs();
+    const jobId = randomUUID();
+    _BATCH_JOBS.set(jobId, { status: 'running', startedAt: new Date() });
+
+    this.generateBatch(organizationId, employeeIds, departmentId, userId)
+      .then((result) => {
+        _BATCH_JOBS.set(jobId, { status: 'completed', startedAt: _BATCH_JOBS.get(jobId).startedAt, result });
+      })
+      .catch((err) => {
+        logger.error('decision_batch_job_failed', { jobId, error: err.message });
+        _BATCH_JOBS.set(jobId, {
+          status: 'failed',
+          startedAt: _BATCH_JOBS.get(jobId).startedAt,
+          error: err.message,
+          statusCode: err.statusCode,
+          code: err.code,
+        });
+      });
+
+    return { jobId };
+  }
+
+  /** Poll target for startBatchJob(). Throws 404 if the job is unknown/expired. */
+  getBatchJobStatus(jobId) {
+    const job = _BATCH_JOBS.get(jobId);
+    if (!job) {
+      throw new AppError(404, 'JOB_NOT_FOUND', 'Batch job not found. It may have expired or the ID is invalid.');
+    }
+    return job;
   }
 
   /** Latest decision for one employee (used by the merged AI Insights endpoint). */

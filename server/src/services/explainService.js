@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Explanation from '../models/Explanation.js';
 import { Prediction } from '../models/Prediction.js';
 import { GlobalFeatureImportance } from '../models/GlobalFeatureImportance.js';
+import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
@@ -175,73 +176,85 @@ class ExplainService {
     const payload = {};
     if (employeeIds?.length) payload.employeeIds = employeeIds;
 
-    let batchResults;
+    // Claims the single process-wide AI-heavy-job slot (see
+    // aiConcurrencyGate.js) — verified via production logs that this
+    // running at the same moment as a batch decision run is exactly what
+    // crashed the ai-service container on 2026-08-07 (two heavy jobs'
+    // memory footprints landing on it together). Throws a 429 immediately
+    // if another heavy job is already running, rather than letting them
+    // stack.
+    acquireAiSlot('Generate Explanations (batch)');
     try {
-      // /explain/batch now returns a jobId immediately and computes in the
-      // background — a full-workforce batch takes ~90-160s even after
-      // parallelizing/tuning the ai-service's own enrichment concurrency,
-      // and holding one request open that long proved unreliable against
-      // production no matter how that duration was trimmed (three different
-      // configurations all still landed in the 90-166s failure zone). This
-      // polls a status endpoint with short, individually-fast requests
-      // instead — the fix already used by /train — so no single request
-      // held open by either side risks whatever timeout was cutting the
-      // long one off.
-      const startResponse = await aiClient.post('/explain/batch', payload);
-      const jobId = startResponse.data?.jobId;
-      if (!jobId) {
-        const e = new Error('AI service did not return a jobId for the batch explanation job.');
-        e.statusCode = 502;
-        e.code = 'AI_SERVICE_ERROR';
-        throw e;
+      let batchResults;
+      try {
+        // /explain/batch now returns a jobId immediately and computes in the
+        // background — a full-workforce batch takes ~90-160s even after
+        // parallelizing/tuning the ai-service's own enrichment concurrency,
+        // and holding one request open that long proved unreliable against
+        // production no matter how that duration was trimmed (three different
+        // configurations all still landed in the 90-166s failure zone). This
+        // polls a status endpoint with short, individually-fast requests
+        // instead — the fix already used by /train — so no single request
+        // held open by either side risks whatever timeout was cutting the
+        // long one off.
+        const startResponse = await aiClient.post('/explain/batch', payload);
+        const jobId = startResponse.data?.jobId;
+        if (!jobId) {
+          const e = new Error('AI service did not return a jobId for the batch explanation job.');
+          e.statusCode = 502;
+          e.code = 'AI_SERVICE_ERROR';
+          throw e;
+        }
+        batchResults = (await pollExplainBatchJob(jobId)).explanations || [];
+      } catch (err) {
+        // pollExplainBatchJob (and the jobId check above) already produce a
+        // well-formed {statusCode, code} error — re-throw those as-is.
+        // toExplainError expects a raw axios error shape (it inspects
+        // err.response/err.code) and would otherwise flatten a specific
+        // "job failed: <reason>" into a generic "AI service is currently
+        // unavailable", discarding exactly the detail this rewrite was
+        // meant to surface.
+        if (err.statusCode) throw err;
+        throw toExplainError(err, 'Batch SHAP explanation failed');
       }
-      batchResults = (await pollExplainBatchJob(jobId)).explanations || [];
-    } catch (err) {
-      // pollExplainBatchJob (and the jobId check above) already produce a
-      // well-formed {statusCode, code} error — re-throw those as-is.
-      // toExplainError expects a raw axios error shape (it inspects
-      // err.response/err.code) and would otherwise flatten a specific
-      // "job failed: <reason>" into a generic "AI service is currently
-      // unavailable", discarding exactly the detail this rewrite was
-      // meant to surface.
-      if (err.statusCode) throw err;
-      throw toExplainError(err, 'Batch SHAP explanation failed');
+
+      if (batchResults.length === 0) {
+        return { processed: 0 };
+      }
+
+      const predictions = await Prediction.find({
+        employeeId: { $in: batchResults.map((item) => item.employeeId) },
+      }).sort({ createdAt: -1 });
+      const predictionByEmployee = new Map();
+      for (const p of predictions) {
+        const key = String(p.employeeId);
+        if (!predictionByEmployee.has(key)) predictionByEmployee.set(key, p);
+      }
+
+      const docs = batchResults.map((item) =>
+        mapExplanationPayload(
+          item,
+          item.employeeId,
+          organizationId,
+          predictionByEmployee.get(String(item.employeeId))?._id,
+        ),
+      );
+
+      // `ordered: false` keeps one bad record from aborting the batch, but
+      // Mongoose then *resolves* even when every document fails validation —
+      // it just returns the subset that made it in. Reporting docs.length here
+      // meant the endpoint answered 200 {processed: 1254} while writing zero
+      // rows. Report what was actually inserted, and surface the gap.
+      const inserted = await Explanation.insertMany(docs, { ordered: false });
+      const skipped = docs.length - inserted.length;
+      if (skipped > 0) {
+        console.warn(`explainBatch: ${skipped}/${docs.length} explanations were rejected on insert.`);
+      }
+
+      return { processed: inserted.length, skipped };
+    } finally {
+      releaseAiSlot();
     }
-
-    if (batchResults.length === 0) {
-      return { processed: 0 };
-    }
-
-    const predictions = await Prediction.find({
-      employeeId: { $in: batchResults.map((item) => item.employeeId) },
-    }).sort({ createdAt: -1 });
-    const predictionByEmployee = new Map();
-    for (const p of predictions) {
-      const key = String(p.employeeId);
-      if (!predictionByEmployee.has(key)) predictionByEmployee.set(key, p);
-    }
-
-    const docs = batchResults.map((item) =>
-      mapExplanationPayload(
-        item,
-        item.employeeId,
-        organizationId,
-        predictionByEmployee.get(String(item.employeeId))?._id,
-      ),
-    );
-
-    // `ordered: false` keeps one bad record from aborting the batch, but
-    // Mongoose then *resolves* even when every document fails validation —
-    // it just returns the subset that made it in. Reporting docs.length here
-    // meant the endpoint answered 200 {processed: 1254} while writing zero
-    // rows. Report what was actually inserted, and surface the gap.
-    const inserted = await Explanation.insertMany(docs, { ordered: false });
-    const skipped = docs.length - inserted.length;
-    if (skipped > 0) {
-      console.warn(`explainBatch: ${skipped}/${docs.length} explanations were rejected on insert.`);
-    }
-
-    return { processed: inserted.length, skipped };
   }
 
   /**
