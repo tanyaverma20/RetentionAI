@@ -17,14 +17,15 @@ export const decisionService = {
   },
 
   async generateBatch({ employeeIds, departmentId } = {}) {
-    // Overrides api.js's 60s default: Express holds this connection open
-    // while it polls the ai-service's background decision job (up to
-    // DECISION_JOB_MAX_WAIT_MS = 12 min in decisionService.js), so the
-    // client budget must sit just above that. Recommendations are the
-    // slowest path in the app — each employee needs a Groq LLM call, and
-    // Groq's own account rate ceiling (~4 req/sec, measured) sets the floor
-    // on total wall time regardless of local concurrency.
-    const response = await api.post('/decisions/batch', { employeeIds, departmentId }, { timeout: 13 * 60 * 1000 });
+    // Overrides api.js's 60s default. This is by far the slowest action in
+    // the app and the budget is derived from measured production numbers,
+    // not guessed: 300 employees took 197s (~0.66s each), a rate set by
+    // Groq's account-level API ceiling rather than by this code. Express
+    // processes the workforce in chunks of 300 (see server-side
+    // decisionService.generateBatch), so the full ~1320-employee run is
+    // roughly 5 chunks x ~197s = ~870s. 20 minutes leaves real headroom
+    // above that without ever being the thing that fails first.
+    const response = await api.post('/decisions/batch', { employeeIds, departmentId }, { timeout: 20 * 60 * 1000 });
     return response.data.data;
   },
 

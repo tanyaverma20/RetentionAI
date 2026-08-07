@@ -142,46 +142,93 @@ class DecisionService {
       return { processed: 0, failed: 0, totalCount: 0 };
     }
 
-    let rawDecisions;
-    try {
-      const response = await aiClient.post(
-        '/decision/batch',
-        {
-          employees: employees.map((e) => ({
+    // Chunked, rather than one request carrying the whole workforce. Two
+    // separate production failures made this necessary, both measured
+    // directly against the deployed service:
+    //
+    //   1. Crash on the large payload. Sending all ~1320 employees at once
+    //      (a ~1.1MB body) returned 502 after ~51s and the ai-service
+    //      container restarted (uptime reset to 16s). Chunks of 300 — a
+    //      ~252KB body — complete cleanly.
+    //   2. Total wall time. 300 employees took 197s (~0.66s each, bounded by
+    //      Groq's account-level rate ceiling, not by this code). The full
+    //      workforce therefore projects to ~870s, past both this service's
+    //      12-minute poll ceiling AND the browser's own budget — so even
+    //      without the crash it could not have finished in one request.
+    //
+    // Each chunk's decisions are persisted as soon as that chunk returns, so
+    // a failure partway through keeps the work already done instead of
+    // discarding everything. `ordered: false` keeps one bad document from
+    // aborting a chunk's insert.
+    const CHUNK_SIZE = 300;
+    let processed = 0;
+    let failed = 0;
+
+    for (let start = 0; start < employees.length; start += CHUNK_SIZE) {
+      const chunk = employees.slice(start, start + CHUNK_SIZE);
+
+      let rawDecisions;
+      try {
+        const response = await aiClient.post('/decision/batch', {
+          employees: chunk.map((e) => ({
             employeeId: String(e._id),
             employeeData: e,
             userId: String(userId || 'system'),
           })),
+        });
+
+        const jobId = response.data?.jobId;
+        if (!jobId) {
+          throw new Error('No job ID returned from AI service');
         }
-      );
-      
-      const jobId = response.data?.jobId;
-      if (!jobId) {
-        throw new Error('No job ID returned from AI service');
+
+        rawDecisions = await pollDecisionBatchJob(jobId);
+      } catch (err) {
+        // Surface the failure, but only after keeping whatever earlier
+        // chunks already wrote — reporting how far it got is far more
+        // useful than failing the whole run silently.
+        logger.error('decision_batch_chunk_failed', {
+          chunkStart: start,
+          chunkSize: chunk.length,
+          processedBeforeFailure: processed,
+          error: err.message,
+        });
+        if (processed > 0) {
+          const e = new Error(
+            `Batch decision generation stopped after ${processed}/${employees.length} employees: ${err.message}`,
+          );
+          e.statusCode = err.statusCode || 502;
+          e.code = err.code || 'AI_SERVICE_ERROR';
+          throw e;
+        }
+        throw toAiServiceError(err, 'Batch decision generation failed', {
+          notReadyMessage: 'The Decision Engine is not ready yet. Please try again shortly.',
+        });
       }
-      
-      rawDecisions = await pollDecisionBatchJob(jobId);
-    } catch (err) {
-      throw toAiServiceError(err, 'Batch decision generation failed', {
-        notReadyMessage: 'The Decision Engine is not ready yet. Please try again shortly.',
+
+      const docs = [];
+      for (const d of rawDecisions) {
+        if (d.error) {
+          failed += 1;
+          continue;
+        }
+        docs.push(mapDecisionToDoc(d.employeeId, organizationId, d, userId));
+      }
+
+      if (docs.length > 0) {
+        await Decision.insertMany(docs, { ordered: false });
+        processed += docs.length;
+      }
+
+      logger.info('decision_batch_chunk_done', {
+        chunkStart: start,
+        chunkProcessed: docs.length,
+        totalProcessed: processed,
+        totalCount: employees.length,
       });
     }
 
-    const docs = [];
-    let failed = 0;
-    for (const d of rawDecisions) {
-      if (d.error) {
-        failed += 1;
-        continue;
-      }
-      docs.push(mapDecisionToDoc(d.employeeId, organizationId, d, userId));
-    }
-
-    if (docs.length > 0) {
-      await Decision.insertMany(docs, { ordered: false });
-    }
-
-    return { processed: docs.length, failed, totalCount: employees.length };
+    return { processed, failed, totalCount: employees.length };
   }
 
   /** Latest decision for one employee (used by the merged AI Insights endpoint). */
