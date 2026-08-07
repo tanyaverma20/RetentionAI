@@ -21,6 +21,8 @@ enriched feature values the corresponding prediction used — no train/serve
 or predict/explain skew.
 """
 
+import asyncio
+
 import pandas as pd
 from bson import ObjectId
 
@@ -48,7 +50,29 @@ async def enrich_employee_doc(employee_doc: dict, db) -> dict:
     eid_str = str(raw_id)
     now = pd.Timestamp.now()
 
-    attendance_docs = await db["attendances"].find({"employeeId": eid}).to_list(length=None)
+    # Root cause of the intermittent "Batch SHAP/Employee Intelligence
+    # generation failed: 502" errors in production: these 7 queries are
+    # independent (none depends on another's result) but were previously
+    # awaited one at a time. At MongoDB Atlas's measured ~230ms round-trip
+    # latency from this host (see /health/deep's dependencies.mongo.latencyMs),
+    # that is ~1.6s of pure network wait per employee. With explain_batch's
+    # semaphore(50) bounding concurrency, ~1470 employees is ~30 waves —
+    # ~47s+ from serialized network latency alone, on top of real query
+    # time — measured directly against production at 105s total, right at
+    # the edge of the platform's request timeout, so it failed intermittently
+    # depending on incidental load (e.g. a Train Model run shortly before).
+    # Firing them concurrently collapses each employee's network wait to
+    # ~1 round-trip instead of 7.
+    attendance_docs, perf_doc, promo_docs, training_docs, survey_doc, feedback_count, ei_doc = await asyncio.gather(
+        db["attendances"].find({"employeeId": eid}).to_list(length=None),
+        db["performances"].find_one({"employeeId": eid}, sort=[("reviewPeriod", -1)]),
+        db["promotionhistories"].find({"employeeId": eid}).to_list(length=None),
+        db["traininghistories"].find({"employeeId": eid}).to_list(length=None),
+        db["surveys"].find_one({"employeeId": eid}, sort=[("surveyDate", -1)]),
+        db["employeefeedbacks"].count_documents({"employeeId": eid}),
+        db["employeeintelligences"].find_one({"employeeId": eid}, sort=[("generatedAt", -1)]),
+    )
+
     if attendance_docs:
         total = len(attendance_docs)
         present = sum(1 for d in attendance_docs if d.get("attendanceStatus") == "PRESENT")
@@ -62,10 +86,8 @@ async def enrich_employee_doc(employee_doc: dict, db) -> dict:
         enriched.setdefault("leave_count", _NEUTRAL_DEFAULTS["leave_count"])
         enriched.setdefault("overtime_hours", _NEUTRAL_DEFAULTS["overtime_hours"])
 
-    perf_doc = await db["performances"].find_one({"employeeId": eid}, sort=[("reviewPeriod", -1)])
     enriched.setdefault("performance_rating", float(perf_doc["performanceScore"]) if perf_doc else _NEUTRAL_DEFAULTS["performance_rating"])
 
-    promo_docs = await db["promotionhistories"].find({"employeeId": eid}).to_list(length=None)
     joining_date = enriched.get("joiningDate")
     tenure_years = None
     if joining_date is not None:
@@ -86,7 +108,6 @@ async def enrich_employee_doc(employee_doc: dict, db) -> dict:
     enriched.setdefault("promotion_gap_ratio", (years_since_promo / tenure_years) if tenure_years else 0.0)
     enriched.setdefault("leave_frequency", (enriched.get("leave_count", 0.0) / tenure_years) if tenure_years else 0.0)
 
-    training_docs = await db["traininghistories"].find({"employeeId": eid}).to_list(length=None)
     if training_docs:
         total_hours = sum(d.get("durationHours") or 0.0 for d in training_docs)
         certified = sum(1 for d in training_docs if d.get("certificationEarned"))
@@ -96,7 +117,6 @@ async def enrich_employee_doc(employee_doc: dict, db) -> dict:
         enriched.setdefault("training_hours", _NEUTRAL_DEFAULTS["training_hours"])
         enriched.setdefault("training_completion_rate", _NEUTRAL_DEFAULTS["training_completion_rate"])
 
-    survey_doc = await db["surveys"].find_one({"employeeId": eid}, sort=[("surveyDate", -1)])
     if survey_doc:
         dims = [survey_doc.get(f) for f in [
             "engagementScore", "careerGrowthScore", "managerRelationshipScore",
@@ -112,7 +132,6 @@ async def enrich_employee_doc(employee_doc: dict, db) -> dict:
         enriched.setdefault("engagement_score", _NEUTRAL_DEFAULTS["engagement_score"])
         enriched.setdefault("avg_survey_score", _NEUTRAL_DEFAULTS["avg_survey_score"])
 
-    feedback_count = await db["employeefeedbacks"].count_documents({"employeeId": eid})
     enriched.setdefault("feedback_frequency", float(feedback_count))
 
     # Root cause fixed here: this queried `nlp_insights` — this service's OWN
@@ -128,7 +147,6 @@ async def enrich_employee_doc(employee_doc: dict, db) -> dict:
     # per-employee data lives in Express's `employeeintelligences` collection
     # (see app/nlp/repository.get_latest_employee_intelligence, fixed the
     # same way for the Decision Engine's NLP evidence step).
-    ei_doc = await db["employeeintelligences"].find_one({"employeeId": eid}, sort=[("generatedAt", -1)])
     if ei_doc:
         enriched.setdefault("sentiment_score", float(ei_doc["sentimentScore"]) if ei_doc.get("sentimentScore") is not None else _NEUTRAL_DEFAULTS["sentiment_score"])
         # burnoutScore is the 0-1 numeric field on this collection;
