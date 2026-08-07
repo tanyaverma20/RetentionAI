@@ -17,12 +17,6 @@ import { decisionService } from '../services/decisionService.js';
 import { getProfilePictureUrl } from '../middlewares/uploadMiddleware.js';
 import { sendSuccess } from '../utils/response.js';
 
-// Mirrors hrController.js's extractOrgId — req.auth (set by authenticate.js)
-// does not carry organizationId in this single-tenant MVP.
-function extractOrgId(request) {
-  return request.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
-
 export async function createEmployee(request, response, next) {
   try {
     const employee = await employeeService.createEmployee(request.validatedBody);
@@ -102,7 +96,7 @@ export async function explainEmployeeRisk(request, response, next) {
     const forceRefresh = request.query.refresh === 'true';
     const explanation = await explainService.explainSingle(
       request.params.employeeId,
-      extractOrgId(request),
+      request.auth.organizationId,
       forceRefresh,
     );
     return sendSuccess(response, 200, explanation, request.requestId);

@@ -1,10 +1,6 @@
 import { notificationService } from '../services/notificationService.js';
 import { sendSuccess } from '../utils/response.js';
 
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
-
 export async function listNotifications(req, res, next) {
   try {
     const { isRead, isArchived, limit } = req.query;
@@ -60,7 +56,7 @@ export async function dismissNotification(req, res, next) {
 
 export async function getPreferences(req, res, next) {
   try {
-    const result = await notificationService.getPreferences(req.auth.userId, extractOrgId(req));
+    const result = await notificationService.getPreferences(req.auth.userId, req.auth.organizationId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error);
@@ -70,7 +66,7 @@ export async function getPreferences(req, res, next) {
 export async function updatePreferences(req, res, next) {
   try {
     const { channels } = req.body || {};
-    const result = await notificationService.updatePreferences(req.auth.userId, extractOrgId(req), channels || {});
+    const result = await notificationService.updatePreferences(req.auth.userId, req.auth.organizationId, channels || {});
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error);

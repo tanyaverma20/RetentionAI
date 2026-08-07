@@ -2,11 +2,6 @@ import { employeeIntelligenceService } from '../services/employeeIntelligenceSer
 import { AppError } from '../errors/AppError.js';
 import { recordAudit } from '../services/auditService.js';
 
-// Mirrors hrController.js's extractOrgId / explainController.js — req.auth
-// (set by authenticate.js) does not carry organizationId in this single-tenant MVP.
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
 
 /**
  * POST /api/v1/employee-intelligence/:id
@@ -16,9 +11,9 @@ export const generateEmployeeIntelligence = async (req, res, next) => {
   try {
     const { id } = req.params;
     const forceRefresh = req.query.refresh === 'true';
-    const result = await employeeIntelligenceService.generateForEmployee(id, extractOrgId(req), forceRefresh);
+    const result = await employeeIntelligenceService.generateForEmployee(id, req.auth.organizationId, forceRefresh);
     if (req.auth?.userId) {
-      await recordAudit(extractOrgId(req), 'EMPLOYEE_INTELLIGENCE_GENERATED', req.auth.userId, { entityType: 'EMPLOYEE', entityId: id });
+      await recordAudit(req.auth.organizationId, 'EMPLOYEE_INTELLIGENCE_GENERATED', req.auth.userId, { entityType: 'EMPLOYEE', entityId: id });
     }
     res.status(200).json({ success: true, data: result });
   } catch (error) {
@@ -51,7 +46,7 @@ export const getEmployeeIntelligence = async (req, res, next) => {
 export const generateEmployeeIntelligenceBatch = async (req, res, next) => {
   try {
     const { employeeIds, departmentId } = req.body || {};
-    const result = await employeeIntelligenceService.generateBatch(extractOrgId(req), employeeIds, departmentId);
+    const result = await employeeIntelligenceService.generateBatch(req.auth.organizationId, employeeIds, departmentId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(new AppError(error.statusCode || 502, error.code || 'EMPLOYEE_INTELLIGENCE_ERROR', error.message));
@@ -64,7 +59,7 @@ export const generateEmployeeIntelligenceBatch = async (req, res, next) => {
  */
 export const getEmployeeIntelligenceDashboard = async (req, res, next) => {
   try {
-    const result = await employeeIntelligenceService.getDashboardSummary(extractOrgId(req));
+    const result = await employeeIntelligenceService.getDashboardSummary(req.auth.organizationId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(new AppError(error.statusCode || 502, error.code || 'EMPLOYEE_INTELLIGENCE_ERROR', error.message));

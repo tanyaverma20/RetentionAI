@@ -3,11 +3,6 @@ import { AppError } from '../errors/AppError.js';
 import { sendSuccess } from '../utils/response.js';
 import { recordAudit } from '../services/auditService.js';
 
-// Mirrors hrController.js's extractOrgId — req.auth (set by authenticate.js)
-// does not carry organizationId in this single-tenant MVP.
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
 
 function parseTags(rawTags) {
   if (!rawTags) return [];
@@ -26,7 +21,7 @@ export async function uploadDocument(request, response, next) {
       documentType: request.body.documentType,
       tags: parseTags(request.body.tags),
       uploadedByUserId: request.auth.userId,
-      organizationId: extractOrgId(request),
+      organizationId: request.auth.organizationId,
     });
     return sendSuccess(response, 201, doc, request.requestId);
   } catch (error) {
@@ -45,7 +40,7 @@ export async function reindexDocument(request, response, next) {
 
 export async function reindexAll(request, response, next) {
   try {
-    const result = await knowledgeService.reindexAll(extractOrgId(request));
+    const result = await knowledgeService.reindexAll(request.auth.organizationId);
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
     return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));
@@ -65,7 +60,7 @@ export async function listDocuments(request, response, next) {
   try {
     const { page = 1, limit = 20, documentType, tags, search } = request.query;
     const result = await knowledgeService.listDocuments({
-      organizationId: extractOrgId(request),
+      organizationId: request.auth.organizationId,
       documentType,
       tags,
       search,
@@ -100,7 +95,7 @@ export async function queryKnowledge(request, response, next) {
       documentType,
       filterDocument,
     });
-    await recordAudit(extractOrgId(request), 'KNOWLEDGE_REFERENCED', request.auth.userId, {
+    await recordAudit(request.auth.organizationId, 'KNOWLEDGE_REFERENCED', request.auth.userId, {
       entityType: 'KNOWLEDGE_DOCUMENT',
       context: { question, documentType },
     });
@@ -125,7 +120,7 @@ export async function searchKnowledge(request, response, next) {
 
 export async function getStatistics(request, response, next) {
   try {
-    const result = await knowledgeService.getStatistics(extractOrgId(request));
+    const result = await knowledgeService.getStatistics(request.auth.organizationId);
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
     return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'KNOWLEDGE_SERVICE_ERROR', error.message));

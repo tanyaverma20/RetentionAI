@@ -2,16 +2,12 @@ import { attachmentService } from '../services/attachmentService.js';
 import { AppError } from '../errors/AppError.js';
 import { sendSuccess } from '../utils/response.js';
 
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
-
 export async function uploadAttachment(req, res, next) {
   try {
     const { entityType, entityId } = req.body || {};
     if (!req.file) throw new AppError(422, 'VALIDATION_ERROR', 'A file is required.');
     const result = await attachmentService.create(
-      extractOrgId(req),
+      req.auth.organizationId,
       { entityType, entityId, file: req.file, attachmentId: req.attachmentId },
       req.auth.userId,
     );

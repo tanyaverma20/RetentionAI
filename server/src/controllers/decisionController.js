@@ -2,18 +2,13 @@ import { decisionService } from '../services/decisionService.js';
 import { AppError } from '../errors/AppError.js';
 import { sendSuccess } from '../utils/response.js';
 
-// Mirrors hrController.js's extractOrgId — req.auth (set by authenticate.js)
-// does not carry organizationId in this single-tenant MVP.
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
 
 export async function generateDecision(req, res, next) {
   try {
     const forceRefresh = req.query.refresh === 'true';
     const result = await decisionService.generateForEmployee(
       req.params.employeeId,
-      extractOrgId(req),
+      req.auth.organizationId,
       req.auth.userId,
       forceRefresh,
     );
@@ -52,7 +47,7 @@ export async function getDecisionHistory(req, res, next) {
 export async function generateBatch(req, res, next) {
   try {
     const { employeeIds, departmentId } = req.body || {};
-    const result = await decisionService.generateBatch(extractOrgId(req), employeeIds, departmentId, req.auth.userId);
+    const result = await decisionService.generateBatch(req.auth.organizationId, employeeIds, departmentId, req.auth.userId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
@@ -74,7 +69,7 @@ export async function updateDecisionStatus(req, res, next) {
 
 export async function getDashboardSummary(req, res, next) {
   try {
-    const result = await decisionService.getDashboardSummary(extractOrgId(req));
+    const result = await decisionService.getDashboardSummary(req.auth.organizationId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
@@ -87,7 +82,7 @@ export async function getManagerDashboard(req, res, next) {
     if (!departmentId) {
       throw new AppError(400, 'DEPARTMENT_REQUIRED', 'No department scope available for this user.');
     }
-    const result = await decisionService.getManagerDashboard(extractOrgId(req), departmentId);
+    const result = await decisionService.getManagerDashboard(req.auth.organizationId, departmentId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));

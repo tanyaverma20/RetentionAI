@@ -56,9 +56,10 @@ export async function notify(organizationId, recipientUserId, { type, severity =
 
 /**
  * Notify every user holding one of `roleNames`. Deliberately not filtered by
- * User.organizationId — this single-tenant MVP stamps organizationId on
- * workflow documents (via each controller's extractOrgId fallback) but not
- * reliably on User docs themselves (seeded accounts never set it), so
+ * User.organizationId — this MVP is still transitioning to multi-tenancy,
+ * and workflow documents reliably carry organizationId (stamped from
+ * req.auth.organizationId, resolved once in authenticate.js) but User docs
+ * themselves don't always (pre-existing seeded accounts never set it), so
  * filtering the recipient query by it would silently match zero users.
  */
 export async function notifyByRole(organizationId, roleNames, payload) {

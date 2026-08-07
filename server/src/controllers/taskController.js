@@ -2,13 +2,10 @@ import { taskService } from '../services/taskService.js';
 import { AppError } from '../errors/AppError.js';
 import { sendSuccess } from '../utils/response.js';
 
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
 
 export async function createTask(req, res, next) {
   try {
-    const result = await taskService.create(extractOrgId(req), req.body || {}, req.auth.userId);
+    const result = await taskService.create(req.auth.organizationId, req.body || {}, req.auth.userId);
     return sendSuccess(res, 201, result, req.requestId);
   } catch (error) {
     return next(error);
@@ -17,7 +14,7 @@ export async function createTask(req, res, next) {
 
 export async function listTasks(req, res, next) {
   try {
-    const result = await taskService.list(extractOrgId(req), req.query);
+    const result = await taskService.list(req.auth.organizationId, req.query);
     return sendSuccess(res, 200, { tasks: result }, req.requestId);
   } catch (error) {
     return next(error);
@@ -75,7 +72,7 @@ export async function escalateTask(req, res, next) {
 
 export async function listOverdueTasks(req, res, next) {
   try {
-    const result = await taskService.listOverdue(extractOrgId(req));
+    const result = await taskService.listOverdue(req.auth.organizationId);
     return sendSuccess(res, 200, { tasks: result }, req.requestId);
   } catch (error) {
     return next(error);
@@ -84,7 +81,7 @@ export async function listOverdueTasks(req, res, next) {
 
 export async function listTasksDueToday(req, res, next) {
   try {
-    const result = await taskService.listDueToday(extractOrgId(req));
+    const result = await taskService.listDueToday(req.auth.organizationId);
     return sendSuccess(res, 200, { tasks: result }, req.requestId);
   } catch (error) {
     return next(error);

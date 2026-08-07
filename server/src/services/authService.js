@@ -53,8 +53,7 @@ import { comparePassword, hashPassword } from '../utils/password.js';
 import { durationToMilliseconds } from '../utils/duration.js';
 import { recordAudit } from './auditService.js';
 import { logger } from '../utils/logger.js';
-
-const DEFAULT_ORGANIZATION_ID = '60d5ec388832a828f8000000';
+import { DEFAULT_ORGANIZATION_ID } from '../config/tenancy.js';
 import {
   createAccessToken,
   createPasswordResetToken,

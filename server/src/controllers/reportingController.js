@@ -9,9 +9,6 @@ import { parse } from 'json2csv';
 import { recordAudit } from '../services/auditService.js';
 import { logger } from '../utils/logger.js';
 
-function extractOrgId(request) {
-  return request.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
 
 /**
  * Helper function to send CSV response
@@ -24,7 +21,7 @@ function sendCsvResponse(response, data, filename, request) {
   try {
     const csv = parse(data);
     if (request?.auth?.userId) {
-      recordAudit(extractOrgId(request), 'REPORT_EXPORTED', request.auth.userId, { context: { report: filename } });
+      recordAudit(request.auth.organizationId, 'REPORT_EXPORTED', request.auth.userId, { context: { report: filename } });
     }
     logger.info('report_exported', { report: filename, rowCount: data.length, userId: request?.auth?.userId });
     response.header('Content-Type', 'text/csv');

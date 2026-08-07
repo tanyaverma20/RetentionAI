@@ -28,6 +28,7 @@ import jwt from 'jsonwebtoken';
 import { AppError } from '../errors/AppError.js';
 import { findUserById } from '../repositories/userRepository.js';
 import { verifyAccessToken } from '../utils/tokens.js';
+import { DEFAULT_ORGANIZATION_ID } from '../config/tenancy.js';
 
 const { JsonWebTokenError, TokenExpiredError } = jwt;
 
@@ -59,12 +60,24 @@ export async function authenticate(request, _response, next) {
     }
 
     // Attach verified context for downstream authorize middleware and controllers.
+    //
+    // organizationId is resolved HERE, from the authenticated user's own DB
+    // record — never from client input. Every controller previously had its
+    // own extractOrgId(req) helper that trusted an `x-organization-id`
+    // header (falling back to the same DEFAULT_ORGANIZATION_ID below),
+    // which meant any authenticated user could read/write ANY
+    // organization's data just by setting that header. That header is no
+    // longer consulted anywhere. The DEFAULT_ORGANIZATION_ID fallback only
+    // exists because pre-existing seeded User documents predate this field
+    // being populated; once every User has a real organizationId this
+    // fallback becomes dead code and can be deleted.
     request.auth = {
       userId: user.id,
       role: user.roleId.name,
       permissions: user.roleId.permissions,
       departmentId: user.departmentId?.toString(),
       employeeId: user.employeeId?.toString(),
+      organizationId: user.organizationId?.toString() || DEFAULT_ORGANIZATION_ID,
     };
 
     return next();

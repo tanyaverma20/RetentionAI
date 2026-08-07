@@ -9,19 +9,20 @@ import { workflowService } from './workflowService.js';
 import * as executiveService from './executiveService.js';
 import { recordAudit } from './auditService.js';
 import { logger } from '../utils/logger.js';
+import { DEFAULT_ORGANIZATION_ID } from '../config/tenancy.js';
 
 const ESCALATION_THRESHOLD_HOURS = 24;
 
-const DEFAULT_ORGANIZATION_ID = '60d5ec388832a828f8000000';
-
 /**
- * This MVP is single-tenant, and User.organizationId is frequently left
- * unset (every controller falls back to DEFAULT_ORGANIZATION_ID rather than
- * requiring it on the user doc) — so deriving orgs from User would find
- * none. Task/Intervention are always created with a real organizationId
- * (every controller stamps it via extractOrgId), so they're the reliable
- * source; the default is unioned in so the very first run (before any
- * workflow doc exists yet) still processes the one real organization.
+ * This MVP is still transitioning to multi-tenancy, and User.organizationId
+ * is frequently left unset on pre-existing accounts (authenticate.js falls
+ * back to DEFAULT_ORGANIZATION_ID rather than requiring it on the user doc)
+ * — so deriving orgs from User would find none. Task/Intervention are
+ * always created with a real organizationId (every controller reads it from
+ * req.auth.organizationId, resolved once in authenticate.js), so they're
+ * the reliable source; the default is unioned in so the very first run
+ * (before any workflow doc exists yet) still processes the one real
+ * organization.
  */
 async function getOrganizationIds() {
   const [taskOrgIds, interventionOrgIds] = await Promise.all([

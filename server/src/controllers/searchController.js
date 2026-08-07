@@ -8,10 +8,6 @@ import { KnowledgeDocument } from '../models/KnowledgeDocument.js';
 import { sendSuccess } from '../utils/response.js';
 import { logger } from '../utils/logger.js';
 
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
-
 /**
  * Global enterprise search — Sprint 9 Part 8. Extends the original
  * Employee-only search into categorized results across every searchable
@@ -29,7 +25,7 @@ export async function globalSearch(request, response, next) {
 
     const searchRegex = new RegExp(q, 'i');
     const n = Number(limit);
-    const orgId = extractOrgId(request);
+    const orgId = request.auth.organizationId;
 
     const [employees, departments, recommendations, tasks, interventions, comments, knowledge] = await Promise.all([
       Employee.find({

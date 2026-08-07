@@ -32,8 +32,7 @@
 
 import { AppError } from '../errors/AppError.js';
 import { recordAudit } from '../services/auditService.js';
-
-const DEFAULT_ORGANIZATION_ID = '60d5ec388832a828f8000000';
+import { DEFAULT_ORGANIZATION_ID } from '../config/tenancy.js';
 
 /**
  * Authorize the request based on the user's role or permissions.

@@ -2,13 +2,9 @@ import { commentService } from '../services/commentService.js';
 import { AppError } from '../errors/AppError.js';
 import { sendSuccess } from '../utils/response.js';
 
-function extractOrgId(req) {
-  return req.headers['x-organization-id'] || '60d5ec388832a828f8000000';
-}
-
 export async function createComment(req, res, next) {
   try {
-    const result = await commentService.create(extractOrgId(req), req.body || {}, req.auth.userId);
+    const result = await commentService.create(req.auth.organizationId, req.body || {}, req.auth.userId);
     return sendSuccess(res, 201, result, req.requestId);
   } catch (error) {
     return next(error);
