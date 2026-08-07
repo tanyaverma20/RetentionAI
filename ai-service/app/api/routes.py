@@ -158,11 +158,16 @@ async def predict_batch(request: BatchPredictionRequest):
     # each doing predict_single()'s full enrich_employee_doc() (attendance/
     # performance/promotion/training/survey/feedback/nlp lookups) sequentially
     # over the network to Atlas — the same bottleneck already fixed for
-    # explain_batch, employee_intelligence_batch, and decision_batch. Same
-    # bounded-concurrency fix, same semaphore width as explain_batch/employee-
-    # intelligence (no external LLM call here, so no reason to be as
-    # conservative as decision_service.py's batch).
-    semaphore = asyncio.Semaphore(50)
+    # explain_batch, employee_intelligence_batch, and decision_batch.
+    #
+    # Width note: enrich_employee_doc() now fires 7 concurrent Mongo queries
+    # per employee internally, so this semaphore's width times 7 must stay
+    # safely under Motor's default 100-connection pool or requests queue for
+    # a free connection instead of running — measured directly on
+    # explain_batch, width 50 (350 peak concurrent ops) made a request that
+    # used to take 105s take 159s instead. Matches explain_batch's width for
+    # the same reason.
+    semaphore = asyncio.Semaphore(12)
 
     async def _predict_one(emp):
         async with semaphore:

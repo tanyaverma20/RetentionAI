@@ -234,7 +234,18 @@ async def explain_batch(request: ExplainBatchRequest):
     # every successfully-enriched employee instead of one call per employee.
     # explain_employee() (the single-employee function, used by
     # /explain/{employeeId} and /explain) is untouched.
-    semaphore = asyncio.Semaphore(50)
+    #
+    # Width note: enrich_employee_doc() (called per employee below) now
+    # fires 7 independent Mongo queries concurrently internally (see its
+    # own comment). Motor's default maxPoolSize is 100, so this semaphore's
+    # width times 7 must stay safely under that or requests queue for a
+    # free pooled connection instead of running — which is worse than the
+    # sequential version this replaced. Measured directly: at width 50
+    # (350 peak concurrent ops) a batch explain immediately following a
+    # Train Model run took 159s and 502'd, worse than the 105s timeout it
+    # was meant to fix. 12 x 7 = 84 stays under the pool ceiling with
+    # margin to spare.
+    semaphore = asyncio.Semaphore(12)
 
     async def _enrich_one(emp):
         async with semaphore:
