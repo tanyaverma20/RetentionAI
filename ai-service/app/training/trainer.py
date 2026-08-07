@@ -33,22 +33,46 @@ from catboost import CatBoostClassifier
 # Phase 4 — Model Benchmarking
 # ---------------------------------------------------------------------------
 
+# Root cause of the production Train Model crash: this function's output is
+# reused as tune_hyperparameters()'s base_estimator, wrapped in a
+# RandomizedSearchCV that ALSO parallelizes (see _TRAIN_CV_JOBS below). With
+# n_jobs=-1 on both the inner model AND the outer search, each of the
+# outer's worker processes independently tries to spawn its own full set of
+# inner workers — nested parallelism that multiplies, not adds. os.cpu_count()
+# (what n_jobs=-1 sizes itself against) reflects the HOST's visible CPUs, not
+# the container's actual memory ceiling, so this went unnoticed locally and
+# then OOM-killed the process the first time it ran on the real, memory-
+# constrained deployment. Inner models are single-threaded here; the outer
+# CV wrappers (RandomizedSearchCV, cross_val_predict) are the only
+# parallelism layer, and even those are capped rather than -1 — see
+# _TRAIN_CV_JOBS.
 def _candidate_models(pos_weight: float) -> dict:
     return {
         "LogisticRegression": LogisticRegression(max_iter=1000, random_state=42, class_weight="balanced"),
         "RandomForest": RandomForestClassifier(
-            n_estimators=200, random_state=42, class_weight="balanced", n_jobs=-1,
+            n_estimators=200, random_state=42, class_weight="balanced", n_jobs=1,
         ),
         "XGBoost": xgb.XGBClassifier(
-            random_state=42, eval_metric="logloss", scale_pos_weight=pos_weight, n_jobs=-1,
+            random_state=42, eval_metric="logloss", scale_pos_weight=pos_weight, n_jobs=1,
         ),
         "LightGBM": lgb.LGBMClassifier(
-            random_state=42, class_weight="balanced", verbosity=-1, n_jobs=-1,
+            random_state=42, class_weight="balanced", verbosity=-1, n_jobs=1,
         ),
         "CatBoost": CatBoostClassifier(
             random_state=42, verbose=False, auto_class_weights="Balanced",
         ),
     }
+
+
+# Bounds the outer-layer parallelism (RandomizedSearchCV, cross_val_predict)
+# instead of leaving it at n_jobs=-1. Each worker is a separate process that
+# gets its own copy of the training data and a partially-fitted model —
+# uncapped, that's up to os.cpu_count() processes (8 on the current
+# deployment host, per psutil), which is itself enough to OOM a
+# memory-constrained container even with the inner-model nesting above fixed.
+# 2 keeps genuine wall-clock benefit from parallel CV folds without the
+# process count scaling with however many CPUs the host happens to report.
+_TRAIN_CV_JOBS = 2
 
 
 def _model_size_bytes(model) -> int:
@@ -180,7 +204,7 @@ def tune_hyperparameters(model_name: str, X_train, y_train, n_iter: int = 25):
         scoring="f1",
         cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
         random_state=42,
-        n_jobs=-1,
+        n_jobs=_TRAIN_CV_JOBS,
         refit=False,  # we only need the winning hyperparameters, not a fitted copy
     )
     search.fit(X_train, y_train)
@@ -225,7 +249,7 @@ def optimize_threshold(tuned_estimator, X_train, y_train, beta: float = 2.0, min
     """
     calibrated_for_oof = CalibratedClassifierCV(clone(tuned_estimator), method="isotonic", cv=5)
     oof_probs = cross_val_predict(
-        calibrated_for_oof, X_train, y_train, cv=5, method="predict_proba", n_jobs=-1,
+        calibrated_for_oof, X_train, y_train, cv=5, method="predict_proba", n_jobs=_TRAIN_CV_JOBS,
     )[:, 1]
 
     thresholds = np.linspace(0.05, 0.95, 91)
