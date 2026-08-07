@@ -34,19 +34,6 @@ export default function WhyExplanationModal({ employee, onClose }) {
       .finally(() => setLoading(false));
   }, [employeeId]);
 
-  const handleGenerate = async (forceRefresh = false) => {
-    try {
-      setGenerating(true);
-      setError('');
-      const result = await aiService.explainSingle(employeeId, forceRefresh);
-      setExplanation(result);
-    } catch (err) {
-      setError(extractErrorMessage(err, 'Failed to generate an explanation for this employee.'));
-    } finally {
-      setGenerating(false);
-    }
-  };
-
   if (!employee) return null;
 
   const allFactors = [
@@ -79,14 +66,7 @@ export default function WhyExplanationModal({ employee, onClose }) {
 
         {!loading && !error && !explanation && (
           <div className="text-center py-8">
-            <p className="text-sm text-slate-500 mb-4">No SHAP explanation generated yet for this employee.</p>
-            <button
-              onClick={() => handleGenerate(false)}
-              disabled={generating}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-amber-600 hover:bg-amber-500 rounded-xl shadow-lg transition-all disabled:opacity-50"
-            >
-              {generating ? 'Generating…' : '⚖️ Explain This Prediction'}
-            </button>
+            <p className="text-sm text-slate-500 mb-4">No explanation generated yet. Run batch SHAP explanations from the dashboard to populate this data.</p>
           </div>
         )}
 
@@ -117,15 +97,6 @@ export default function WhyExplanationModal({ employee, onClose }) {
               </div>
             )}
 
-            <div className="flex justify-end pt-2 border-t border-slate-100">
-              <button
-                onClick={() => handleGenerate(true)}
-                disabled={generating}
-                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-amber-600 bg-amber-50 hover:bg-amber-50 border border-amber-100 rounded-xl transition-all disabled:opacity-50"
-              >
-                {generating ? 'Refreshing…' : 'Refresh Explanation'}
-              </button>
-            </div>
           </div>
         )}
       </div>

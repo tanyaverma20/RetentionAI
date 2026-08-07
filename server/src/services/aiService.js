@@ -35,7 +35,7 @@ function toServiceError(error, fallbackMessage) {
 class AIService {
   async trainModel() {
     try {
-      const response = await aiClient.post('/train');
+      const response = await aiClient.post('/train', {}, { timeout: 30000 });
       return response.data;
     } catch (error) {
       throw toServiceError(error, 'Failed to start training model');

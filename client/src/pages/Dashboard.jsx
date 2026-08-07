@@ -191,6 +191,8 @@ export default function Dashboard() {
   const [isGeneratingDecisions, setIsGeneratingDecisions] = useState(false);
   const [decisionMessage, setDecisionMessage] = useState('');
   const [decisionElapsedSeconds, setDecisionElapsedSeconds] = useState(0);
+  const [explainElapsedSeconds, setExplainElapsedSeconds] = useState(0);
+  const [intelligenceElapsedSeconds, setIntelligenceElapsedSeconds] = useState(0);
 
   const extractErrorMessage = (err, fallback) =>
     err?.response?.data?.error?.message || err?.message || fallback;
@@ -237,6 +239,24 @@ export default function Dashboard() {
     return () => clearInterval(interval);
   }, [isGeneratingDecisions]);
 
+  useEffect(() => {
+    if (!isGeneratingExplanations) {
+      setExplainElapsedSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => setExplainElapsedSeconds((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [isGeneratingExplanations]);
+
+  useEffect(() => {
+    if (!isGeneratingIntelligence) {
+      setIntelligenceElapsedSeconds(0);
+      return;
+    }
+    const interval = setInterval(() => setIntelligenceElapsedSeconds((s) => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, [isGeneratingIntelligence]);
+
   const handleTrainModel = async () => {
     try {
       setIsTraining(true);
@@ -260,15 +280,26 @@ export default function Dashboard() {
 
       // /ai/train's background task only trains the model — polling
       // getModelInfo() and watching trainedAt change is sufficient to know
-      // when it's done.
+      // when it's done. Measured in production: a full retrain finishes in
+      // ~90s, so 8 minutes is generous headroom.
+      //
+      // Bounded by WALL-CLOCK time, not a poll count: each iteration costs
+      // the 5s sleep PLUS however long getModelInfo() takes, and that call
+      // can now burn up to api.js's 60s timeout when the service is
+      // unresponsive. A fixed "60 polls" bound would therefore stretch to
+      // over an hour in exactly the degraded case this loop most needs to
+      // give up in — leaving the button on "Training…" the whole time.
       const POLL_INTERVAL_MS = 5000;
-      const MAX_POLLS = 60; // 5 minutes
-      for (let i = 0; i < MAX_POLLS; i++) {
+      const POLL_DEADLINE = Date.now() + 8 * 60 * 1000;
+      while (Date.now() < POLL_DEADLINE) {
         await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
         try {
           const info = await aiService.getModelInfo();
           if (info?.trainedAt && info.trainedAt !== baselineTrainedAt) {
             setTrainMessage(`Model trained successfully — ${info.algorithm} (${info.version}).`);
+            aiService.getGlobalFeatureImportance(true)
+              .then(data => setGlobalImportance(data?.features || data))
+              .catch(() => {});
             loadExplainabilityWidgets();
             return;
           }
@@ -290,6 +321,11 @@ export default function Dashboard() {
       setExplainMessage('');
       const res = await aiService.explainBatch();
       setExplainMessage(`Generated explanations for ${res?.processed ?? 0} employees.`);
+      
+      aiService.getGlobalFeatureImportance(true)
+        .then(data => setGlobalImportance(data?.features || data))
+        .catch(() => {});
+        
       loadExplainabilityWidgets();
     } catch (err) {
       setExplainMessage(extractErrorMessage(err, 'Failed to generate explanations.'));
@@ -595,7 +631,7 @@ export default function Dashboard() {
                   disabled={isGeneratingExplanations}
                   className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isGeneratingExplanations ? 'Generating…' : 'Generate Explanations'}
+                  {isGeneratingExplanations ? `Generating… (${explainElapsedSeconds}s)` : 'Generate Explanations'}
                 </button>
               </div>
             </div>
@@ -651,7 +687,7 @@ export default function Dashboard() {
                   disabled={isGeneratingIntelligence}
                   className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white text-sm font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  {isGeneratingIntelligence ? 'Analyzing…' : 'Generate Employee Intelligence'}
+                  {isGeneratingIntelligence ? `Analyzing… (${intelligenceElapsedSeconds}s)` : 'Generate Employee Intelligence'}
                 </button>
               </div>
             </div>

@@ -23,10 +23,10 @@ const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-tok
 // a flat ~4/sec regardless of client-side concurrency, meaning Groq's own
 // account-level rate ceiling, not this code, is the bottleneck once you're
 // past a handful of concurrent requests. No amount of added concurrency
-// here can exceed that external ceiling. 420s keeps real margin above the
-// measured ~320s floor.
+// here can exceed that external ceiling.
 const AI_DEFAULT_TIMEOUT_MS = 60000;
-const AI_BATCH_TIMEOUT_MS = 420000;
+const DECISION_JOB_POLL_INTERVAL_MS = 5000;
+const DECISION_JOB_MAX_WAIT_MS = 12 * 60 * 1000; // 12 min max wait
 
 const aiClient = axios.create({
   baseURL: AI_API_URL,
@@ -36,6 +36,27 @@ const aiClient = axios.create({
   },
   timeout: AI_DEFAULT_TIMEOUT_MS,
 });
+
+async function pollDecisionBatchJob(jobId) {
+  const deadline = Date.now() + DECISION_JOB_MAX_WAIT_MS;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, DECISION_JOB_POLL_INTERVAL_MS));
+    const response = await aiClient.get(`/decision/batch/status/${jobId}`);
+    const { status: jobStatus, data, error } = response.data || {};
+    if (jobStatus === 'completed') return data.decisions;
+    if (jobStatus === 'failed') {
+      const e = new Error(`Batch decision generation job failed: ${error}`);
+      e.statusCode = 502;
+      e.code = 'AI_SERVICE_ERROR';
+      throw e;
+    }
+    // running, keep polling
+  }
+  const e = new Error(`Batch decision generation did not complete within ${DECISION_JOB_MAX_WAIT_MS / 1000}s.`);
+  e.statusCode = 504;
+  e.code = 'AI_SERVICE_TIMEOUT';
+  throw e;
+}
 
 function mapDecisionToDoc(employeeId, organizationId, data, userId) {
   return {
@@ -131,10 +152,15 @@ class DecisionService {
             employeeData: e,
             userId: String(userId || 'system'),
           })),
-        },
-        { timeout: AI_BATCH_TIMEOUT_MS },
+        }
       );
-      rawDecisions = response.data?.decisions || [];
+      
+      const jobId = response.data?.jobId;
+      if (!jobId) {
+        throw new Error('No job ID returned from AI service');
+      }
+      
+      rawDecisions = await pollDecisionBatchJob(jobId);
     } catch (err) {
       throw toAiServiceError(err, 'Batch decision generation failed', {
         notReadyMessage: 'The Decision Engine is not ready yet. Please try again shortly.',

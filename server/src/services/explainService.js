@@ -2,18 +2,22 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import Explanation from '../models/Explanation.js';
 import { Prediction } from '../models/Prediction.js';
+import { GlobalFeatureImportance } from '../models/GlobalFeatureImportance.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
 
-// Per-request budgets. The default covers the small single-employee/global
-// calls; the batch call gets its own because it is inherently long-running —
-// it runs SHAP over the entire active workforce in one shot (~12s for 1254
-// employees on this dataset) and grows with headcount. Every historical
-// AI_SERVICE_UNAVAILABLE in server/logs/error-*.log was logged at
-// durationMs≈30010, i.e. this timeout firing, not the AI service being down.
+// Per-request budget for the small single-employee/global calls. The batch
+// endpoint no longer needs its own longer budget — it returns a jobId
+// immediately now (see pollExplainBatchJob below) instead of holding one
+// request open for the whole computation.
 const AI_DEFAULT_TIMEOUT_MS = 30000;
-const AI_BATCH_TIMEOUT_MS = 180000;
+
+// How long to keep polling a batch explanation job before giving up. Actual
+// full-workforce runs have been measured at 90-166s against production;
+// this leaves generous margin above that.
+const EXPLAIN_JOB_POLL_INTERVAL_MS = 3000;
+const EXPLAIN_JOB_MAX_WAIT_MS = 8 * 60 * 1000;
 
 const aiClient = axios.create({
   baseURL: AI_API_URL,
@@ -23,6 +27,33 @@ const aiClient = axios.create({
   },
   timeout: AI_DEFAULT_TIMEOUT_MS,
 });
+
+/**
+ * Polls GET /explain/batch/status/:jobId with short, individually-fast
+ * requests until the background job completes, fails, or this gives up.
+ * Each poll uses the default (30s) axios timeout, which is never a risk —
+ * status checks are cheap regardless of how long the underlying job takes.
+ */
+async function pollExplainBatchJob(jobId) {
+  const deadline = Date.now() + EXPLAIN_JOB_MAX_WAIT_MS;
+  while (Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, EXPLAIN_JOB_POLL_INTERVAL_MS));
+    const response = await aiClient.get(`/explain/batch/status/${jobId}`);
+    const { status: jobStatus, data, error } = response.data || {};
+    if (jobStatus === 'completed') return data;
+    if (jobStatus === 'failed') {
+      const e = new Error(`Batch SHAP explanation job failed: ${error}`);
+      e.statusCode = 502;
+      e.code = 'AI_SERVICE_ERROR';
+      throw e;
+    }
+    // jobStatus === 'running' — keep polling.
+  }
+  const e = new Error(`Batch SHAP explanation did not complete within ${EXPLAIN_JOB_MAX_WAIT_MS / 1000}s.`);
+  e.statusCode = 504;
+  e.code = 'AI_SERVICE_TIMEOUT';
+  throw e;
+}
 
 /**
  * Normalizes a raw axios failure into a plain Error carrying `.statusCode`/`.code`,
@@ -104,13 +135,20 @@ class ExplainService {
    * Checks MongoDB cache first; falls back to calling FastAPI.
    */
   async explainSingle(employeeId, organizationId, forceRefresh = false) {
-    // 1. Check cache
+    // 1. Find the associated prediction
+    const prediction = await Prediction.findOne({ employeeId }).sort({ createdAt: -1 }).lean();
+
+    // 2. Check cache
     if (!forceRefresh) {
       const cached = await Explanation.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
-      if (cached) return cached;
+      // Reuse explanations whenever the prediction has not changed.
+      // If there is no prediction yet (prediction?._id is undefined), this checks if cached.predictionId is null.
+      if (cached && String(cached.predictionId || 'null') === String(prediction?._id || 'null')) {
+        return cached;
+      }
     }
 
-    // 2. Call FastAPI
+    // 3. Call FastAPI
     let fastApiData;
     try {
       const response = await aiClient.get(`/explain/${employeeId}`);
@@ -118,9 +156,6 @@ class ExplainService {
     } catch (err) {
       throw toExplainError(err, 'SHAP explanation failed');
     }
-
-    // 3. Find the associated prediction
-    const prediction = await Prediction.findOne({ employeeId }).sort({ createdAt: -1 });
 
     // 4. Insert a new explanation record — never overwrite, so explanation
     // history is preserved (getStoredExplanation/cache lookups always sort by
@@ -142,11 +177,34 @@ class ExplainService {
 
     let batchResults;
     try {
-      const response = await aiClient.post('/explain/batch', payload, {
-        timeout: AI_BATCH_TIMEOUT_MS,
-      });
-      batchResults = response.data?.data?.explanations || [];
+      // /explain/batch now returns a jobId immediately and computes in the
+      // background — a full-workforce batch takes ~90-160s even after
+      // parallelizing/tuning the ai-service's own enrichment concurrency,
+      // and holding one request open that long proved unreliable against
+      // production no matter how that duration was trimmed (three different
+      // configurations all still landed in the 90-166s failure zone). This
+      // polls a status endpoint with short, individually-fast requests
+      // instead — the fix already used by /train — so no single request
+      // held open by either side risks whatever timeout was cutting the
+      // long one off.
+      const startResponse = await aiClient.post('/explain/batch', payload);
+      const jobId = startResponse.data?.jobId;
+      if (!jobId) {
+        const e = new Error('AI service did not return a jobId for the batch explanation job.');
+        e.statusCode = 502;
+        e.code = 'AI_SERVICE_ERROR';
+        throw e;
+      }
+      batchResults = (await pollExplainBatchJob(jobId)).explanations || [];
     } catch (err) {
+      // pollExplainBatchJob (and the jobId check above) already produce a
+      // well-formed {statusCode, code} error — re-throw those as-is.
+      // toExplainError expects a raw axios error shape (it inspects
+      // err.response/err.code) and would otherwise flatten a specific
+      // "job failed: <reason>" into a generic "AI service is currently
+      // unavailable", discarding exactly the detail this rewrite was
+      // meant to surface.
+      if (err.statusCode) throw err;
       throw toExplainError(err, 'Batch SHAP explanation failed');
     }
 
@@ -188,11 +246,19 @@ class ExplainService {
 
   /**
    * Get the global feature importance from FastAPI.
+   * Caches in MongoDB and refreshes only when requested (after model retraining or batch explanation).
    */
-  async getGlobalFeatureImportance() {
+  async getGlobalFeatureImportance(forceRefresh = false) {
+    if (!forceRefresh) {
+      const cached = await GlobalFeatureImportance.findOne().sort({ generatedAt: -1 }).lean();
+      if (cached) return cached.features;
+    }
+
     try {
       const response = await aiClient.get('/feature-importance');
-      return response.data?.data;
+      const features = response.data?.data || [];
+      await GlobalFeatureImportance.create({ features });
+      return features;
     } catch (err) {
       throw toExplainError(err, 'Global feature importance failed');
     }

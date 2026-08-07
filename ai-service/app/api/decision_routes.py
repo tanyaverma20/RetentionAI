@@ -35,6 +35,12 @@ from app.decision.services.decision_service import (
     get_decision_dashboard_stats,
 )
 
+import uuid
+import datetime
+from fastapi import BackgroundTasks
+
+_DECISION_JOBS: Dict[str, Dict[str, Any]] = {}
+
 router = APIRouter(prefix="/decision", tags=["Decision Intelligence"])
 
 
@@ -66,19 +72,47 @@ async def decision_generate(request: DecisionGenerateRequest):
         raise HTTPException(status_code=500, detail=f"Decision generation failed: {e}")
 
 
-@router.post("/batch", response_model=DecisionBatchResponse, dependencies=[Depends(verify_auth_token)])
-async def decision_batch(request: DecisionBatchRequest):
+@router.post("/batch", response_model=dict, dependencies=[Depends(verify_auth_token)])
+async def decision_batch(request: DecisionBatchRequest, background_tasks: BackgroundTasks):
     if not request.employees:
         raise HTTPException(status_code=422, detail="No employees provided.")
 
-    try:
-        raw_results = await generate_batch_decisions(
-            employees=[e.model_dump() for e in request.employees]
-        )
-        decisions = [DecisionResponse(**r) for r in raw_results]
-        return DecisionBatchResponse(success=True, processedCount=len(decisions), decisions=decisions)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Batch decision generation failed: {e}")
+    job_id = str(uuid.uuid4())
+    _DECISION_JOBS[job_id] = {
+        "status": "running",
+        "startedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    }
+
+    async def _run_batch():
+        try:
+            raw_results = await generate_batch_decisions(
+                employees=[e.model_dump() for e in request.employees]
+            )
+            decisions = [DecisionResponse(**r).model_dump() for r in raw_results]
+            _DECISION_JOBS[job_id] = {
+                "status": "completed",
+                "startedAt": _DECISION_JOBS[job_id]["startedAt"],
+                "data": {
+                    "decisions": decisions
+                }
+            }
+        except Exception as e:
+            _DECISION_JOBS[job_id] = {
+                "status": "failed",
+                "startedAt": _DECISION_JOBS[job_id]["startedAt"],
+                "error": str(e)
+            }
+
+    background_tasks.add_task(_run_batch)
+    return {"jobId": job_id}
+
+
+@router.get("/batch/status/{job_id}", response_model=dict, dependencies=[Depends(verify_auth_token)])
+async def decision_batch_status(job_id: str):
+    job = _DECISION_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return job
 
 
 # Registered BEFORE /{employeeId} — otherwise "dashboard"/"history" would be

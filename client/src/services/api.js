@@ -3,8 +3,20 @@ import { clearAuth, setTokens } from '../store/slices/authSlice';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
 
+// A default timeout matters more than it looks: without one, axios waits
+// forever, so ANY request that never cleanly settles (a dropped connection,
+// a proxy that silently stops responding) leaves its promise pending — and
+// with it, whatever `isLoading` state the caller set before awaiting. That
+// is the mechanism behind buttons stuck on "Training…"/"Generating…"
+// indefinitely, since a pending promise runs neither .catch nor .finally.
+// 60s comfortably covers every normal request; the few genuinely
+// long-running batch endpoints override this per-call with their own
+// larger budgets.
+const DEFAULT_TIMEOUT_MS = 60000;
+
 export const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: DEFAULT_TIMEOUT_MS,
   headers: {
     'Content-Type': 'application/json',
   },

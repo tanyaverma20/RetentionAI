@@ -27,7 +27,13 @@ router = APIRouter(tags=["Unavailable in this build"])
 
 # Mirrors the real routers' surface: nlp_routes uses prefix="/nlp", while
 # employee_intelligence_routes and rag_routes mount their paths at the root.
-_NLP_PATHS = ["/nlp/{rest_of_path:path}", "/sentiment/{rest_of_path:path}", "/sentiment"]
+_NLP_PATHS = [
+    "/nlp/{rest_of_path:path}",
+    "/sentiment/{rest_of_path:path}",
+    "/sentiment",
+    "/employee-intelligence",
+    "/employee-intelligence/{rest_of_path:path}"
+]
 _RAG_PATHS = [
     "/knowledge/{rest_of_path:path}",
     "/documents/{rest_of_path:path}",

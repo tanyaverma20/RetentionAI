@@ -17,17 +17,14 @@ export const decisionService = {
   },
 
   async generateBatch({ employeeIds, departmentId } = {}) {
-    // Root cause of the "Generating..." button that never resolved: this
-    // axios instance has no default timeout (see api.js), and generating
-    // recommendations for the full active workforce genuinely takes several
-    // minutes (verified directly against the API: ~4.5 minutes for ~1250
-    // employees, well under Express's own 420s AI_BATCH_TIMEOUT_MS below).
-    // With no client-side bound at all, ANY network hiccup that doesn't
-    // cleanly close the connection would leave the promise — and therefore
-    // the button's loading state — with no guaranteed way to ever settle.
-    // This timeout is set just above Express's own budget so it only ever
-    // fires as a safety net, never preempting a real response.
-    const response = await api.post('/decisions/batch', { employeeIds, departmentId }, { timeout: 450000 });
+    // Overrides api.js's 60s default: Express holds this connection open
+    // while it polls the ai-service's background decision job (up to
+    // DECISION_JOB_MAX_WAIT_MS = 12 min in decisionService.js), so the
+    // client budget must sit just above that. Recommendations are the
+    // slowest path in the app — each employee needs a Groq LLM call, and
+    // Groq's own account rate ceiling (~4 req/sec, measured) sets the floor
+    // on total wall time regardless of local concurrency.
+    const response = await api.post('/decisions/batch', { employeeIds, departmentId }, { timeout: 13 * 60 * 1000 });
     return response.data.data;
   },
 

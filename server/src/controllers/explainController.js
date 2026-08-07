@@ -64,7 +64,8 @@ export const explainBatch = async (req, res, next) => {
  */
 export const getGlobalFeatureImportance = async (req, res, next) => {
   try {
-    const result = await explainService.getGlobalFeatureImportance();
+    const forceRefresh = req.query.refresh === 'true';
+    const result = await explainService.getGlobalFeatureImportance(forceRefresh);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(new AppError(error.statusCode || 502, error.code || 'EXPLAIN_SERVICE_ERROR', error.message));

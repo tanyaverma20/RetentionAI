@@ -21,6 +21,8 @@ from __future__ import annotations
 
 import os
 import asyncio
+import time
+import uuid
 from typing import Optional
 
 from bson import ObjectId
@@ -73,6 +75,89 @@ def _shap_not_ready():
         status.HTTP_503_SERVICE_UNAVAILABLE,
         "SHAP explainer is not initialised. Please train a model first.",
     )
+
+
+# ---------------------------------------------------------------------------
+# Background job tracking for POST /explain/batch
+# ---------------------------------------------------------------------------
+#
+# Root cause of the recurring "Batch SHAP explanation failed: 502" errors:
+# this endpoint held one HTTP request open for the entire ~90-160s a full-
+# workforce batch takes (fetch + enrich + vectorized SHAP). Every attempt to
+# fix the *duration* (parallelizing per-employee enrichment, tuning
+# concurrency to avoid connection-pool contention) measurably changed the
+# timing but never made it reliable — three different configurations all
+# landed in the same 90-166s failure zone against production. /train already
+# solves this the right way: return immediately, do the work in the
+# background. This endpoint now does the same. Express is the only caller,
+# and it switches from one long POST to a POST-then-poll pattern — no
+# frontend change needed, since the frontend<->Express leg already tolerates
+# multi-minute waits (proven directly: a 123s through-Express call to the
+# OLD synchronous endpoint succeeded before this change).
+#
+# In-memory, not a persistent queue: this service has no job-queue
+# infrastructure (see aiPipelineService.js's docstring on the Express side
+# for the same constraint), and a single-process FastAPI deployment is the
+# only thing that needs to read this. A restart loses in-flight jobs, which
+# is acceptable — Express's poll loop times out and the user can just click
+# the button again, exactly as if the request itself had failed.
+_EXPLAIN_JOBS: dict[str, dict] = {}
+
+# Jobs older than this are evicted on each new job's creation so _EXPLAIN_JOBS
+# can't grow without bound across a long-lived process.
+_JOB_TTL_SECONDS = 30 * 60
+
+
+def _prune_old_jobs() -> None:
+    cutoff = time.time() - _JOB_TTL_SECONDS
+    stale = [job_id for job_id, job in _EXPLAIN_JOBS.items() if job["startedAt"] < cutoff]
+    for job_id in stale:
+        del _EXPLAIN_JOBS[job_id]
+
+
+async def _run_explain_batch_job(job_id: str, query: dict) -> None:
+    """Does the actual fetch/enrich/SHAP work; stores the outcome in
+    _EXPLAIN_JOBS instead of returning it directly to an HTTP caller."""
+    try:
+        db = get_db()
+        employees = [emp async for emp in db["employees"].find(query)]
+
+        semaphore = asyncio.Semaphore(12)
+
+        async def _enrich_one(emp):
+            async with semaphore:
+                return await enrich_employee_doc(_serialize(emp), db)
+
+        enrich_results = await asyncio.gather(*(_enrich_one(emp) for emp in employees), return_exceptions=True)
+
+        enriched_docs = []
+        failed_count = 0
+        for emp, result in zip(employees, enrich_results):
+            if isinstance(result, Exception):
+                print(f"Failed to enrich employee {emp.get('_id')}: {result}")
+                failed_count += 1
+            else:
+                enriched_docs.append(result)
+
+        explanations = await asyncio.to_thread(explain_employees_batch, enriched_docs)
+
+        _EXPLAIN_JOBS[job_id] = {
+            "status": "completed",
+            "startedAt": _EXPLAIN_JOBS[job_id]["startedAt"],
+            "result": {
+                "explanations": explanations,
+                "totalCount": len(employees),
+                "successCount": len(explanations),
+                "failedCount": failed_count,
+            },
+        }
+    except Exception as exc:
+        print(f"Batch explain job {job_id} failed: {exc}")
+        _EXPLAIN_JOBS[job_id] = {
+            "status": "failed",
+            "startedAt": _EXPLAIN_JOBS[job_id]["startedAt"],
+            "error": str(exc),
+        }
 
 
 def _serialize(doc: dict) -> dict:
@@ -176,21 +261,24 @@ async def explain_adhoc(request: ExplainRequest):
 @router.post(
     "/explain/batch",
     response_model=dict,
-    summary="Local SHAP explanations for a batch of employees (DB lookup)",
+    summary="Start a background batch SHAP explanation job for a set of employees",
     dependencies=[Depends(verify_auth_token)],
 )
 async def explain_batch(request: ExplainBatchRequest):
     """
-    Explains either an explicit list of employees, all employees of one
-    department, or (when neither filter is given) every ACTIVE employee.
-    Mirrors the filtering behaviour of POST /predict/batch in routes.py.
+    Starts a background job explaining either an explicit list of employees,
+    all employees of one department, or (when neither filter is given)
+    every ACTIVE employee. Mirrors the filtering behaviour of
+    POST /predict/batch in routes.py. Returns a jobId immediately — the
+    caller (Express) polls GET /explain/batch/status/{jobId} for the result.
 
-    Per-employee enrichment failures do not abort the batch — they are
-    counted and skipped so one bad record can't block explanations for the
-    rest of the workforce. The SHAP computation itself now runs as a single
-    vectorized call across all successfully-enriched employees (see comment
-    below); if that call raises, the whole request fails with a 500 rather
-    than degrading gracefully per-employee.
+    This used to compute synchronously and return the full result in one
+    response. A full-workforce batch (~1470 employees) takes ~90-160s even
+    after enrichment was parallelized and its concurrency tuned — three
+    different configurations all still landed in the 90-166s zone against
+    production, well past whatever the deployment platform tolerates for a
+    single held-open request. Returning immediately and polling sidesteps
+    that entirely, the same way POST /train already does.
     """
     if not shap_cache.is_ready:
         _shap_not_ready()
@@ -213,69 +301,33 @@ async def explain_batch(request: ExplainBatchRequest):
     else:
         query["status"] = "ACTIVE"
 
-    employees = [emp async for emp in db["employees"].find(query)]
+    _prune_old_jobs()
+    job_id = str(uuid.uuid4())
+    _EXPLAIN_JOBS[job_id] = {"status": "running", "startedAt": time.time()}
+    asyncio.create_task(_run_explain_batch_job(job_id, query))
 
-    # Root cause of the "Generate Explanations" 503 (AI_SERVICE_UNAVAILABLE):
-    # with no employeeIds/departmentId filter — exactly what the button sends
-    # — this processes every ACTIVE employee (~1470 in the seeded dataset).
-    # explain_employee() builds a 1-row DataFrame and calls
-    # transform_inference/model.predict_proba/shap_cache.compute_shap_values
-    # PER employee, even though all three are vectorized and already support
-    # an (N, n_features) batch matrix (shap_cache.compute_shap_values's own
-    # docstring: "Return SHAP values for the given feature matrix X... shape
-    # (n_samples, n_features)"). Calling them once per row instead of once
-    # for the whole batch was measured directly against this endpoint at
-    # ~0.05s/employee of pure per-call overhead — ~1470 employees is
-    # 70-100+ seconds, well past Express's 30s axios timeout, so Express's
-    # request timed out with no response ever received, which is exactly
-    # what maps to AI_SERVICE_UNAVAILABLE. Fix below: enrich concurrently
-    # (genuine async I/O, bounded so Mongo isn't hit with 1470 requests at
-    # once), then run ONE vectorized explain_employees_batch() call across
-    # every successfully-enriched employee instead of one call per employee.
-    # explain_employee() (the single-employee function, used by
-    # /explain/{employeeId} and /explain) is untouched.
-    #
-    # Width note: enrich_employee_doc() (called per employee below) now
-    # fires 7 independent Mongo queries concurrently internally (see its
-    # own comment). Motor's default maxPoolSize is 100, so this semaphore's
-    # width times 7 must stay safely under that or requests queue for a
-    # free pooled connection instead of running — which is worse than the
-    # sequential version this replaced. Measured directly: at width 50
-    # (350 peak concurrent ops) a batch explain immediately following a
-    # Train Model run took 159s and 502'd, worse than the 105s timeout it
-    # was meant to fix. 12 x 7 = 84 stays under the pool ceiling with
-    # margin to spare.
-    semaphore = asyncio.Semaphore(12)
+    return {"success": True, "jobId": job_id, "message": "Batch explanation started in the background."}
 
-    async def _enrich_one(emp):
-        async with semaphore:
-            return await enrich_employee_doc(_serialize(emp), db)
 
-    enrich_results = await asyncio.gather(*(_enrich_one(emp) for emp in employees), return_exceptions=True)
+@router.get(
+    "/explain/batch/status/{jobId}",
+    response_model=dict,
+    summary="Poll the status/result of a batch SHAP explanation job",
+    dependencies=[Depends(verify_auth_token)],
+)
+async def explain_batch_status(jobId: str):
+    job = _EXPLAIN_JOBS.get(jobId)
+    if job is None:
+        raise HTTPException(
+            status.HTTP_404_NOT_FOUND,
+            "No such job (it may have completed and been pruned, or the service restarted). Start a new batch.",
+        )
 
-    enriched_docs = []
-    failed_count = 0
-    for emp, result in zip(employees, enrich_results):
-        if isinstance(result, Exception):
-            print(f"Failed to enrich employee {emp.get('_id')}: {result}")
-            failed_count += 1
-        else:
-            enriched_docs.append(result)
-
-    try:
-        explanations = await asyncio.to_thread(explain_employees_batch, enriched_docs)
-    except Exception as exc:
-        raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, f"Batch SHAP computation failed: {exc}")
-
-    return {
-        "success": True,
-        "data": {
-            "explanations": explanations,
-            "totalCount": len(employees),
-            "successCount": len(explanations),
-            "failedCount": failed_count,
-        },
-    }
+    if job["status"] == "running":
+        return {"success": True, "status": "running"}
+    if job["status"] == "failed":
+        return {"success": True, "status": "failed", "error": job["error"]}
+    return {"success": True, "status": "completed", "data": job["result"]}
 
 
 # ---------------------------------------------------------------------------
