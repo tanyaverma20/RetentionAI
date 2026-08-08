@@ -485,7 +485,7 @@ function TabAIInsights({
         {explanation ? (
           <div className="space-y-5">
             {/* Natural language summary */}
-            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm text-amber-100 leading-relaxed">
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm text-slate-800 leading-relaxed">
               {explanation.summary}
             </div>
 
@@ -570,7 +570,7 @@ function TabAIInsights({
         )}
         {intelligence ? (
           <div className="space-y-5">
-            <div className="p-4 bg-violet-50 border border-violet-100 rounded-2xl text-sm text-violet-100 leading-relaxed">
+            <div className="p-4 bg-violet-50 border border-violet-100 rounded-2xl text-sm text-slate-800 leading-relaxed">
               {intelligence.summary}
             </div>
 

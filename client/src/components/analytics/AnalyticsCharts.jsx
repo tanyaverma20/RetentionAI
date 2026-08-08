@@ -115,7 +115,7 @@ export function EmployeesByEmploymentTypeChart({ data = [] }) {
   );
 }
 
-export function GlobalFeatureImportanceChart({ data = [] }) {
+export function GlobalFeatureImportanceChart({ data = [], narrative = '' }) {
   const sorted = [...data].sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0)).slice(0, 10);
   return (
     <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex flex-col justify-between">
@@ -133,6 +133,11 @@ export function GlobalFeatureImportanceChart({ data = [] }) {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      {narrative && (
+        <div className="mt-4 p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm text-slate-800 leading-relaxed">
+          {narrative}
+        </div>
+      )}
     </div>
   );
 }

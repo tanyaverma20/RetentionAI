@@ -261,17 +261,37 @@ class ExplainService {
    * Get the global feature importance from FastAPI.
    * Caches in MongoDB and refreshes only when requested (after model retraining or batch explanation).
    */
+  /**
+   * Returns { features, narrative }. Both the cache-hit and fresh-fetch
+   * paths now return this same shape — previously, `const features =
+   * response.data?.data` assigned the WHOLE ai-service response object
+   * (which is itself `{ features: [...], shapMatrix, baseValue, ... }`,
+   * not the bare array despite the variable's name) to a field the
+   * schema declares as an array of { featureKey, displayName, shapValue }.
+   * Mongoose cast that mismatched object into a single-element array
+   * containing only an auto-generated _id — every document ever written
+   * here lost its real data, and every cached (non-forceRefresh) read
+   * silently returned that empty shell instead of throwing, which is why
+   * this went unnoticed: the always-forceRefresh call sites (right after
+   * training/batch-explain) worked by relying on the CLIENT'S
+   * `data?.features || data` fallback to paper over the still-correct
+   * fresh response, before it round-tripped through the cache once.
+   */
   async getGlobalFeatureImportance(forceRefresh = false) {
     if (!forceRefresh) {
       const cached = await GlobalFeatureImportance.findOne().sort({ generatedAt: -1 }).lean();
-      if (cached) return cached.features;
+      if (cached && Array.isArray(cached.features) && cached.features.length > 0 && cached.features[0]?.featureKey) {
+        return { features: cached.features, narrative: cached.narrative || '' };
+      }
     }
 
     try {
       const response = await aiClient.get('/feature-importance');
-      const features = response.data?.data || [];
-      await GlobalFeatureImportance.create({ features });
-      return features;
+      const result = response.data?.data || {};
+      const features = Array.isArray(result.features) ? result.features : [];
+      const narrative = result.narrative || '';
+      await GlobalFeatureImportance.create({ features, narrative });
+      return { features, narrative };
     } catch (err) {
       throw toExplainError(err, 'Global feature importance failed');
     }

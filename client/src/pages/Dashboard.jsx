@@ -176,6 +176,7 @@ export default function Dashboard() {
   const [isTraining, setIsTraining] = useState(false);
   const [trainMessage, setTrainMessage] = useState('');
   const [globalImportance, setGlobalImportance] = useState(null);
+  const [globalNarrative, setGlobalNarrative] = useState('');
   const [modelComparison, setModelComparison] = useState(null);
   const [departmentDrivers, setDepartmentDrivers] = useState(null);
   const [aiOverviewError, setAiOverviewError] = useState('');
@@ -206,7 +207,7 @@ export default function Dashboard() {
       })
       .catch((err) => setAiOverviewError(extractErrorMessage(err, 'Unable to load AI risk overview.')));
     aiService.getGlobalFeatureImportance()
-      .then(data => setGlobalImportance(data?.features || data))
+      .then(data => { setGlobalImportance(data?.features || []); setGlobalNarrative(data?.narrative || ''); })
       .catch(() => {}); // Expected until a model has been trained — no model = no chart, not an error state.
     aiService.getDepartmentRiskDrivers()
       .then(setDepartmentDrivers)
@@ -304,7 +305,7 @@ export default function Dashboard() {
           if (info?.trainedAt && info.trainedAt !== baselineTrainedAt) {
             setTrainMessage(`Model trained successfully — ${info.algorithm} (${info.version}).`);
             aiService.getGlobalFeatureImportance(true)
-              .then(data => setGlobalImportance(data?.features || data))
+              .then(data => { setGlobalImportance(data?.features || []); setGlobalNarrative(data?.narrative || ''); })
               .catch(() => {});
             // Full 5-model comparison table + why this one was picked
             // (PR-AUC ranking + one-standard-error simplicity rule — see
@@ -335,9 +336,9 @@ export default function Dashboard() {
       setExplainMessage(`Generated explanations for ${res?.processed ?? 0} employees.`);
       
       aiService.getGlobalFeatureImportance(true)
-        .then(data => setGlobalImportance(data?.features || data))
+        .then(data => { setGlobalImportance(data?.features || []); setGlobalNarrative(data?.narrative || ''); })
         .catch(() => {});
-        
+
       loadExplainabilityWidgets();
     } catch (err) {
       setExplainMessage(extractErrorMessage(err, 'Failed to generate explanations.'));
@@ -702,7 +703,7 @@ export default function Dashboard() {
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {globalImportance?.length > 0 ? (
-                <GlobalFeatureImportanceChart data={globalImportance} />
+                <GlobalFeatureImportanceChart data={globalImportance} narrative={globalNarrative} />
               ) : (
                 <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card flex items-center justify-center text-center text-xs text-slate-400 italic h-full min-h-[16rem]">
                   No global feature importance yet. Train a model first, then reload this page.

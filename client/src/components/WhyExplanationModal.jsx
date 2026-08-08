@@ -72,7 +72,7 @@ export default function WhyExplanationModal({ employee, onClose }) {
 
         {!loading && explanation && (
           <div className="space-y-4">
-            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm text-amber-100 leading-relaxed">
+            <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl text-sm text-slate-800 leading-relaxed">
               {explanation.summary}
             </div>
 
