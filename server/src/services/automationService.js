@@ -171,7 +171,22 @@ const JOBS = {
   MONTHLY_RETENTION_SUMMARY: runMonthlyRetentionSummary,
 };
 
-/** Runs one named job across every organization in the system; used by both the scheduler and the manual "run now" endpoint. */
+/**
+ * Runs one named job across EVERY organization in the system. Internal
+ * use only (the scheduler) — this is genuine, intentional platform-level
+ * behavior, so it must never be reachable from a per-tenant request.
+ *
+ * Prompt 1, Part 13 — previously this same function backed the
+ * browser-facing "run job now" endpoint too (automationRoutes.js gates it
+ * on the per-org ADMIN/HR_DIRECTOR roles, not a separate platform-admin
+ * concept), which meant any single tenant's admin could force every other
+ * tenant's automation job to run on demand AND get back a response
+ * enumerating every organizationId on the platform plus each one's job
+ * result (e.g. digest recipientCount) — both an unauthorized cross-tenant
+ * action and an information disclosure. runJobForOrganization() below is
+ * the correctly-scoped replacement for that endpoint; this function is no
+ * longer called from any HTTP-reachable path.
+ */
 async function runJob(jobName) {
   const jobFn = JOBS[jobName];
   if (!jobFn) throw new Error(`Unknown automation job: ${jobName}`);
@@ -187,6 +202,23 @@ async function runJob(jobName) {
     }
   }
   return { jobName, ranAt: new Date().toISOString(), results };
+}
+
+/**
+ * Runs one named job for exactly the caller's own organization — the
+ * correctly-scoped target for the manual "run job now" endpoint.
+ * `organizationId` MUST be the authenticated caller's own org (Part 10).
+ */
+async function runJobForOrganization(jobName, organizationId) {
+  const jobFn = JOBS[jobName];
+  if (!jobFn) throw new Error(`Unknown automation job: ${jobName}`);
+  try {
+    const result = await jobFn(organizationId);
+    await recordAudit(organizationId, 'AUTOMATION_JOB_RUN', (await getSystemUserId(organizationId)) || undefined, { context: { jobName, result } });
+    return { jobName, ranAt: new Date().toISOString(), results: [{ organizationId, ...result }] };
+  } catch (err) {
+    return { jobName, ranAt: new Date().toISOString(), results: [{ organizationId, error: err.message }] };
+  }
 }
 
 // ── Scheduler ────────────────────────────────────────────────────────────
@@ -258,13 +290,28 @@ function stopScheduler() {
   timers.length = 0;
 }
 
-function getLastRuns() {
-  return lastRunLog;
+/**
+ * Prompt 1, Part 13 — the raw lastRunLog holds the SCHEDULER's cross-org
+ * results (every organizationId on the platform + its per-job outcome).
+ * Returning it verbatim to a per-tenant caller was the same information-
+ * disclosure class as runJob() above. Filters each job's `results` array
+ * down to (at most) the caller's own organizationId entry before
+ * returning — the shape stays identical, so nothing else has to change.
+ */
+function getLastRuns(organizationId) {
+  const scoped = {};
+  for (const [jobName, run] of Object.entries(lastRunLog)) {
+    scoped[jobName] = {
+      ...run,
+      results: (run.results || []).filter((r) => String(r.organizationId) === String(organizationId)),
+    };
+  }
+  return scoped;
 }
 
 function listJobNames() {
   return Object.keys(JOBS);
 }
 
-export const automationService = { runJob, startScheduler, stopScheduler, getLastRuns, listJobNames };
+export const automationService = { runJob, runJobForOrganization, startScheduler, stopScheduler, getLastRuns, listJobNames };
 export default automationService;

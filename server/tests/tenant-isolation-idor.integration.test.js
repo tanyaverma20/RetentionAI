@@ -239,6 +239,27 @@ test(
       const docStillExists = await KnowledgeDocument.findById(knowledgeDoc._id).lean();
       assert.ok(docStillExists, 'Org A\'s knowledge document must survive Org B\'s attempted deletion');
 
+      // ── Automation jobs (platform-wide side effects / info disclosure) ──
+      // Found while auditing: the manual "run job now" / "list jobs"
+      // endpoints previously ran/reported EVERY organization's automation
+      // job in one call (automationService.runJob() is genuinely
+      // all-org — intended for the internal scheduler only), letting any
+      // tenant's ADMIN force side effects across every other tenant AND
+      // enumerate every organizationId on the platform via the response.
+      const runJobAsB = await fetch(`${baseUrl}/automation/jobs/DAILY_HR_DIGEST/run`, { method: 'POST', headers: authed(orgB.token) });
+      const runJobAsBBody = await runJobAsB.json();
+      assert.equal(runJobAsB.status, 200);
+      assert.equal(runJobAsBBody.data.results.length, 1, 'a manually-triggered job must only run for the caller\'s own organization');
+      assert.equal(runJobAsBBody.data.results[0].organizationId, orgB.orgId);
+
+      const listJobsAsB = await fetch(`${baseUrl}/automation/jobs`, { headers: authed(orgB.token) });
+      const listJobsAsBBody = await listJobsAsB.json();
+      for (const run of Object.values(listJobsAsBBody.data.lastRuns)) {
+        for (const result of run.results) {
+          assert.equal(result.organizationId, orgB.orgId, 'Org B must never see another organization\'s ID/result in its own job-run log');
+        }
+      }
+
       // ── Executive Alerts ─────────────────────────────────────────────
       const alert = await ExecutiveAlert.create({
         organizationId: orgA.orgId,
