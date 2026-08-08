@@ -17,6 +17,15 @@ const envSchema = z.object({
   AI_SERVICE_URL: z.string().default('http://127.0.0.1:8000'),
   AI_SERVICE_TOKEN: z.string().default('replace-with-a-service-token'),
   AI_SERVICE_TIMEOUT_MS: z.coerce.number().int().positive().default(10000),
+  // Upstash Redis (REST API, not a redis:// TCP URL) — backs persistent job
+  // state (batch explain/decision jobs) and the distributed AI concurrency
+  // lock. Both optional so local dev can run without Redis (see
+  // utils/redisClient.js for the in-memory fallback that kicks in when
+  // unset); the check below still fails startup on a HALF-set pair, since
+  // that's never an intentional configuration — either both are outstanding
+  // from a copy/paste (real credentials to add) or one is a typo.
+  UPSTASH_REDIS_REST_URL: z.string().url().optional(),
+  UPSTASH_REDIS_REST_TOKEN: z.string().min(1).optional(),
 });
 
 const PLACEHOLDER_VALUES = new Set([
@@ -31,6 +40,19 @@ if (!parsedEnv.success) {
   throw new Error(
     `Invalid environment configuration: ${parsedEnv.error.issues.map((issue) => issue.path.join('.')).join(', ')}`,
   );
+}
+
+// Half-configured Redis is always a mistake (never a deliberate mode) — fail
+// clearly now rather than have redisClient.js silently decide "not
+// configured" from the URL while a stray token sits unused, or vice versa.
+{
+  const hasUrl = !!parsedEnv.data.UPSTASH_REDIS_REST_URL;
+  const hasToken = !!parsedEnv.data.UPSTASH_REDIS_REST_TOKEN;
+  if (hasUrl !== hasToken) {
+    throw new Error(
+      `Invalid environment configuration: ${hasUrl ? 'UPSTASH_REDIS_REST_URL is set but UPSTASH_REDIS_REST_TOKEN is missing' : 'UPSTASH_REDIS_REST_TOKEN is set but UPSTASH_REDIS_REST_URL is missing'} — set both or neither.`,
+    );
+  }
 }
 
 // Production-only checks: values that are structurally valid (right type,
@@ -84,5 +106,10 @@ export const env = {
     url: parsedEnv.data.AI_SERVICE_URL,
     token: parsedEnv.data.AI_SERVICE_TOKEN,
     timeoutMs: parsedEnv.data.AI_SERVICE_TIMEOUT_MS,
+  },
+  redis: {
+    url: parsedEnv.data.UPSTASH_REDIS_REST_URL || null,
+    token: parsedEnv.data.UPSTASH_REDIS_REST_TOKEN || null,
+    configured: Boolean(parsedEnv.data.UPSTASH_REDIS_REST_URL && parsedEnv.data.UPSTASH_REDIS_REST_TOKEN),
   },
 };

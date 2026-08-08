@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     groq_api_key: str = Field(default="", alias="GROQ_API_KEY")
     log_level: str = Field(default="info", alias="LOG_LEVEL")
 
+    # Upstash Redis (REST API) — Prompt 1. Backs the persistent job store for
+    # _EXPLAIN_JOBS/_DECISION_JOBS (app/utils/job_store.py). Optional so a
+    # fresh dev checkout still boots without Redis (see job_store.py's
+    # in-memory fallback); a HALF-set pair is still fatal (see the validator
+    # below) since that's never intentional.
+    upstash_redis_rest_url: str = Field(default="", alias="UPSTASH_REDIS_REST_URL")
+    upstash_redis_rest_token: str = Field(default="", alias="UPSTASH_REDIS_REST_TOKEN")
+
     @field_validator("ai_service_token")
     @classmethod
     def _token_present(cls, value: str) -> str:
@@ -58,6 +66,16 @@ class Settings(BaseSettings):
 def validate_startup_config() -> Settings:
     """Raises a clear, actionable error and prevents startup on fatal misconfiguration."""
     settings = Settings()
+
+    has_redis_url = bool(settings.upstash_redis_rest_url)
+    has_redis_token = bool(settings.upstash_redis_rest_token)
+    if has_redis_url != has_redis_token:
+        missing = "UPSTASH_REDIS_REST_TOKEN" if has_redis_url else "UPSTASH_REDIS_REST_URL"
+        present = "UPSTASH_REDIS_REST_URL" if has_redis_url else "UPSTASH_REDIS_REST_TOKEN"
+        raise RuntimeError(
+            f"{present} is set but {missing} is missing. Set both Upstash Redis "
+            "environment variables or neither."
+        )
 
     if settings.environment == "production" and not settings.groq_api_key:
         # reasoning_chain.py raises ValueError the first time the Decision

@@ -1,8 +1,8 @@
 /**
  * @file aiConcurrencyGate.js
- * @description Global in-process lock preventing more than one heavy AI
- * batch job (train / explain-batch / decision-batch / employee-intelligence
- * batch) from running against the ai-service at the same time.
+ * @description Global lock preventing more than one heavy AI batch job
+ * (train / explain-batch / decision-batch / employee-intelligence batch)
+ * from running against the ai-service at the same time.
  *
  * Why this file exists
  * ---------------------
@@ -24,42 +24,131 @@
  * better user experience than either silently queueing or crashing again —
  * the caller finds out in milliseconds, not minutes.
  *
- * Scope: process-global, not per-organization. Correct for now, since this
- * app is still single-tenant in practice (see docs/PLATFORM_BLUEPRINT.md
- * Part 1/2) and — more importantly — there is only ONE ai-service instance
- * with one shared memory budget regardless of which tenant is asking, so a
- * per-tenant lock wouldn't actually prevent the crash. Revisit only if the
- * ai-service itself is scaled to isolate tenants.
+ * Prompt 1, Part 8 — Redis migration
+ * ------------------------------------------------------------------------
+ * This was originally a plain in-process variable, correct only because
+ * exactly one Express instance has ever run (`numInstances: 1`, confirmed
+ * in docs/AUDIT_PROMPT0.md). It doesn't survive a restart (a crash mid-job
+ * would leave the *next* process's lock unheld even though the ai-service
+ * might still be finishing the old request) and wouldn't coordinate at all
+ * across multiple instances, which the target Cloud Run architecture may
+ * run. Now backed by a Redis key (`SET NX PX` — atomic acquire, TTL-bounded
+ * so a crashed holder can't wedge the lock forever) with a token-guarded
+ * release (Lua EVAL: only delete if the stored token still matches the
+ * caller's own) so one process can never release a lock it doesn't hold —
+ * the classic Redlock safe-release pattern, minimal version (single Redis
+ * node — Upstash — so the multi-node Redlock consensus algorithm itself
+ * isn't needed here).
+ *
+ * Falls back to the original in-process variable when Redis isn't
+ * configured (local dev only — see redisClient.js); that fallback is
+ * exactly as correct/incorrect as the code this replaces, so it changes
+ * nothing for anyone currently running without Redis.
+ *
+ * acquireAiSlot/releaseAiSlot are now async — every call site was updated
+ * to `await` them (see decisionService.js, explainService.js,
+ * employeeIntelligenceService.js, aiService.js).
  */
 
-let activeJob = null; // { name: string, startedAt: number } | null
+import { randomUUID } from 'crypto';
+import { getRedisClient, isRedisConfigured } from './redisClient.js';
+import { logger } from './logger.js';
+
+const LOCK_KEY = 'lock:ai-concurrency-gate';
+// Safety ceiling, not the expected hold time: real callers release
+// explicitly (or via aiService.js's fixed 3-minute train timer) far sooner.
+// This TTL only matters if a process dies mid-job without releasing —
+// bounds how long the lock can stay stuck instead of leaving it held
+// forever, which is what a plain in-process variable would already have
+// "fixed" by dying with the process (a restart cleared it for free). Redis
+// persistence removes that free reset, so an explicit ceiling replaces it.
+const LOCK_TTL_MS = 15 * 60 * 1000;
+
+// Lua: only delete the key if its value still matches the token we set it
+// to — guards against process A's release accidentally clearing process
+// B's lock after A's own lock already expired and B legitimately acquired
+// it in between.
+const RELEASE_SCRIPT = `
+if redis.call("get", KEYS[1]) == ARGV[1] then
+  return redis.call("del", KEYS[1])
+else
+  return 0
+end
+`;
+
+// In-process fallback, used only when Redis isn't configured.
+let memoryLock = null; // { name, token, startedAt } | null
+
+function busyError(name, startedAt) {
+  const runningForSec = Math.round((Date.now() - startedAt) / 1000);
+  const err = new Error(
+    `The AI pipeline is currently busy running "${name}" (started ${runningForSec}s ago). ` +
+    `Only one heavy AI batch job can run at a time to avoid overloading the AI service. ` +
+    `Please wait for it to finish and try again.`,
+  );
+  err.statusCode = 429;
+  err.code = 'AI_PIPELINE_BUSY';
+  return err;
+}
 
 /**
  * Claims the single AI-heavy-job slot. Throws a well-formed 429 if another
  * heavy job is already running.
  * @param {string} jobName - human-readable name for the error message/logs.
+ * @returns {Promise<string>} a release token — pass it to releaseAiSlot().
  */
-export function acquireAiSlot(jobName) {
-  if (activeJob) {
-    const runningForSec = Math.round((Date.now() - activeJob.startedAt) / 1000);
-    const err = new Error(
-      `The AI pipeline is currently busy running "${activeJob.name}" (started ${runningForSec}s ago). ` +
-      `Only one heavy AI batch job can run at a time to avoid overloading the AI service. ` +
-      `Please wait for it to finish and try again.`,
-    );
-    err.statusCode = 429;
-    err.code = 'AI_PIPELINE_BUSY';
-    throw err;
+export async function acquireAiSlot(jobName) {
+  const token = randomUUID();
+  const payload = JSON.stringify({ name: jobName, startedAt: Date.now(), token });
+
+  if (isRedisConfigured()) {
+    const result = await getRedisClient().set(LOCK_KEY, payload, { px: LOCK_TTL_MS, nx: true });
+    if (result === null) {
+      const raw = await getRedisClient().get(LOCK_KEY);
+      const held = raw ? (typeof raw === 'string' ? JSON.parse(raw) : raw) : null;
+      throw busyError(held?.name || 'another job', held?.startedAt || Date.now());
+    }
+    return token;
   }
-  activeJob = { name: jobName, startedAt: Date.now() };
+
+  if (memoryLock) {
+    throw busyError(memoryLock.name, memoryLock.startedAt);
+  }
+  memoryLock = { name: jobName, startedAt: Date.now(), token };
+  return token;
 }
 
-/** Releases the slot. Safe to call even if nothing is held. */
-export function releaseAiSlot() {
-  activeJob = null;
+/**
+ * Releases the slot. Safe to call even if nothing is held, and safe to call
+ * with a stale/foreign token — it only ever removes a lock this exact
+ * acquireAiSlot() call created.
+ * @param {string} [token] - the token returned by the matching acquireAiSlot().
+ */
+export async function releaseAiSlot(token) {
+  if (isRedisConfigured()) {
+    if (!token) return; // nothing to safely release without a token.
+    try {
+      await getRedisClient().eval(RELEASE_SCRIPT, [LOCK_KEY], [token]);
+    } catch (err) {
+      // Releasing must never throw into a caller's `finally` block — that
+      // would mask the real error/result it's wrapping. The TTL is the
+      // backstop if this genuinely fails to reach Redis.
+      logger.error('ai_concurrency_gate_release_failed', { error: err.message });
+    }
+    return;
+  }
+  if (memoryLock && (!token || memoryLock.token === token)) {
+    memoryLock = null;
+  }
 }
 
 /** For the health/status endpoints — what's running right now, if anything. */
-export function getActiveAiJob() {
-  return activeJob ? { ...activeJob } : null;
+export async function getActiveAiJob() {
+  if (isRedisConfigured()) {
+    const raw = await getRedisClient().get(LOCK_KEY);
+    if (!raw) return null;
+    const held = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    return { name: held.name, startedAt: held.startedAt };
+  }
+  return memoryLock ? { name: memoryLock.name, startedAt: memoryLock.startedAt } : null;
 }

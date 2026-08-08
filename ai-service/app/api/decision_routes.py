@@ -34,12 +34,13 @@ from app.decision.services.decision_service import (
     get_employee_decisions,
     get_decision_dashboard_stats,
 )
+from app.utils.job_store import create_job, get_job, update_job
 
-import uuid
-import datetime
 from fastapi import BackgroundTasks
 
-_DECISION_JOBS: Dict[str, Dict[str, Any]] = {}
+# Prompt 1, Part 3/6 — see explain_routes.py's identical comment; same
+# Redis-backed job store, same restart-recovery semantics.
+_JOB_TYPE = "decision-batch"
 
 router = APIRouter(prefix="/decision", tags=["Decision Intelligence"])
 
@@ -77,11 +78,7 @@ async def decision_batch(request: DecisionBatchRequest, background_tasks: Backgr
     if not request.employees:
         raise HTTPException(status_code=422, detail="No employees provided.")
 
-    job_id = str(uuid.uuid4())
-    _DECISION_JOBS[job_id] = {
-        "status": "running",
-        "startedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    }
+    job_id = await create_job(_JOB_TYPE)
 
     async def _run_batch():
         try:
@@ -89,19 +86,12 @@ async def decision_batch(request: DecisionBatchRequest, background_tasks: Backgr
                 employees=[e.model_dump() for e in request.employees]
             )
             decisions = [DecisionResponse(**r).model_dump() for r in raw_results]
-            _DECISION_JOBS[job_id] = {
+            await update_job(_JOB_TYPE, job_id, {
                 "status": "completed",
-                "startedAt": _DECISION_JOBS[job_id]["startedAt"],
-                "data": {
-                    "decisions": decisions
-                }
-            }
+                "data": {"decisions": decisions},
+            })
         except Exception as e:
-            _DECISION_JOBS[job_id] = {
-                "status": "failed",
-                "startedAt": _DECISION_JOBS[job_id]["startedAt"],
-                "error": str(e)
-            }
+            await update_job(_JOB_TYPE, job_id, {"status": "failed", "error": str(e)})
 
     background_tasks.add_task(_run_batch)
     return {"jobId": job_id}
@@ -109,7 +99,7 @@ async def decision_batch(request: DecisionBatchRequest, background_tasks: Backgr
 
 @router.get("/batch/status/{job_id}", response_model=dict, dependencies=[Depends(verify_auth_token)])
 async def decision_batch_status(job_id: str):
-    job = _DECISION_JOBS.get(job_id)
+    job = await get_job(_JOB_TYPE, job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
     return job

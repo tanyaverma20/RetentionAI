@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { Prediction } from '../models/Prediction.js';
 import { ModelMetadata } from '../models/ModelMetadata.js';
+import { Employee } from '../models/Employee.js';
+import { AppError } from '../errors/AppError.js';
 import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
 const aiClient = axios.create({
@@ -48,23 +50,38 @@ const TRAIN_SLOT_HOLD_MS = 3 * 60 * 1000; // 3 min — ~2x the measured ~90s.
 
 class AIService {
   async trainModel() {
-    acquireAiSlot('Train Model');
+    const lockToken = await acquireAiSlot('Train Model');
     try {
       const response = await aiClient.post('/train', {}, { timeout: 30000 });
       // Training itself continues in the ai-service background after this
       // resolves — release on a timer, not in `finally`, so the slot stays
       // held for the real work instead of just this quick POST.
-      setTimeout(releaseAiSlot, TRAIN_SLOT_HOLD_MS);
+      setTimeout(() => {
+        releaseAiSlot(lockToken).catch((err) => console.error('Failed to release AI slot after training window:', err.message));
+      }, TRAIN_SLOT_HOLD_MS);
       return response.data;
     } catch (error) {
       // The job never actually started — free the slot immediately rather
       // than blocking other work for 3 minutes over a request that failed.
-      releaseAiSlot();
+      await releaseAiSlot(lockToken);
       throw toServiceError(error, 'Failed to start training model');
     }
   }
 
-  async predictSingle(employeeId) {
+  // Prompt 1, Part 9/11 — the ai-service has no organization concept: given
+  // just an employeeId (predictSingle) or a raw departmentId/employeeIds
+  // list (predictBatch), it fetches directly from Mongo with no tenant
+  // filter at all. Previously Express forwarded those straight through, so
+  // any authenticated user of ANY org could run a live prediction (full PII
+  // + risk score in the response) for another org's employee just by
+  // knowing/guessing its ID. Express is the only layer that knows about
+  // organizations, so it must verify ownership itself before ever calling
+  // the ai-service — see the resolved-employeeIds approach in predictBatch.
+  async predictSingle(employeeId, organizationId) {
+    const owned = await Employee.exists({ _id: employeeId, organizationId });
+    if (!owned) {
+      throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee not found.');
+    }
     try {
       const response = await aiClient.post('/predict', { employeeId });
       return response.data.data;
@@ -73,11 +90,23 @@ class AIService {
     }
   }
 
-  async predictBatch(departmentId = null, employeeIds = null) {
+  async predictBatch(departmentId, employeeIds, organizationId) {
+    // Resolve the target set ourselves, scoped to the caller's org, and send
+    // an explicit employeeIds list — never forward the raw departmentId/
+    // employeeIds the client supplied, since the ai-service would otherwise
+    // apply them with no tenant filter at all (see predictSingle's comment).
+    const filter = { organizationId, isDeleted: false };
+    if (employeeIds?.length) filter._id = { $in: employeeIds };
+    else if (departmentId) filter.departmentId = departmentId;
+    else filter.status = 'ACTIVE';
+
+    const resolvedIds = await Employee.find(filter).distinct('_id');
+    if (resolvedIds.length === 0) {
+      return { processed: 0, failed: 0, totalCount: 0, predictions: [] };
+    }
+
     try {
-      const payload = {};
-      if (departmentId) payload.departmentId = departmentId;
-      if (employeeIds) payload.employeeIds = employeeIds;
+      const payload = { employeeIds: resolvedIds.map(String) };
 
       // Own budget, not env.aiService.timeoutMs (10s default meant for the
       // single-employee calls below) — same fix already applied to explain/
@@ -129,9 +158,11 @@ class AIService {
     }
   }
 
-  async getPredictionForEmployee(employeeId) {
-    // Read directly from MongoDB where FastAPI saved it
-    return await Prediction.findOne({ employeeId });
+  async getPredictionForEmployee(employeeId, organizationId) {
+    // Read directly from MongoDB where FastAPI saved it. organizationId
+    // required (Part 9/11) — Prediction carries it directly (stamped at
+    // write time), so this is a direct filter, not a join.
+    return await Prediction.findOne({ employeeId, organizationId });
   }
 
   async getDashboardRiskCounts(organizationId) {

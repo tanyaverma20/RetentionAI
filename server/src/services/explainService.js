@@ -183,7 +183,7 @@ class ExplainService {
     // memory footprints landing on it together). Throws a 429 immediately
     // if another heavy job is already running, rather than letting them
     // stack.
-    acquireAiSlot('Generate Explanations (batch)');
+    const lockToken = await acquireAiSlot('Generate Explanations (batch)');
     try {
       let batchResults;
       try {
@@ -253,7 +253,7 @@ class ExplainService {
 
       return { processed: inserted.length, skipped };
     } finally {
-      releaseAiSlot();
+      await releaseAiSlot(lockToken);
     }
   }
 
@@ -323,11 +323,13 @@ class ExplainService {
   }
 
   /**
-   * Get an explanation from MongoDB for a given employee.
-   * Returns null if not found.
+   * Get an explanation from MongoDB for a given employee. Returns null if
+   * not found. organizationId required (Part 9/11) — Explanation carries it
+   * directly. Previously any org could read another org's SHAP explanation
+   * (top risk factors) for any employeeId via GET /explain/:employeeId.
    */
-  async getStoredExplanation(employeeId) {
-    return Explanation.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+  async getStoredExplanation(employeeId, organizationId) {
+    return Explanation.findOne({ employeeId, organizationId }).sort({ generatedAt: -1 }).lean();
   }
 
   /**

@@ -84,7 +84,7 @@ class EmployeeIntelligenceService {
     // aiConcurrencyGate.js) — see decisionService.js/explainService.js for
     // the production incident this prevents. Throws a 429 immediately if
     // another heavy job is already running, rather than letting them stack.
-    acquireAiSlot('Generate Employee Intelligence (batch)');
+    const lockToken = await acquireAiSlot('Generate Employee Intelligence (batch)');
     try {
       let profiles;
       try {
@@ -118,16 +118,19 @@ class EmployeeIntelligenceService {
 
       return { processed: inserted.length, skipped };
     } finally {
-      releaseAiSlot();
+      await releaseAiSlot(lockToken);
     }
   }
 
   /**
    * Get the latest stored Employee Intelligence profile for one employee.
-   * Returns null if none has been generated yet.
+   * Returns null if none has been generated yet. organizationId required
+   * (Part 9/11) — EmployeeIntelligence carries it directly. Previously any
+   * org could read another org's sentiment/burnout/emotion profile for any
+   * employeeId via GET /employee-intelligence/:id.
    */
-  async getStored(employeeId) {
-    return EmployeeIntelligence.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+  async getStored(employeeId, organizationId) {
+    return EmployeeIntelligence.findOne({ employeeId, organizationId }).sort({ generatedAt: -1 }).lean();
   }
 
   /**

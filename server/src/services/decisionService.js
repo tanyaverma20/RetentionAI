@@ -1,6 +1,5 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
-import { randomUUID } from 'crypto';
 import { Decision, STATUS_VALUES } from '../models/Decision.js';
 import { Employee } from '../models/Employee.js';
 import { toAiServiceError } from '../utils/aiServiceError.js';
@@ -8,6 +7,7 @@ import { AppError } from '../errors/AppError.js';
 import { recordAudit } from './auditService.js';
 import { logger } from '../utils/logger.js';
 import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
+import { createJob, getJob, updateJob } from '../utils/jobStore.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
@@ -80,15 +80,19 @@ async function pollDecisionBatchJob(jobId) {
 // GET /decisions/batch/status/:jobId until it sees 'completed' or 'failed'.
 // No single leg of that round trip is ever held open longer than one poll
 // interval, so the platform's connection ceiling is never in play.
-const _BATCH_JOBS = new Map();
-const _JOB_TTL_MS = 30 * 60 * 1000; // 30 min — long enough to cover polling, short enough not to leak memory across many runs.
-
-function _pruneOldJobs() {
-  const cutoff = Date.now() - _JOB_TTL_MS;
-  for (const [id, job] of _BATCH_JOBS) {
-    if (job.startedAt.getTime() < cutoff) _BATCH_JOBS.delete(id);
-  }
-}
+//
+// Prompt 1 status (audited, not silently left broken): startBatchJob()/
+// getBatchJobStatus() below are NOT currently called by any controller or
+// route — decisionRoutes.js's POST /batch still calls generateBatch()
+// synchronously (see decisionController.generateBatch), so this async-job
+// path was written but never wired up. Migrating its storage to the shared
+// Redis-backed jobStore.js here (organizationId-scoped, per Part 14) keeps
+// it correct and ready, but actually exposing it over HTTP would change
+// POST /decisions/batch's response shape from the full result to
+// {jobId} — a breaking API change requiring a matching frontend update
+// (Part 23), which is out of this reliability/security phase's scope. See
+// the Prompt 1 report's "Remaining Risks" / "What Prompt 2 should do".
+const _JOB_TYPE = 'decision-batch';
 
 function mapDecisionToDoc(employeeId, organizationId, data, userId) {
   return {
@@ -119,13 +123,18 @@ class DecisionService {
    * data changes".
    */
   async generateForEmployee(employeeId, organizationId, userId, forceRefresh = false) {
-    const employee = await Employee.findById(employeeId).lean();
+    // Part 9/11 — previously unscoped: generating a recommendation for
+    // another org's employeeId would have both leaked that employee's data
+    // into the response AND written a Decision document tagged with the
+    // CALLER's organizationId but referencing a foreign employee (a data
+    // integrity break, not just an access-control one).
+    const employee = await Employee.findOne({ _id: employeeId, organizationId }).lean();
     if (!employee) {
       throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee not found.');
     }
 
     if (!forceRefresh) {
-      const cached = await Decision.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+      const cached = await Decision.findOne({ employeeId, organizationId }).sort({ generatedAt: -1 }).lean();
       if (cached && employee.updatedAt && cached.generatedAt >= employee.updatedAt) {
         return cached;
       }
@@ -203,7 +212,7 @@ class DecisionService {
     // footprints landing on it together). Throws a 429 immediately if
     // another heavy job (train / explain-batch / employee-intelligence
     // batch) is already running, rather than letting them stack.
-    acquireAiSlot('Generate Recommendations (batch)');
+    const lockToken = await acquireAiSlot('Generate Recommendations (batch)');
     try {
       for (let start = 0; start < employees.length; start += CHUNK_SIZE) {
         const chunk = employees.slice(start, start + CHUNK_SIZE);
@@ -271,30 +280,30 @@ class DecisionService {
 
       return { processed, failed, totalCount: employees.length };
     } finally {
-      releaseAiSlot();
+      await releaseAiSlot(lockToken);
     }
   }
 
   /**
    * Kicks off generateBatch() in the background and returns a jobId
-   * immediately. See the _BATCH_JOBS comment above for why this exists —
+   * immediately. See the _JOB_TYPE comment above for why this exists —
    * the request/response cycle for this call must stay short (it does no
    * chunk work itself), unlike the synchronous generateBatch() it wraps.
+   *
+   * `organizationId` MUST be the authenticated caller's org (Part 10) —
+   * every current/future call site must pass req.auth.organizationId, never
+   * a client-supplied value, since getBatchJobStatus() uses it to enforce
+   * per-tenant ownership (Part 14).
    */
-  startBatchJob(organizationId, employeeIds, departmentId, userId) {
-    _pruneOldJobs();
-    const jobId = randomUUID();
-    _BATCH_JOBS.set(jobId, { status: 'running', startedAt: new Date() });
+  async startBatchJob(organizationId, employeeIds, departmentId, userId) {
+    const jobId = await createJob(_JOB_TYPE, { organizationId });
 
     this.generateBatch(organizationId, employeeIds, departmentId, userId)
-      .then((result) => {
-        _BATCH_JOBS.set(jobId, { status: 'completed', startedAt: _BATCH_JOBS.get(jobId).startedAt, result });
-      })
+      .then((result) => updateJob(_JOB_TYPE, jobId, { status: 'completed', result }))
       .catch((err) => {
         logger.error('decision_batch_job_failed', { jobId, error: err.message });
-        _BATCH_JOBS.set(jobId, {
+        updateJob(_JOB_TYPE, jobId, {
           status: 'failed',
-          startedAt: _BATCH_JOBS.get(jobId).startedAt,
           error: err.message,
           statusCode: err.statusCode,
           code: err.code,
@@ -304,23 +313,33 @@ class DecisionService {
     return { jobId };
   }
 
-  /** Poll target for startBatchJob(). Throws 404 if the job is unknown/expired. */
-  getBatchJobStatus(jobId) {
-    const job = _BATCH_JOBS.get(jobId);
+  /**
+   * Poll target for startBatchJob(). Throws 404 if the job is unknown,
+   * expired, or belongs to a different organization — the three cases are
+   * deliberately indistinguishable to the caller (Part 14: confirming a job
+   * ID exists but belongs to someone else is itself a cross-tenant leak).
+   */
+  async getBatchJobStatus(jobId, organizationId) {
+    const job = await getJob(_JOB_TYPE, jobId, { organizationId });
     if (!job) {
       throw new AppError(404, 'JOB_NOT_FOUND', 'Batch job not found. It may have expired or the ID is invalid.');
     }
     return job;
   }
 
-  /** Latest decision for one employee (used by the merged AI Insights endpoint). */
-  async getStored(employeeId) {
-    return Decision.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+  /**
+   * Latest decision for one employee (used by the merged AI Insights
+   * endpoint). organizationId required (Part 9/11) — Decision carries it
+   * directly. Previously any org could read another org's AI recommendation
+   * (reasoning, evidence) for any employeeId via GET /decisions/:employeeId.
+   */
+  async getStored(employeeId, organizationId) {
+    return Decision.findOne({ employeeId, organizationId }).sort({ generatedAt: -1 }).lean();
   }
 
-  /** Full decision history for one employee. */
-  async getHistory(employeeId) {
-    return Decision.find({ employeeId }).sort({ generatedAt: -1 }).lean();
+  /** Full decision history for one employee. Same organizationId requirement as getStored(). */
+  async getHistory(employeeId, organizationId) {
+    return Decision.find({ employeeId, organizationId }).sort({ generatedAt: -1 }).lean();
   }
 
   /**
@@ -328,11 +347,13 @@ class DecisionService {
    * appended to statusHistory (audit trail) — restricted to HR/Admin at
    * the route layer.
    */
-  async updateStatus(decisionId, status, changedByUserId, note = '') {
+  async updateStatus(decisionId, organizationId, status, changedByUserId, note = '') {
     if (!STATUS_VALUES.includes(status)) {
       throw new AppError(400, 'INVALID_STATUS', `Status must be one of: ${STATUS_VALUES.join(', ')}`);
     }
-    const decision = await Decision.findById(decisionId);
+    // Part 9/11/14 — previously unscoped: any org's HR/Admin could accept/
+    // dismiss another org's AI recommendation by decision ID alone.
+    const decision = await Decision.findOne({ _id: decisionId, organizationId });
     if (!decision) {
       throw new AppError(404, 'DECISION_NOT_FOUND', 'Decision not found.');
     }

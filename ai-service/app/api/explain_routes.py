@@ -21,8 +21,6 @@ from __future__ import annotations
 
 import os
 import asyncio
-import time
-import uuid
 from typing import Optional
 
 from bson import ObjectId
@@ -44,6 +42,7 @@ from app.explainability.plot_generator import (
 )
 from app.preprocessing.pipeline import transform_inference
 from app.utils.database import get_db
+from app.utils.job_store import create_job, get_job, update_job
 
 router = APIRouter(tags=["Explainability"])
 
@@ -95,29 +94,19 @@ def _shap_not_ready():
 # multi-minute waits (proven directly: a 123s through-Express call to the
 # OLD synchronous endpoint succeeded before this change).
 #
-# In-memory, not a persistent queue: this service has no job-queue
-# infrastructure (see aiPipelineService.js's docstring on the Express side
-# for the same constraint), and a single-process FastAPI deployment is the
-# only thing that needs to read this. A restart loses in-flight jobs, which
-# is acceptable — Express's poll loop times out and the user can just click
-# the button again, exactly as if the request itself had failed.
-_EXPLAIN_JOBS: dict[str, dict] = {}
-
-# Jobs older than this are evicted on each new job's creation so _EXPLAIN_JOBS
-# can't grow without bound across a long-lived process.
-_JOB_TTL_SECONDS = 30 * 60
-
-
-def _prune_old_jobs() -> None:
-    cutoff = time.time() - _JOB_TTL_SECONDS
-    stale = [job_id for job_id, job in _EXPLAIN_JOBS.items() if job["startedAt"] < cutoff]
-    for job_id in stale:
-        del _EXPLAIN_JOBS[job_id]
+# Prompt 1, Part 3/6 — persisted via app/utils/job_store.py (Redis-backed,
+# in-memory fallback only when Redis isn't configured). Previously a plain
+# dict here: any ai-service restart mid-batch silently lost the job, and
+# Express's poll got a bare 404 with no way to tell "expired" apart from
+# "the whole service just restarted out from under this job". The job store
+# now distinguishes that case explicitly (see its "recovered" flag) instead
+# of just disappearing.
+_JOB_TYPE = "explain-batch"
 
 
 async def _run_explain_batch_job(job_id: str, query: dict) -> None:
-    """Does the actual fetch/enrich/SHAP work; stores the outcome in
-    _EXPLAIN_JOBS instead of returning it directly to an HTTP caller."""
+    """Does the actual fetch/enrich/SHAP work; stores the outcome via the
+    job store instead of returning it directly to an HTTP caller."""
     try:
         db = get_db()
         employees = [emp async for emp in db["employees"].find(query)]
@@ -141,23 +130,18 @@ async def _run_explain_batch_job(job_id: str, query: dict) -> None:
 
         explanations = await asyncio.to_thread(explain_employees_batch, enriched_docs)
 
-        _EXPLAIN_JOBS[job_id] = {
+        await update_job(_JOB_TYPE, job_id, {
             "status": "completed",
-            "startedAt": _EXPLAIN_JOBS[job_id]["startedAt"],
             "result": {
                 "explanations": explanations,
                 "totalCount": len(employees),
                 "successCount": len(explanations),
                 "failedCount": failed_count,
             },
-        }
+        })
     except Exception as exc:
         print(f"Batch explain job {job_id} failed: {exc}")
-        _EXPLAIN_JOBS[job_id] = {
-            "status": "failed",
-            "startedAt": _EXPLAIN_JOBS[job_id]["startedAt"],
-            "error": str(exc),
-        }
+        await update_job(_JOB_TYPE, job_id, {"status": "failed", "error": str(exc)})
 
 
 def _serialize(doc: dict) -> dict:
@@ -301,9 +285,7 @@ async def explain_batch(request: ExplainBatchRequest):
     else:
         query["status"] = "ACTIVE"
 
-    _prune_old_jobs()
-    job_id = str(uuid.uuid4())
-    _EXPLAIN_JOBS[job_id] = {"status": "running", "startedAt": time.time()}
+    job_id = await create_job(_JOB_TYPE)
     asyncio.create_task(_run_explain_batch_job(job_id, query))
 
     return {"success": True, "jobId": job_id, "message": "Batch explanation started in the background."}
@@ -316,7 +298,7 @@ async def explain_batch(request: ExplainBatchRequest):
     dependencies=[Depends(verify_auth_token)],
 )
 async def explain_batch_status(jobId: str):
-    job = _EXPLAIN_JOBS.get(jobId)
+    job = await get_job(_JOB_TYPE, jobId)
     if job is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND,

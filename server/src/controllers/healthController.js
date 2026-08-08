@@ -3,6 +3,7 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { getMetricsSnapshot } from '../middlewares/metrics.js';
+import { getRedisDiagnostics } from '../utils/redisClient.js';
 
 const startedAt = Date.now();
 
@@ -43,10 +44,17 @@ export async function getDetailedHealth(_request, response) {
 
   const overallStatus = mongo.status === 'UP' && aiService.status === 'UP' ? 'UP' : 'DEGRADED';
 
+  // Configuration only, not a live round-trip (getRedisDiagnostics() never
+  // calls Upstash) — keeps this endpoint fast and never NOT configured
+  // doesn't degrade overallStatus: it's a valid, intentional dev-mode state
+  // (see redisClient.js's module docstring). Never includes the token or
+  // full URL — host only (Part 16).
+  const redis = getRedisDiagnostics();
+
   response.status(overallStatus === 'UP' ? 200 : 503).json({
     status: overallStatus,
     uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
-    dependencies: { mongo, aiService },
+    dependencies: { mongo, aiService, redis },
     resources: {
       memory: {
         rssMb: Math.round(memory.rss / 1024 / 1024),
