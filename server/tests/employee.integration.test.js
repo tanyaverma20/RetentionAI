@@ -28,6 +28,7 @@ test('Employee management endpoints support full lifecycle, CSV bulk import, and
     { hashPassword },
     { createAccessToken },
     { app },
+    { DEFAULT_ORGANIZATION_ID },
   ] = await Promise.all([
     import('../src/config/database.js'),
     import('../src/services/roleService.js'),
@@ -38,6 +39,7 @@ test('Employee management endpoints support full lifecycle, CSV bulk import, and
     import('../src/utils/password.js'),
     import('../src/utils/tokens.js'),
     import('../src/app.js'),
+    import('../src/config/tenancy.js'),
   ]);
 
   await connectDatabase();
@@ -49,7 +51,14 @@ test('Employee management endpoints support full lifecycle, CSV bulk import, and
 
   const adminRole = await Role.findOne({ name: 'ADMIN' });
 
+  // organizationId matches authenticate.js's DEFAULT_ORGANIZATION_ID
+  // fallback for pre-existing accounts — without it these fixtures don't
+  // belong to any organization the request can resolve to, and every
+  // org-scoped repository call (departmentRepository/employeeRepository)
+  // now correctly finds nothing, since real production seed data
+  // (scripts/seedHrData.js) always sets this field.
   const admin = await User.create({
+    organizationId: DEFAULT_ORGANIZATION_ID,
     name: 'HR Admin',
     email: 'hr.admin@example.test',
     passwordHash: await hashPassword('Admin#12345'),
@@ -57,6 +66,7 @@ test('Employee management endpoints support full lifecycle, CSV bulk import, and
   });
 
   const department = await Department.create({
+    organizationId: DEFAULT_ORGANIZATION_ID,
     name: 'Technology',
     code: 'TECH',
     location: 'Headquarters',

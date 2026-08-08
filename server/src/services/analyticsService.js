@@ -16,7 +16,15 @@ import * as analyticsRepo from '../repositories/analyticsRepository.js';
  * Enforces role-based query scope restrictions.
  */
 function applyRbacScope(authContext, filter = {}) {
-  const scopedFilter = { ...filter };
+  // organizationId is the FIRST scope applied, unconditionally, before role
+  // narrows it further — every analytics query used to run with no tenant
+  // scope at all (Employee/Attendance/Performance/Survey/TrainingHistory/
+  // PromotionHistory/EmployeeFeedback all queried with no organizationId
+  // filter), so a brand-new organization's dashboard showed the seeded
+  // default organization's entire workforce. Confirmed live: signing up a
+  // fresh org and loading /dashboard showed "Total Employees: 1,470" —
+  // another tenant's real headcount — instead of 0.
+  const scopedFilter = { ...filter, organizationId: authContext?.organizationId };
   const role = authContext?.role;
 
   if (role === ROLE_NAMES.ADMIN || role === ROLE_NAMES.HR_MANAGER || role === ROLE_NAMES.HR_ANALYST) {

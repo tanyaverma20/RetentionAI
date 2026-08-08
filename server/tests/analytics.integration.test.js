@@ -28,6 +28,7 @@ test('Analytics endpoints calculate aggregations and respect RBAC query scoping'
     { hashPassword },
     { createAccessToken },
     { app },
+    { DEFAULT_ORGANIZATION_ID },
   ] = await Promise.all([
     import('../src/config/database.js'),
     import('../src/services/roleService.js'),
@@ -38,6 +39,7 @@ test('Analytics endpoints calculate aggregations and respect RBAC query scoping'
     import('../src/utils/password.js'),
     import('../src/utils/tokens.js'),
     import('../src/app.js'),
+    import('../src/config/tenancy.js'),
   ]);
 
   await connectDatabase();
@@ -50,12 +52,20 @@ test('Analytics endpoints calculate aggregations and respect RBAC query scoping'
   const adminRole = await Role.findOne({ name: 'ADMIN' });
   const deptMgrRole = await Role.findOne({ name: 'DEPARTMENT_MANAGER' });
 
+  // organizationId matches authenticate.js's DEFAULT_ORGANIZATION_ID
+  // fallback for pre-existing accounts — see employee.integration.test.js's
+  // identical comment for why this is required now that analytics queries
+  // are correctly tenant-scoped (they previously weren't; a fresh
+  // organization's dashboard showed every other tenant's real data).
+  const orgId = DEFAULT_ORGANIZATION_ID;
+
   // Create test departments
-  const deptEng = await Department.create({ name: 'Engineering', code: 'ENG', location: 'Floor 3' });
-  const deptHr = await Department.create({ name: 'Human Resources', code: 'HR', location: 'Floor 1' });
+  const deptEng = await Department.create({ organizationId: orgId, name: 'Engineering', code: 'ENG', location: 'Floor 3' });
+  const deptHr = await Department.create({ organizationId: orgId, name: 'Human Resources', code: 'HR', location: 'Floor 1' });
 
   // Create test users
   const admin = await User.create({
+    organizationId: orgId,
     name: 'Analytics Admin',
     email: 'admin.analytics@example.test',
     passwordHash: await hashPassword('Admin#12345'),
@@ -63,6 +73,7 @@ test('Analytics endpoints calculate aggregations and respect RBAC query scoping'
   });
 
   const deptManager = await User.create({
+    organizationId: orgId,
     name: 'Tech Lead Manager',
     email: 'tech.mgr@example.test',
     passwordHash: await hashPassword('User#12345'),
@@ -73,6 +84,7 @@ test('Analytics endpoints calculate aggregations and respect RBAC query scoping'
   // Create sample employees
   await Employee.create([
     {
+      organizationId: orgId,
       employeeCode: 'EMP-101',
       firstName: 'Alice',
       lastName: 'Smith',
@@ -86,6 +98,7 @@ test('Analytics endpoints calculate aggregations and respect RBAC query scoping'
       employmentType: 'FULL_TIME',
     },
     {
+      organizationId: orgId,
       employeeCode: 'EMP-102',
       firstName: 'Bob',
       lastName: 'Johnson',
@@ -99,6 +112,7 @@ test('Analytics endpoints calculate aggregations and respect RBAC query scoping'
       employmentType: 'FULL_TIME',
     },
     {
+      organizationId: orgId,
       employeeCode: 'EMP-103',
       firstName: 'Carol',
       lastName: 'Davis',

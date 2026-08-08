@@ -34,6 +34,26 @@ export const loginValidationSchema = z.object({
   password: z.string().min(1, 'Password is required.'),
 });
 
+export const signupValidationSchema = z.object({
+  organizationName: z
+    .string()
+    .trim()
+    .min(2, 'Organization name must be at least 2 characters.')
+    .max(200, 'Organization name must not exceed 200 characters.'),
+  adminName: z
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters.')
+    .max(100, 'Name must not exceed 100 characters.'),
+  adminEmail: z
+    .string()
+    .trim()
+    .min(1, 'Email address is required.')
+    .email('Please enter a valid email address.')
+    .toLowerCase(),
+  adminPassword: clientPasswordSchema,
+});
+
 export const forgotPasswordValidationSchema = z.object({
   email: z
     .string()

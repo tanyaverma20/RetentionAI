@@ -9,6 +9,8 @@ import mongoose from 'mongoose';
  */
 
 const AUDIT_ACTIONS = [
+  // Phase 1 — SaaS multi-tenancy (docs/PLATFORM_BLUEPRINT.md)
+  'ORGANIZATION_CREATED',
   // Sprint 8 — executive
   'EXECUTIVE_DASHBOARD_EXPORT',
   'EXECUTIVE_REPORT_GENERATED',

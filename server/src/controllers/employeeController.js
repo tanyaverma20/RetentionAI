@@ -19,7 +19,7 @@ import { sendSuccess } from '../utils/response.js';
 
 export async function createEmployee(request, response, next) {
   try {
-    const employee = await employeeService.createEmployee(request.validatedBody);
+    const employee = await employeeService.createEmployee(request.validatedBody, request.auth.organizationId);
     return sendSuccess(response, 201, employee, request.requestId);
   } catch (error) {
     return next(error);
@@ -146,6 +146,7 @@ export async function updateEmployee(request, response, next) {
     const employee = await employeeService.updateEmployee(
       request.params.employeeId,
       request.validatedBody,
+      request.auth.organizationId,
     );
     return sendSuccess(response, 200, employee, request.requestId);
   } catch (error) {
@@ -155,7 +156,7 @@ export async function updateEmployee(request, response, next) {
 
 export async function softDeleteEmployee(request, response, next) {
   try {
-    const employee = await employeeService.softDeleteEmployee(request.params.employeeId);
+    const employee = await employeeService.softDeleteEmployee(request.params.employeeId, request.auth.organizationId);
     return sendSuccess(response, 200, employee, request.requestId);
   } catch (error) {
     return next(error);
@@ -164,7 +165,7 @@ export async function softDeleteEmployee(request, response, next) {
 
 export async function restoreEmployee(request, response, next) {
   try {
-    const employee = await employeeService.restoreEmployee(request.params.employeeId);
+    const employee = await employeeService.restoreEmployee(request.params.employeeId, request.auth.organizationId);
     return sendSuccess(response, 200, employee, request.requestId);
   } catch (error) {
     return next(error);
@@ -173,7 +174,7 @@ export async function restoreEmployee(request, response, next) {
 
 export async function bulkSoftDeleteAllEmployees(request, response, next) {
   try {
-    const result = await employeeService.bulkSoftDeleteAllEmployees();
+    const result = await employeeService.bulkSoftDeleteAllEmployees(request.auth.organizationId);
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
     return next(error);
@@ -191,7 +192,7 @@ export async function bulkImport(request, response, next) {
       rowsToImport = records;
     }
 
-    const result = await employeeService.bulkImportEmployees(rowsToImport);
+    const result = await employeeService.bulkImportEmployees(rowsToImport, request.auth.organizationId);
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
     return next(error);
@@ -207,6 +208,7 @@ export async function uploadAvatar(request, response, next) {
     const employee = await employeeService.updateEmployee(
       request.params.employeeId,
       { profilePicture: url },
+      request.auth.organizationId,
     );
     return sendSuccess(response, 200, { profilePicture: url, employee }, request.requestId);
   } catch (error) {

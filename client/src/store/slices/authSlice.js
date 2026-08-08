@@ -1,5 +1,6 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import authService from '../../services/authService';
+import organizationService from '../../services/organizationService';
 
 const storedAccessToken = localStorage.getItem('accessToken') || null;
 const storedRefreshToken = localStorage.getItem('refreshToken') || null;
@@ -23,6 +24,20 @@ export const loginUser = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(
         error.response?.data?.error?.message || 'Login failed. Please check your credentials.',
+      );
+    }
+  },
+);
+
+export const signupOrganization = createAsyncThunk(
+  'auth/signupOrganization',
+  async (payload, { rejectWithValue }) => {
+    try {
+      const data = await organizationService.signup(payload);
+      return data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data?.error?.message || 'Signup failed. Please try again.',
       );
     }
   },
@@ -97,6 +112,25 @@ const authSlice = createSlice({
       localStorage.setItem('refreshToken', action.payload.refreshToken);
     });
     builder.addCase(loginUser.rejected, (state, action) => {
+      state.isLoading = false;
+      state.error = action.payload;
+    });
+
+    // Organization Signup
+    builder.addCase(signupOrganization.pending, (state) => {
+      state.isLoading = true;
+      state.error = null;
+    });
+    builder.addCase(signupOrganization.fulfilled, (state, action) => {
+      state.isLoading = false;
+      state.isAuthenticated = true;
+      state.accessToken = action.payload.accessToken;
+      state.refreshToken = action.payload.refreshToken;
+      state.user = action.payload.user;
+      localStorage.setItem('accessToken', action.payload.accessToken);
+      localStorage.setItem('refreshToken', action.payload.refreshToken);
+    });
+    builder.addCase(signupOrganization.rejected, (state, action) => {
       state.isLoading = false;
       state.error = action.payload;
     });

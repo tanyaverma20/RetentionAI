@@ -6,6 +6,7 @@ import BaseLayout from './layouts/BaseLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/Home';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
 import { injectStoreInApi } from './services/api';
 import { store } from './store/store';
 import { fetchCurrentUser } from './store/slices/authSlice';
@@ -67,6 +68,7 @@ export default function App() {
           {/* Public Routes */}
           <Route index element={<Home />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 

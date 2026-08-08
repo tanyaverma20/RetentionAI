@@ -42,29 +42,30 @@ export async function getEmployee360(employeeId, authContext) {
 /**
  * Create a new employee.
  * @param {object} data
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document>}
  */
-export async function createEmployee(data) {
+export async function createEmployee(data, organizationId) {
   const email = data.email.toLowerCase();
   const code = data.employeeCode.toUpperCase();
 
-  const existingEmail = await employeeRepository.findEmployeeByEmail(email);
+  const existingEmail = await employeeRepository.findEmployeeByEmail(email, organizationId);
   if (existingEmail) {
     throw new AppError(409, 'DUPLICATE_EMAIL', `Employee with email '${email}' already exists.`);
   }
 
-  const existingCode = await employeeRepository.findEmployeeByCode(code);
+  const existingCode = await employeeRepository.findEmployeeByCode(code, organizationId);
   if (existingCode) {
     throw new AppError(409, 'DUPLICATE_EMPLOYEE_CODE', `Employee code '${code}' already exists.`);
   }
 
-  const department = await departmentRepository.findDepartmentById(data.departmentId);
+  const department = await departmentRepository.findDepartmentById(data.departmentId, organizationId);
   if (!department) {
     throw new AppError(404, 'DEPARTMENT_NOT_FOUND', 'Specified department was not found.');
   }
 
   if (data.managerId) {
-    const manager = await employeeRepository.findEmployeeById(data.managerId);
+    const manager = await employeeRepository.findEmployeeById(data.managerId, organizationId);
     if (!manager) {
       throw new AppError(404, 'MANAGER_NOT_FOUND', 'Specified manager employee record was not found.');
     }
@@ -74,6 +75,7 @@ export async function createEmployee(data) {
     ...data,
     email,
     employeeCode: code,
+    organizationId,
   });
 }
 
@@ -81,11 +83,11 @@ export async function createEmployee(data) {
  * Get employee profile by ID with RBAC scope check.
  *
  * @param {string} employeeId - Target employee ID.
- * @param {{ userId: string, role: string, departmentId?: string }} authContext - Request auth context.
+ * @param {{ userId: string, role: string, departmentId?: string, organizationId: string }} authContext - Request auth context.
  * @returns {Promise<import('mongoose').Document>}
  */
 export async function getEmployeeProfile(employeeId, authContext) {
-  const employee = await employeeRepository.findEmployeeById(employeeId);
+  const employee = await employeeRepository.findEmployeeById(employeeId, authContext.organizationId);
   if (!employee) {
     throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found.');
   }
@@ -131,11 +133,11 @@ export async function getEmployeeProfile(employeeId, authContext) {
  * List employees with filtering, searching, pagination, and RBAC department scope checks.
  *
  * @param {object} queryOptions
- * @param {{ userId: string, role: string, departmentId?: string }} authContext
+ * @param {{ userId: string, role: string, departmentId?: string, organizationId: string }} authContext
  * @returns {Promise<object>}
  */
 export async function listEmployees(queryOptions, authContext) {
-  const { role, departmentId } = authContext;
+  const { role, departmentId, organizationId } = authContext;
 
   // If role is Department Manager, automatically restrict query to their department
   if (role === 'DEPARTMENT_MANAGER' || role === 'DEPT_MANAGER') {
@@ -145,24 +147,25 @@ export async function listEmployees(queryOptions, authContext) {
     queryOptions.departmentId = departmentId;
   }
 
-  return employeeRepository.listEmployees(queryOptions);
+  return employeeRepository.listEmployees(queryOptions, organizationId);
 }
 
 /**
  * Update an existing employee profile.
  * @param {string} employeeId
  * @param {object} updates
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document>}
  */
-export async function updateEmployee(employeeId, updates) {
-  const employee = await employeeRepository.findEmployeeById(employeeId);
+export async function updateEmployee(employeeId, updates, organizationId) {
+  const employee = await employeeRepository.findEmployeeById(employeeId, organizationId);
   if (!employee) {
     throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found.');
   }
 
   if (updates.email && updates.email.toLowerCase() !== employee.email) {
     const email = updates.email.toLowerCase();
-    const existing = await employeeRepository.findEmployeeByEmail(email);
+    const existing = await employeeRepository.findEmployeeByEmail(email, organizationId);
     if (existing && existing.id !== employeeId) {
       throw new AppError(409, 'DUPLICATE_EMAIL', `Email '${email}' is already in use.`);
     }
@@ -171,7 +174,7 @@ export async function updateEmployee(employeeId, updates) {
 
   if (updates.employeeCode && updates.employeeCode.toUpperCase() !== employee.employeeCode) {
     const code = updates.employeeCode.toUpperCase();
-    const existing = await employeeRepository.findEmployeeByCode(code);
+    const existing = await employeeRepository.findEmployeeByCode(code, organizationId);
     if (existing && existing.id !== employeeId) {
       throw new AppError(409, 'DUPLICATE_EMPLOYEE_CODE', `Employee code '${code}' is already in use.`);
     }
@@ -179,7 +182,7 @@ export async function updateEmployee(employeeId, updates) {
   }
 
   if (updates.departmentId) {
-    const department = await departmentRepository.findDepartmentById(updates.departmentId);
+    const department = await departmentRepository.findDepartmentById(updates.departmentId, organizationId);
     if (!department) {
       throw new AppError(404, 'DEPARTMENT_NOT_FOUND', 'Specified department was not found.');
     }
@@ -188,7 +191,7 @@ export async function updateEmployee(employeeId, updates) {
 
   if (updates.managerId !== undefined) {
     if (updates.managerId) {
-      const manager = await employeeRepository.findEmployeeById(updates.managerId);
+      const manager = await employeeRepository.findEmployeeById(updates.managerId, organizationId);
       if (!manager) {
         throw new AppError(404, 'MANAGER_NOT_FOUND', 'Specified manager record was not found.');
       }
@@ -238,10 +241,11 @@ export async function updateEmployee(employeeId, updates) {
 /**
  * Soft delete an employee.
  * @param {string} employeeId
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document>}
  */
-export async function softDeleteEmployee(employeeId) {
-  const employee = await employeeRepository.findEmployeeById(employeeId);
+export async function softDeleteEmployee(employeeId, organizationId) {
+  const employee = await employeeRepository.findEmployeeById(employeeId, organizationId);
   if (!employee) {
     throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found.');
   }
@@ -250,16 +254,17 @@ export async function softDeleteEmployee(employeeId) {
     throw new AppError(400, 'ALREADY_DELETED', 'Employee is already soft-deleted.');
   }
 
-  return employeeRepository.softDeleteEmployee(employeeId);
+  return employeeRepository.softDeleteEmployee(employeeId, organizationId);
 }
 
 /**
  * Restore a soft-deleted employee.
  * @param {string} employeeId
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document>}
  */
-export async function restoreEmployee(employeeId) {
-  const employee = await employeeRepository.findEmployeeById(employeeId);
+export async function restoreEmployee(employeeId, organizationId) {
+  const employee = await employeeRepository.findEmployeeById(employeeId, organizationId);
   if (!employee) {
     throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found.');
   }
@@ -268,17 +273,20 @@ export async function restoreEmployee(employeeId) {
     throw new AppError(400, 'NOT_DELETED', 'Employee is active and not soft-deleted.');
   }
 
-  return employeeRepository.restoreEmployee(employeeId);
+  return employeeRepository.restoreEmployee(employeeId, organizationId);
 }
 
 /**
- * Soft delete every active (not already soft-deleted) employee at once.
- * Same reversible operation as softDeleteEmployee — restore individually via
- * POST /:employeeId/restore. No hard-delete path exists for employees.
+ * Soft delete every active (not already soft-deleted) employee in the
+ * caller's organization at once. Scoped — this used to update EVERY
+ * tenant's employees; see this file's header. Same reversible operation as
+ * softDeleteEmployee — restore individually via POST /:employeeId/restore.
+ * No hard-delete path exists for employees.
+ * @param {string} organizationId
  * @returns {Promise<{ deletedCount: number }>}
  */
-export async function bulkSoftDeleteAllEmployees() {
-  const deletedCount = await employeeRepository.softDeleteAllEmployees();
+export async function bulkSoftDeleteAllEmployees(organizationId) {
+  const deletedCount = await employeeRepository.softDeleteAllEmployees(organizationId);
   return { deletedCount };
 }
 
@@ -334,9 +342,10 @@ export function parseCSVText(csvText) {
  * Validates department existence, email uniqueness, and code uniqueness per row.
  *
  * @param {Array<object>} rows
+ * @param {string} organizationId
  * @returns {Promise<{ importedCount: number, failedCount: number, errors: Array<{ row: number, error: string }>, items: Array }>}
  */
-export async function bulkImportEmployees(rows) {
+export async function bulkImportEmployees(rows, organizationId) {
   if (!Array.isArray(rows) || rows.length === 0) {
     throw new AppError(400, 'EMPTY_IMPORT_DATA', 'No employee records were provided for bulk import.');
   }
@@ -344,8 +353,10 @@ export async function bulkImportEmployees(rows) {
   const errors = [];
   const validRecords = [];
 
-  // Pre-fetch departments map by code and name
-  const departmentsList = await departmentRepository.listDepartments();
+  // Pre-fetch departments map by code and name, scoped to this organization
+  // — otherwise a row referencing another tenant's department code/name by
+  // coincidence would silently link this org's new employee to it.
+  const departmentsList = await departmentRepository.listDepartments({}, organizationId);
   const deptCodeMap = new Map(departmentsList.map((d) => [d.code.toUpperCase(), d._id.toString()]));
   const deptNameMap = new Map(departmentsList.map((d) => [d.name.toLowerCase(), d._id.toString()]));
 
@@ -379,13 +390,13 @@ export async function bulkImportEmployees(rows) {
         continue;
       }
 
-      const existingCode = await employeeRepository.findEmployeeByCode(employeeCode);
+      const existingCode = await employeeRepository.findEmployeeByCode(employeeCode, organizationId);
       if (existingCode) {
         errors.push({ row: rowNum, error: `Employee code '${employeeCode}' already exists.` });
         continue;
       }
 
-      const existingEmail = await employeeRepository.findEmployeeByEmail(email);
+      const existingEmail = await employeeRepository.findEmployeeByEmail(email, organizationId);
       if (existingEmail) {
         errors.push({ row: rowNum, error: `Employee email '${email}' already exists.` });
         continue;
@@ -396,6 +407,7 @@ export async function bulkImportEmployees(rows) {
         firstName,
         lastName,
         email,
+        organizationId,
         phone: row.phone || row.Phone || '',
         gender: ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'].includes(row.gender?.toUpperCase())
           ? row.gender.toUpperCase()

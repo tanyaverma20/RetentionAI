@@ -77,3 +77,12 @@ export const passwordChangeRateLimit = createRateLimit({
   limit: 5,
   keyGenerator: (request) => request.auth?.userId ?? request.ip,
 });
+
+// Organization signup creates a new tenant (and its first admin account) —
+// generous enough for real use, strict enough to block scripted mass
+// account creation from a single source.
+export const signupRateLimit = createRateLimit({
+  windowMs: 60 * 60_000,
+  limit: 5,
+  keyGenerator: (request) => request.ip,
+});

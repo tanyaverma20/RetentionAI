@@ -6,8 +6,21 @@
  * --------------------
  * Encapsulates all Mongoose query execution for Department documents so that
  * business logic remains decoupled from the database layer.
+ *
+ * Tenant scoping
+ * --------------
+ * Every read/write here takes an explicit `organizationId` and filters by
+ * it. This was NOT true before: an organization.integration.test.js smoke
+ * test (Phase 1, item 2 — see docs/PLATFORM_BLUEPRINT.md) created a
+ * department in one organization and found it fully visible, editable, and
+ * deletable from a second, unrelated organization — every function here
+ * queried Department/Employee with no organizationId filter at all. That
+ * was a real, currently-exploitable cross-tenant data leak, not a
+ * hypothetical: `deleteAllDepartments` would have deleted every tenant's
+ * departments, not just the caller's.
  */
 
+import mongoose from 'mongoose';
 import { Department } from '../models/Department.js';
 import { Employee } from '../models/Employee.js';
 
@@ -17,7 +30,8 @@ const managerPopulation = {
 };
 
 /**
- * Create a new department.
+ * Create a new department. `data.organizationId` must already be set by
+ * the caller (departmentService stamps it from the authenticated request).
  * @param {object} data
  * @returns {Promise<import('mongoose').Document>}
  */
@@ -26,43 +40,47 @@ export function createDepartment(data) {
 }
 
 /**
- * Find department by ID.
+ * Find department by ID, scoped to one organization.
  * @param {string} departmentId
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function findDepartmentById(departmentId) {
-  return Department.findById(departmentId).populate(managerPopulation);
+export function findDepartmentById(departmentId, organizationId) {
+  return Department.findOne({ _id: departmentId, organizationId }).populate(managerPopulation);
 }
 
 /**
- * Find department by uppercase department code.
+ * Find department by uppercase department code, scoped to one organization.
  * @param {string} code
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function findDepartmentByCode(code) {
-  return Department.findOne({ code: code.toUpperCase() }).populate(managerPopulation);
+export function findDepartmentByCode(code, organizationId) {
+  return Department.findOne({ code: code.toUpperCase(), organizationId }).populate(managerPopulation);
 }
 
 /**
- * Find department by exact name.
+ * Find department by exact name, scoped to one organization.
  * @param {string} name
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function findDepartmentByName(name) {
-  return Department.findOne({ name: new RegExp(`^${name.trim()}$`, 'i') }).populate(
+export function findDepartmentByName(name, organizationId) {
+  return Department.findOne({ name: new RegExp(`^${name.trim()}$`, 'i'), organizationId }).populate(
     managerPopulation,
   );
 }
 
 /**
- * List departments with optional text search and active status filter.
- * Also computes employee counts per department.
+ * List departments with optional text search and active status filter,
+ * scoped to one organization. Also computes employee counts per department.
  *
  * @param {{ isActive?: boolean, q?: string }} options
+ * @param {string} organizationId
  * @returns {Promise<Array<object>>}
  */
-export async function listDepartments({ isActive, q } = {}) {
-  const filter = {};
+export async function listDepartments({ isActive, q } = {}, organizationId) {
+  const filter = { organizationId };
   if (typeof isActive === 'boolean') {
     filter.isActive = isActive;
   }
@@ -80,9 +98,19 @@ export async function listDepartments({ isActive, q } = {}) {
     .sort({ name: 1 })
     .lean();
 
-  // Aggregate active employee count per department
+  // Aggregate active employee count per department — scoped to the same
+  // organization so a department's count can never include another
+  // tenant's employees even if departmentIds were ever to collide.
+  //
+  // aggregate() does NOT auto-cast a string to ObjectId the way find() does
+  // (Department.find(filter) above works fine with a raw string; this does
+  // not) — without the explicit cast this silently matches zero employees
+  // and every department would report employeeCount: 0.
+  const orgObjectId = mongoose.Types.ObjectId.isValid(organizationId)
+    ? new mongoose.Types.ObjectId(organizationId)
+    : organizationId;
   const employeeCounts = await Employee.aggregate([
-    { $match: { isDeleted: false } },
+    { $match: { isDeleted: false, organizationId: orgObjectId } },
     { $group: { _id: '$departmentId', count: { $sum: 1 } } },
   ]);
 
@@ -97,7 +125,8 @@ export async function listDepartments({ isActive, q } = {}) {
 }
 
 /**
- * Save updated department document.
+ * Save updated department document. No separate org check needed here —
+ * the document was already fetched via a scoped findDepartmentById above.
  * @param {import('mongoose').Document} department
  * @returns {Promise<import('mongoose').Document>}
  */
@@ -106,25 +135,32 @@ export function updateDepartment(department) {
 }
 
 /**
- * Delete a department by ID.
+ * Delete a department by ID, scoped to one organization.
  * @param {string} departmentId
+ * @param {string} organizationId
  * @returns {Promise<object | null>}
  */
-export function deleteDepartmentById(departmentId) {
-  return Department.findByIdAndDelete(departmentId);
+export function deleteDepartmentById(departmentId, organizationId) {
+  return Department.findOneAndDelete({ _id: departmentId, organizationId });
 }
 
 /**
- * Count employees assigned to a given department.
+ * Count employees assigned to a given department, scoped to one
+ * organization (a departmentId is only ever meaningful within the
+ * organization that owns it, but this is called with IDs already
+ * confirmed to belong to the caller's org by the service layer — the
+ * explicit filter here is defense in depth, not the only guard).
  * @param {string} departmentId
+ * @param {string} organizationId
  * @returns {Promise<number>}
  */
-export function countEmployeesInDepartment(departmentId) {
-  return Employee.countDocuments({ departmentId, isDeleted: false });
+export function countEmployeesInDepartment(departmentId, organizationId) {
+  return Employee.countDocuments({ departmentId, organizationId, isDeleted: false });
 }
 
 /**
- * Bulk create departments.
+ * Bulk create departments. Each record must already have organizationId
+ * stamped by the caller (departmentService).
  * @param {Array<object>} departmentsArray
  * @returns {Promise<any>}
  */

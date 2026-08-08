@@ -6,6 +6,17 @@
  * --------------------
  * Encapsulates all database operations for employee profiles, search, filtering,
  * pagination, soft deletion, and bulk insertions.
+ *
+ * Tenant scoping
+ * --------------
+ * Every read/write here takes an explicit `organizationId` and filters by
+ * it. This was NOT true before — none of these functions filtered by
+ * organization at all, meaning any authenticated ADMIN/HR_MANAGER (from
+ * ANY organization) could list, read, and edit every OTHER organization's
+ * employee records, including salary and other PII. Found via
+ * organization.integration.test.js while verifying Phase 1's multi-tenancy
+ * work (docs/PLATFORM_BLUEPRINT.md) — see departmentRepository.js's header
+ * for the twin bug that test first caught.
  */
 
 import mongoose from 'mongoose';
@@ -18,7 +29,9 @@ const defaultPopulation = [
 ];
 
 /**
- * Create a single employee document.
+ * Create a single employee document. `data.organizationId` must already be
+ * set by the caller (employeeService stamps it from the authenticated
+ * request).
  * @param {object} data
  * @returns {Promise<import('mongoose').Document>}
  */
@@ -27,43 +40,51 @@ export function createEmployee(data) {
 }
 
 /**
- * Find employee by MongoDB ID with populated references.
+ * Find employee by MongoDB ID with populated references, scoped to one
+ * organization.
  * @param {string} employeeId
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function findEmployeeById(employeeId) {
-  return Employee.findById(employeeId).populate(defaultPopulation);
+export function findEmployeeById(employeeId, organizationId) {
+  return Employee.findOne({ _id: employeeId, organizationId }).populate(defaultPopulation);
 }
 
 /**
- * Find employee by email address.
+ * Find employee by email address, scoped to one organization (two
+ * different organizations may each have an employee with the same email).
  * @param {string} email
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function findEmployeeByEmail(email) {
-  return Employee.findOne({ email: email.toLowerCase() }).populate(defaultPopulation);
+export function findEmployeeByEmail(email, organizationId) {
+  return Employee.findOne({ email: email.toLowerCase(), organizationId }).populate(defaultPopulation);
 }
 
 /**
- * Find employee by employeeCode string (e.g. "EMP-001").
+ * Find employee by employeeCode string (e.g. "EMP-001"), scoped to one
+ * organization.
  * @param {string} code
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function findEmployeeByCode(code) {
-  return Employee.findOne({ employeeCode: code.toUpperCase() }).populate(defaultPopulation);
+export function findEmployeeByCode(code, organizationId) {
+  return Employee.findOne({ employeeCode: code.toUpperCase(), organizationId }).populate(defaultPopulation);
 }
 
 /**
- * Find employee record linked to a User account.
+ * Find employee record linked to a User account, scoped to one organization.
  * @param {string} userId
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function findEmployeeByUserId(userId) {
-  return Employee.findOne({ userId, isDeleted: false }).populate(defaultPopulation);
+export function findEmployeeByUserId(userId, organizationId) {
+  return Employee.findOne({ userId, organizationId, isDeleted: false }).populate(defaultPopulation);
 }
 
 /**
- * List employees with full filtering, text search, pagination, and sorting.
+ * List employees with full filtering, text search, pagination, and sorting,
+ * scoped to one organization.
  *
  * @param {object} options
  * @param {number} [options.page=1]
@@ -78,6 +99,7 @@ export function findEmployeeByUserId(userId) {
  * @param {string} [options.sentiment] Filter by latest Employee Intelligence sentiment (Positive/Neutral/Negative)
  * @param {string} [options.burnoutRisk] Filter by latest Employee Intelligence burnout risk (Low/Medium/High)
  * @param {string} [options.emotion] Filter by latest Employee Intelligence dominant emotion
+ * @param {string} organizationId
  * @returns {Promise<{ items: Array, totalItems: number, page: number, totalPages: number }>}
  */
 export async function listEmployees({
@@ -93,8 +115,18 @@ export async function listEmployees({
   sentiment,
   burnoutRisk,
   emotion,
-} = {}) {
-  const filter = {};
+} = {}, organizationId) {
+  // Aggregate() does NOT auto-cast query values to the schema's ObjectId
+  // type the way find()/findOne() do (unlike findEmployeeById etc. above,
+  // which use findOne and cast automatically) — matching organizationId as
+  // a raw string here would silently match zero documents, exactly the
+  // "processed: 1254, persisted 0" class of bug already hit elsewhere in
+  // this codebase (see decisionService.js's getDashboardSummary comment).
+  const filter = {
+    organizationId: mongoose.Types.ObjectId.isValid(organizationId)
+      ? new mongoose.Types.ObjectId(organizationId)
+      : organizationId,
+  };
 
   if (!includeDeleted) {
     filter.isDeleted = false;
@@ -215,7 +247,8 @@ export async function listEmployees({
 }
 
 /**
- * Save modifications to an employee document.
+ * Save modifications to an employee document. No separate org check needed
+ * here — the document was already fetched via a scoped findEmployeeById.
  * @param {import('mongoose').Document} employee
  * @returns {Promise<import('mongoose').Document>}
  */
@@ -224,13 +257,15 @@ export function updateEmployee(employee) {
 }
 
 /**
- * Soft delete an employee by setting `isDeleted: true` and `deletedAt: Date`.
+ * Soft delete an employee by setting `isDeleted: true` and `deletedAt: Date`,
+ * scoped to one organization.
  * @param {string} employeeId
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function softDeleteEmployee(employeeId) {
-  return Employee.findByIdAndUpdate(
-    employeeId,
+export function softDeleteEmployee(employeeId, organizationId) {
+  return Employee.findOneAndUpdate(
+    { _id: employeeId, organizationId },
     {
       isDeleted: true,
       deletedAt: new Date(),
@@ -241,13 +276,14 @@ export function softDeleteEmployee(employeeId) {
 }
 
 /**
- * Restore a soft-deleted employee.
+ * Restore a soft-deleted employee, scoped to one organization.
  * @param {string} employeeId
+ * @param {string} organizationId
  * @returns {Promise<import('mongoose').Document | null>}
  */
-export function restoreEmployee(employeeId) {
-  return Employee.findByIdAndUpdate(
-    employeeId,
+export function restoreEmployee(employeeId, organizationId) {
+  return Employee.findOneAndUpdate(
+    { _id: employeeId, organizationId },
     {
       isDeleted: false,
       deletedAt: null,
@@ -258,20 +294,22 @@ export function restoreEmployee(employeeId) {
 }
 
 /**
- * Soft delete every employee not already soft-deleted, mirroring the same
- * fields softDeleteEmployee() sets for a single record.
+ * Soft delete every employee not already soft-deleted, scoped to one
+ * organization — this used to update EVERY tenant's employees at once.
+ * @param {string} organizationId
  * @returns {Promise<number>} count of employees updated
  */
-export async function softDeleteAllEmployees() {
+export async function softDeleteAllEmployees(organizationId) {
   const result = await Employee.updateMany(
-    { isDeleted: { $ne: true } },
+    { organizationId, isDeleted: { $ne: true } },
     { $set: { isDeleted: true, deletedAt: new Date(), status: 'INACTIVE' } },
   );
   return result.modifiedCount;
 }
 
 /**
- * Perform bulk insertion of multiple employee documents.
+ * Perform bulk insertion of multiple employee documents. Each record must
+ * already have organizationId stamped by the caller (employeeService).
  * @param {Array<object>} records
  * @returns {Promise<Array<import('mongoose').Document>>}
  */

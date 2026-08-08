@@ -16,6 +16,7 @@ import { requestLoggingMiddleware } from './middlewares/requestLogging.js';
 import { sanitizeInput } from './middlewares/sanitizeInput.js';
 import { analyticsRouter } from './routes/analyticsRoutes.js';
 import { authRouter } from './routes/authRoutes.js';
+import { organizationRouter } from './routes/organizationRoutes.js';
 import { departmentRouter } from './routes/departmentRoutes.js';
 import { employeeRouter } from './routes/employeeRoutes.js';
 import { healthRouter } from './routes/healthRoutes.js';
@@ -91,6 +92,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(openApiSpec, { customSiteT
 
 app.use(healthRouter);
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/organizations', organizationRouter);
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/departments', departmentRouter);
 app.use('/api/v1/employees', employeeRouter);

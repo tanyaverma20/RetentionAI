@@ -20,10 +20,24 @@ import { EmployeeFeedback } from '../models/EmployeeFeedback.js';
 
 
 /**
+ * Casts a string organizationId to ObjectId for aggregate() pipelines,
+ * which — unlike find()/findOne() — do NOT auto-cast query values to the
+ * schema's ObjectId type. Every $match stage below that filters by
+ * organizationId needs this; omitting it silently matches zero documents
+ * (the "processed: N, persisted 0" failure class already hit elsewhere in
+ * this codebase — see decisionService.js's getDashboardSummary comment).
+ */
+function toOrgObjectId(organizationId) {
+  return mongoose.Types.ObjectId.isValid(organizationId)
+    ? new mongoose.Types.ObjectId(organizationId)
+    : organizationId;
+}
+
+/**
  * Helper to build Mongoose match condition from query filters.
  */
 function buildMatchFilter(filter = {}) {
-  const match = { isDeleted: false };
+  const match = { isDeleted: false, organizationId: toOrgObjectId(filter.organizationId) };
 
   if (filter.departmentId) {
     match.departmentId = mongoose.Types.ObjectId.isValid(filter.departmentId)
@@ -113,8 +127,8 @@ export async function getKpiSummary(filter = {}) {
       joiningDate: { $gte: thirtyDaysAgo },
     }),
     filter.departmentId
-      ? Department.countDocuments({ _id: filter.departmentId, isActive: true })
-      : Department.countDocuments({ isActive: true }),
+      ? Department.countDocuments({ _id: filter.departmentId, organizationId: match.organizationId, isActive: true })
+      : Department.countDocuments({ organizationId: match.organizationId, isActive: true }),
   ]);
 
   // Calculated / placeholder ML parameters
@@ -129,20 +143,25 @@ export async function getKpiSummary(filter = {}) {
   const todayEnd = new Date(now);
   todayEnd.setHours(23, 59, 59, 999);
 
+  const orgObjectId = match.organizationId;
+
   const [attendanceTodayCount, avgPerfResult, promotionDueCount, trainingCompletionResult, employeesOnLeave, avgSatResult, totalFeedbackCount] = await Promise.all([
     // Attendance today: count of PRESENT records for today
     Attendance.countDocuments({
+      organizationId: orgObjectId,
       attendanceDate: { $gte: todayStart, $lte: todayEnd },
       attendanceStatus: 'PRESENT',
     }),
     // Average performance score across all reviews
     Performance.aggregate([
+      { $match: { organizationId: orgObjectId } },
       { $group: { _id: null, avg: { $avg: '$performanceScore' } } },
     ]),
     // Promotion due: employees with promotionRecommendation = true
-    Performance.countDocuments({ promotionRecommendation: true }),
+    Performance.countDocuments({ organizationId: orgObjectId, promotionRecommendation: true }),
     // Training completion: count of distinct employees who completed at least 1 training
     TrainingHistory.aggregate([
+      { $match: { organizationId: orgObjectId } },
       { $group: { _id: '$employeeId' } },
       { $count: 'trainedEmployees' },
     ]),
@@ -150,10 +169,11 @@ export async function getKpiSummary(filter = {}) {
     Employee.countDocuments({ ...match, status: 'ON_LEAVE' }),
     // Average satisfaction
     Survey.aggregate([
+      { $match: { organizationId: orgObjectId } },
       { $group: { _id: null, avg: { $avg: '$jobSatisfaction' } } },
     ]),
     // Total feedback
-    EmployeeFeedback.countDocuments(),
+    EmployeeFeedback.countDocuments({ organizationId: orgObjectId }),
   ]);
 
   const avgPerformance = avgPerfResult[0]?.avg
@@ -509,8 +529,11 @@ export async function getEmployeeInsights(filter = {}) {
 /**
  * Get HR specific metrics like Attendance Summary and Average Working Hours.
  */
-export async function getHrMetrics(_filter = {}) {
+export async function getHrMetrics(filter = {}) {
+  const orgObjectId = toOrgObjectId(filter.organizationId);
+
   const attendanceAgg = await Attendance.aggregate([
+    { $match: { organizationId: orgObjectId } },
     {
       $group: {
         _id: null,
@@ -521,8 +544,9 @@ export async function getHrMetrics(_filter = {}) {
       }
     }
   ]);
-  
+
   const performanceAgg = await Performance.aggregate([
+    { $match: { organizationId: orgObjectId } },
     {
       $group: {
         _id: null,
@@ -531,8 +555,9 @@ export async function getHrMetrics(_filter = {}) {
       }
     }
   ]);
-  
+
   const surveyAgg = await Survey.aggregate([
+    { $match: { organizationId: orgObjectId } },
     {
       $group: {
         _id: null,
@@ -544,6 +569,7 @@ export async function getHrMetrics(_filter = {}) {
   ]);
 
   const trainingAgg = await TrainingHistory.aggregate([
+    { $match: { organizationId: orgObjectId } },
     {
       $group: {
         _id: null,
@@ -555,6 +581,7 @@ export async function getHrMetrics(_filter = {}) {
   ]);
 
   const promotionAgg = await PromotionHistory.aggregate([
+    { $match: { organizationId: orgObjectId } },
     {
       $group: {
         _id: null,
@@ -577,10 +604,12 @@ export async function getHrMetrics(_filter = {}) {
  * Aggregates advanced charts for the dashboard: Attendance Trend, Performance Distribution,
  * Leave Statistics, Training Completion trend, and Promotion History.
  */
-export async function getAdvancedCharts(_filter = {}) {
+export async function getAdvancedCharts(filter = {}) {
+  const orgObjectId = toOrgObjectId(filter.organizationId);
 
   // Performance Distribution (1-5 scale)
   const performanceDistribution = await Performance.aggregate([
+    { $match: { organizationId: orgObjectId } },
     {
       $group: {
         _id: '$performanceScore',
@@ -598,7 +627,7 @@ export async function getAdvancedCharts(_filter = {}) {
 
   // Leave Statistics
   const leaveStatistics = await Attendance.aggregate([
-    { $match: { attendanceStatus: 'ON_LEAVE', leaveType: { $ne: 'NONE' } } },
+    { $match: { organizationId: orgObjectId, attendanceStatus: 'ON_LEAVE', leaveType: { $ne: 'NONE' } } },
     { $group: { _id: '$leaveType', count: { $sum: 1 } } },
   ]);
 
@@ -613,7 +642,7 @@ export async function getAdvancedCharts(_filter = {}) {
   twelveMonthsAgo.setDate(1);
 
   const attendanceAgg = await Attendance.aggregate([
-    { $match: { attendanceDate: { $gte: twelveMonthsAgo } } },
+    { $match: { organizationId: orgObjectId, attendanceDate: { $gte: twelveMonthsAgo } } },
     {
       $group: {
         _id: { year: { $year: '$attendanceDate' }, month: { $month: '$attendanceDate' } },
@@ -624,7 +653,7 @@ export async function getAdvancedCharts(_filter = {}) {
   ]);
 
   const trainingAgg = await TrainingHistory.aggregate([
-    { $match: { completionDate: { $gte: twelveMonthsAgo } } },
+    { $match: { organizationId: orgObjectId, completionDate: { $gte: twelveMonthsAgo } } },
     {
       $group: {
         _id: { year: { $year: '$completionDate' }, month: { $month: '$completionDate' } },
@@ -634,7 +663,7 @@ export async function getAdvancedCharts(_filter = {}) {
   ]);
 
   const promotionAgg = await PromotionHistory.aggregate([
-    { $match: { promotionDate: { $gte: twelveMonthsAgo } } },
+    { $match: { organizationId: orgObjectId, promotionDate: { $gte: twelveMonthsAgo } } },
     {
       $group: {
         _id: { year: { $year: '$promotionDate' }, month: { $month: '$promotionDate' } },

@@ -2,49 +2,42 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useDispatch, useSelector } from 'react-redux';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { clearError, loginUser } from '../store/slices/authSlice';
-import { loginValidationSchema } from '../utils/validators';
+import { Link, useNavigate } from 'react-router-dom';
+import { clearError, signupOrganization } from '../store/slices/authSlice';
+import { signupValidationSchema } from '../utils/validators';
 
-export default function Login() {
+export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const location = useLocation();
   const { isLoading, error, isAuthenticated } = useSelector((state) => state.auth);
-
-  const from = location.state?.from?.pathname || '/dashboard';
 
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(loginValidationSchema),
+    resolver: zodResolver(signupValidationSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      organizationName: '',
+      adminName: '',
+      adminEmail: '',
+      adminPassword: '',
     },
   });
 
   React.useEffect(() => {
     if (isAuthenticated) {
-      navigate(from, { replace: true });
+      navigate('/dashboard', { replace: true });
     }
-  }, [isAuthenticated, navigate, from]);
+  }, [isAuthenticated, navigate]);
 
   const onSubmit = async (data) => {
     dispatch(clearError());
-    const result = await dispatch(loginUser(data));
-    if (loginUser.fulfilled.match(result)) {
-      navigate(from, { replace: true });
+    const result = await dispatch(signupOrganization(data));
+    if (signupOrganization.fulfilled.match(result)) {
+      navigate('/dashboard', { replace: true });
     }
-  };
-
-  const fillDemoAdmin = () => {
-    setValue('email', 'admin@example.test');
-    setValue('password', 'Admin#12345');
   };
 
   return (
@@ -54,8 +47,10 @@ export default function Login() {
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-indigo-50 rounded-full blur-3xl pointer-events-none" />
 
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Welcome Back</h1>
-          <p className="text-sm text-slate-500 mt-2">Sign in to your RetentionAI account</p>
+          <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create Your Organization</h1>
+          <p className="text-sm text-slate-500 mt-2">
+            Start your free 14-day trial — no credit card required.
+          </p>
         </div>
 
         {error && (
@@ -70,36 +65,58 @@ export default function Login() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
             <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
-              Work Email
+              Organization Name
             </label>
             <input
-              type="email"
-              placeholder="user@example.test"
-              {...register('email')}
+              type="text"
+              placeholder="Acme Corp"
+              {...register('organizationName')}
               className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
             />
-            {errors.email && (
-              <p className="text-xs text-red-600 mt-1.5">{errors.email.message}</p>
+            {errors.organizationName && (
+              <p className="text-xs text-red-600 mt-1.5">{errors.organizationName.message}</p>
             )}
           </div>
 
           <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                Password
-              </label>
-              <Link
-                to="/forgot-password"
-                className="text-xs font-medium text-indigo-600 hover:text-indigo-600 transition-colors"
-              >
-                Forgot password?
-              </Link>
-            </div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
+              Your Name
+            </label>
+            <input
+              type="text"
+              placeholder="Jane Doe"
+              {...register('adminName')}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
+            />
+            {errors.adminName && (
+              <p className="text-xs text-red-600 mt-1.5">{errors.adminName.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
+              Work Email
+            </label>
+            <input
+              type="email"
+              placeholder="jane@acme.com"
+              {...register('adminEmail')}
+              className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm"
+            />
+            {errors.adminEmail && (
+              <p className="text-xs text-red-600 mt-1.5">{errors.adminEmail.message}</p>
+            )}
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-slate-600 uppercase tracking-wider mb-2">
+              Password
+            </label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
                 placeholder="••••••••••••"
-                {...register('password')}
+                {...register('adminPassword')}
                 className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all text-sm pr-10"
               />
               <button
@@ -110,9 +127,12 @@ export default function Login() {
                 {showPassword ? 'Hide' : 'Show'}
               </button>
             </div>
-            {errors.password && (
-              <p className="text-xs text-red-600 mt-1.5">{errors.password.message}</p>
+            {errors.adminPassword && (
+              <p className="text-xs text-red-600 mt-1.5">{errors.adminPassword.message}</p>
             )}
+            <p className="text-xs text-slate-400 mt-1.5">
+              At least 8 characters, with uppercase, lowercase, a number, and a symbol.
+            </p>
           </div>
 
           <button
@@ -123,28 +143,22 @@ export default function Login() {
             {isLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Authenticating...
+                Creating your organization...
               </>
             ) : (
-              'Sign In'
+              'Create Organization'
             )}
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-slate-100/60 text-center space-y-3">
-          <button
-            type="button"
-            onClick={fillDemoAdmin}
-            className="text-xs text-indigo-600 hover:text-indigo-600 font-medium underline underline-offset-4 block mx-auto"
+        <div className="mt-8 pt-6 border-t border-slate-100/60 text-center">
+          <span className="text-xs text-slate-500">Already have an account? </span>
+          <Link
+            to="/login"
+            className="text-xs font-medium text-indigo-600 hover:text-indigo-600 underline underline-offset-4"
           >
-            Fill Demo Credentials (Admin)
-          </button>
-          <div className="text-xs text-slate-500">
-            New here?{' '}
-            <Link to="/signup" className="font-medium text-indigo-600 hover:text-indigo-600 underline underline-offset-4">
-              Create an organization
-            </Link>
-          </div>
+            Sign in
+          </Link>
         </div>
       </div>
     </div>
