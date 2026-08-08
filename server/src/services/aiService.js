@@ -2,6 +2,7 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { Prediction } from '../models/Prediction.js';
+import { ModelMetadata } from '../models/ModelMetadata.js';
 import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
 const aiClient = axios.create({
@@ -99,12 +100,32 @@ class AIService {
     }
   }
 
+  /**
+   * Prefers the live ai-service (whatever is actually loaded right now),
+   * falling back to the durable `modelMetadata` MongoDB record (written by
+   * ai-service/train_model.py after every training run) when the live call
+   * fails — e.g. the ai-service is mid-restart, which this deployment has
+   * hit repeatedly. The Mongo record survives that; the ai-service's
+   * in-memory model bundle does not. Either path returns the same shape:
+   * { algorithm, metrics, benchmark, selectionReason }.
+   */
   async getModelMetrics() {
     try {
       const response = await aiClient.get('/model/metrics');
       return response.data.data;
     } catch (error) {
-      throw toServiceError(error, 'Failed to fetch model metrics');
+      const fallback = await ModelMetadata.findOne({ status: 'APPROVED' }).sort({ trainedAt: -1 }).lean();
+      if (!fallback) {
+        throw toServiceError(error, 'Failed to fetch model metrics');
+      }
+      return {
+        algorithm: fallback.algorithm,
+        metrics: fallback.metrics,
+        benchmark: fallback.benchmark,
+        selectionReason: fallback.selectionReason,
+        trainedAt: fallback.trainedAt,
+        source: 'durable-fallback',
+      };
     }
   }
 

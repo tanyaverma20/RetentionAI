@@ -103,6 +103,7 @@ def train_model():
             "organizationId": ObjectId("60d5ec388832a828f8000000"), # Standard demo org
             "version": bundle["version"],
             "algorithm": bundle["model_name"],
+            "selectionReason": bundle.get("selection_reason", ""),
             "featureKeys": bundle["feature_metadata"]["feature_cols"],
             "metrics": {
                 "f1": bundle["metrics"]["f1"],
@@ -112,6 +113,13 @@ def train_model():
                 "accuracy": bundle["metrics"]["accuracy"],
                 "precision": bundle["metrics"]["precision"]
             },
+            # Full 5-model comparison table (accuracy/precision/recall/F1/
+            # ROC-AUC/PR-AUC/cross-validated PR-AUC/training time/inference
+            # time/model size per family) — persisted here, not just held in
+            # the ai-service's in-memory bundle or ephemeral disk report, so
+            # it survives a container restart and Express can serve it to
+            # the dashboard without needing the ai-service to be up.
+            "benchmark": bundle.get("all_model_metrics", {}),
             "threshold": bundle["threshold"],
             "calibrationMethod": bundle["calibration_method"],
             "artifactUri": "models/active/attrition_model.joblib",

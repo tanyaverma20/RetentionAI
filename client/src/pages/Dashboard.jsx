@@ -176,6 +176,7 @@ export default function Dashboard() {
   const [isTraining, setIsTraining] = useState(false);
   const [trainMessage, setTrainMessage] = useState('');
   const [globalImportance, setGlobalImportance] = useState(null);
+  const [modelComparison, setModelComparison] = useState(null);
   const [departmentDrivers, setDepartmentDrivers] = useState(null);
   const [aiOverviewError, setAiOverviewError] = useState('');
   const [isGeneratingExplanations, setIsGeneratingExplanations] = useState(false);
@@ -219,6 +220,11 @@ export default function Dashboard() {
     decisionService.getDashboardSummary()
       .then((data) => { setDecisionStats(data); setDecisionStatsError(''); })
       .catch((err) => setDecisionStatsError(extractErrorMessage(err, 'Unable to load AI Recommendations overview.')));
+    // Last training run's 5-model comparison table, if one exists —
+    // shown without needing to click Train Model again this session.
+    aiService.getModelMetrics()
+      .then(setModelComparison)
+      .catch(() => {}); // Expected until a model has been trained at least once.
   }, []);
 
   useEffect(() => {
@@ -299,6 +305,12 @@ export default function Dashboard() {
             setTrainMessage(`Model trained successfully — ${info.algorithm} (${info.version}).`);
             aiService.getGlobalFeatureImportance(true)
               .then(data => setGlobalImportance(data?.features || data))
+              .catch(() => {});
+            // Full 5-model comparison table + why this one was picked
+            // (PR-AUC ranking + one-standard-error simplicity rule — see
+            // ai-service/app/training/trainer.py's select_best_model).
+            aiService.getModelMetrics()
+              .then(setModelComparison)
               .catch(() => {});
             loadExplainabilityWidgets();
             return;
@@ -536,6 +548,58 @@ export default function Dashboard() {
                 </button>
               </div>
             </div>
+
+            {modelComparison?.benchmark && Object.keys(modelComparison.benchmark).length > 0 && (
+              <div className="mb-6 p-5 bg-white border border-slate-100 rounded-2xl shadow-card overflow-x-auto">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-slate-900">Model Comparison</h3>
+                  <span className="text-xs text-slate-400">5-fold cross-validated PR-AUC decides the winner</span>
+                </div>
+                <table className="w-full text-xs min-w-[560px]">
+                  <thead>
+                    <tr className="text-left text-slate-400 uppercase tracking-wider">
+                      <th className="pb-2 pr-4 font-semibold">Model</th>
+                      <th className="pb-2 pr-4 font-semibold">PR-AUC (CV)</th>
+                      <th className="pb-2 pr-4 font-semibold">F1</th>
+                      <th className="pb-2 pr-4 font-semibold">ROC-AUC</th>
+                      <th className="pb-2 pr-4 font-semibold">Accuracy</th>
+                      <th className="pb-2 font-semibold">Train Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(modelComparison.benchmark)
+                      .sort(([, a], [, b]) => (b.prAucCvMean ?? 0) - (a.prAucCvMean ?? 0))
+                      .map(([name, m]) => {
+                        const isWinner = name === modelComparison.algorithm;
+                        return (
+                          <tr
+                            key={name}
+                            className={`border-t border-slate-50 ${isWinner ? 'bg-indigo-50/60 font-semibold text-indigo-700' : 'text-slate-600'}`}
+                          >
+                            <td className="py-2 pr-4 flex items-center gap-1.5">
+                              {isWinner && <span title="Selected model">🏆</span>}
+                              {name}
+                            </td>
+                            <td className="py-2 pr-4">
+                              {m.prAucCvMean != null ? `${m.prAucCvMean.toFixed(3)} ± ${m.prAucCvStdErr?.toFixed(3) ?? '0.000'}` : '—'}
+                            </td>
+                            <td className="py-2 pr-4">{m.f1?.toFixed(3) ?? '—'}</td>
+                            <td className="py-2 pr-4">{m.rocAuc?.toFixed(3) ?? '—'}</td>
+                            <td className="py-2 pr-4">{m.accuracy?.toFixed(3) ?? '—'}</td>
+                            <td className="py-2">{m.trainingTimeSec != null ? `${m.trainingTimeSec.toFixed(2)}s` : '—'}</td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+                {modelComparison.selectionReason && (
+                  <p className="mt-3 pt-3 border-t border-slate-100 text-xs text-slate-500 leading-relaxed">
+                    <span className="font-semibold text-slate-600">Why {modelComparison.algorithm}: </span>
+                    {modelComparison.selectionReason}
+                  </p>
+                )}
+              </div>
+            )}
 
             {aiOverviewError && (
               <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-2xl text-rose-600 text-xs">

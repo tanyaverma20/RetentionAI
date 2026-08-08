@@ -77,7 +77,13 @@ class PredictionService:
             raise ModelNotLoadedException("No active model is loaded.")
         return {
             "algorithm": self.model_bundle.get("model_name", "Unknown"),
-            "metrics": self.model_bundle.get("metrics", {})
+            "metrics": self.model_bundle.get("metrics", {}),
+            # Full 5-model comparison table + the human-readable reason the
+            # winner was chosen (PR-AUC + one-standard-error simplicity
+            # rule — see trainer.py's select_best_model) — was previously
+            # computed but never exposed past the training logs.
+            "benchmark": self.model_bundle.get("all_model_metrics", {}),
+            "selectionReason": self.model_bundle.get("selection_reason", ""),
         }
 
     async def predict_single(self, employee_doc: dict, run_id: str = "single_run") -> dict:

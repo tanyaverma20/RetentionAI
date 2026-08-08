@@ -141,6 +141,7 @@ def generate_all_reports(bundle: dict, X_test, y_test) -> dict:
     report = {
         "trainedAt": bundle["trained_at"],
         "selectedModel": bundle["model_name"],
+        "selectionReason": bundle.get("selection_reason", ""),
         "version": bundle["version"],
         "benchmark": bundle["all_model_metrics"],
         "bestParams": bundle["best_params"],
