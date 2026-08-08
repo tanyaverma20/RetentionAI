@@ -127,14 +127,24 @@ export function syncSystemRolePermissions(roles) {
 }
 
 /**
- * Count the number of users assigned to a given role.
- * Used before deleting a role to ensure it is not in use.
+ * Count the number of users assigned to a given role within one
+ * organization. Used before deactivating/deleting to ensure the role
+ * isn't left unheld in that org.
+ *
+ * Scoped by organizationId — system roles like ADMIN are shared, global
+ * Role documents (one 'ADMIN' Role._id used by every tenant's admins), so
+ * an unscoped count here summed admins across EVERY organization. That
+ * meant deactivateManagedUser's "don't remove the last admin" guard was
+ * checking whether the last admin existed ANYWHERE, not in the caller's
+ * own org — Org A could deactivate its own last admin as long as some
+ * OTHER org still had one.
  *
  * @param {string} roleId - MongoDB ObjectId string.
+ * @param {string} organizationId
  * @returns {Promise<number>}
  */
-export async function countUsersWithRole(roleId) {
+export async function countUsersWithRole(roleId, organizationId) {
   // Import here to avoid circular dependency: Role → User → Role.
   const { User } = await import('../models/User.js');
-  return User.countDocuments({ roleId, deletedAt: { $exists: false } });
+  return User.countDocuments({ roleId, organizationId, deletedAt: { $exists: false } });
 }

@@ -35,12 +35,12 @@ export async function createChain(organizationId, entityType, entityId, priority
   });
 }
 
-export function getByEntity(entityType, entityId) {
-  return Approval.findOne({ entityType, entityId }).lean();
+export function getByEntity(entityType, entityId, organizationId) {
+  return Approval.findOne({ entityType, entityId, organizationId }).lean();
 }
 
-export function getById(approvalId) {
-  return Approval.findById(approvalId);
+export function getById(approvalId, organizationId) {
+  return Approval.findOne({ _id: approvalId, organizationId });
 }
 
 /**
@@ -49,12 +49,12 @@ export function getById(approvalId) {
  * "HR Manager approval, HR Director approval, CHRO approval" (Part 3), not
  * just a generic permission string.
  */
-export async function decide(approvalId, deciderUserId, deciderRole, decision, reason = '') {
+export async function decide(approvalId, deciderUserId, deciderRole, decision, reason = '', organizationId) {
   if (!['APPROVED', 'REJECTED'].includes(decision)) {
     throw new AppError(400, 'INVALID_DECISION', 'decision must be APPROVED or REJECTED.');
   }
 
-  const approval = await Approval.findById(approvalId);
+  const approval = await Approval.findOne({ _id: approvalId, organizationId });
   if (!approval) throw new AppError(404, 'APPROVAL_NOT_FOUND', 'Approval chain not found.');
   if (approval.overallStatus !== 'PENDING') {
     throw new AppError(409, 'APPROVAL_ALREADY_DECIDED', `This approval chain is already ${approval.overallStatus}.`);

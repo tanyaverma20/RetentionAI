@@ -28,6 +28,7 @@ test(
       { hashPassword },
       { createAccessToken },
       { app },
+      { DEFAULT_ORGANIZATION_ID },
     ] = await Promise.all([
       import('../src/config/database.js'),
       import('../src/services/roleService.js'),
@@ -36,6 +37,7 @@ test(
       import('../src/utils/password.js'),
       import('../src/utils/tokens.js'),
       import('../src/app.js'),
+      import('../src/config/tenancy.js'),
     ]);
 
     await connectDatabase();
@@ -46,7 +48,13 @@ test(
     const adminRole = await Role.findOne({ name: 'ADMIN' });
     const employeeRole = await Role.findOne({ name: 'EMPLOYEE' });
 
+    // organizationId matches authenticate.js's DEFAULT_ORGANIZATION_ID
+    // fallback — required now that userService's list/get/update/deactivate
+    // are correctly tenant-scoped (they previously weren't at all: any
+    // ADMIN from any organization could list, edit, reassign the role of,
+    // or deactivate any other organization's users).
     const admin = await User.create({
+      organizationId: DEFAULT_ORGANIZATION_ID,
       name: 'System Admin',
       email: 'admin@example.test',
       passwordHash: await hashPassword('Admin#12345'),
@@ -54,6 +62,7 @@ test(
     });
 
     const standardUser = await User.create({
+      organizationId: DEFAULT_ORGANIZATION_ID,
       name: 'Standard User',
       email: 'user@example.test',
       passwordHash: await hashPassword('User#12345'),

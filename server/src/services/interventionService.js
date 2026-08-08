@@ -78,7 +78,7 @@ async function getById(interventionId) {
     .populate('createdByUserId', 'name email')
     .lean();
   if (!intervention) throw new AppError(404, 'INTERVENTION_NOT_FOUND', 'Intervention not found.');
-  const approval = await getByEntity('INTERVENTION', interventionId);
+  const approval = await getByEntity('INTERVENTION', interventionId, intervention.organizationId);
   return { ...intervention, approval };
 }
 
@@ -105,7 +105,7 @@ async function transition(interventionId, targetStatus, userId, { note = '', ass
   }
 
   if (targetStatus === 'APPROVED') {
-    const approval = await getByEntity('INTERVENTION', intervention._id);
+    const approval = await getByEntity('INTERVENTION', intervention._id, intervention.organizationId);
     if (!approval || approval.overallStatus !== 'APPROVED') {
       throw new AppError(409, 'APPROVAL_INCOMPLETE', 'This intervention has not completed its approval chain yet.');
     }

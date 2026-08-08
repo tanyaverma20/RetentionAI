@@ -177,6 +177,41 @@ test(
       // an attacker who somehow learns/guesses the ObjectId must still be blocked.
       const empDirectAsB = await fetch(`${baseUrl}/employees/${empAId}`, { headers: { Authorization: `Bearer ${tokenB}` } });
       assert.equal(empDirectAsB.status, 404, 'Org B must NOT be able to fetch Org A\'s employee by ID either');
+
+      // --- Cross-tenant isolation: user management (list/get/deactivate) ---
+      // Org A's admin creates a second managed account in their own org.
+      const createUserResp = await fetch(`${baseUrl}/users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenA}` },
+        body: JSON.stringify({
+          firstName: 'Extra',
+          lastName: 'Staffer',
+          email: 'extra.staffer@acme.test',
+          password: 'Admin#12345',
+          role: 'HR_MANAGER',
+        }),
+      });
+      const createUserBody = await createUserResp.json();
+      assert.equal(createUserResp.status, 201, JSON.stringify(createUserBody));
+      const extraUserId = createUserBody.data.id;
+
+      const usersAsA = await fetch(`${baseUrl}/users`, { headers: { Authorization: `Bearer ${tokenA}` } });
+      const usersAsABody = await usersAsA.json();
+      assert.equal(usersAsABody.data.totalItems, 2, 'Org A must see exactly its own 2 users (Alice + Extra Staffer)');
+
+      const usersAsB = await fetch(`${baseUrl}/users`, { headers: { Authorization: `Bearer ${tokenB}` } });
+      const usersAsBBody = await usersAsB.json();
+      assert.equal(usersAsBBody.data.totalItems, 1, 'Org B must see only its own 1 user (Bob) — not Org A\'s users');
+
+      const userDirectAsB = await fetch(`${baseUrl}/users/${extraUserId}`, { headers: { Authorization: `Bearer ${tokenB}` } });
+      assert.equal(userDirectAsB.status, 404, 'Org B must NOT be able to fetch Org A\'s user by ID');
+
+      const deactivateAsB = await fetch(`${baseUrl}/users/${extraUserId}/deactivate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tokenB}` },
+        body: JSON.stringify({ reason: 'malicious cross-tenant attempt' }),
+      });
+      assert.equal(deactivateAsB.status, 404, 'Org B must NOT be able to deactivate Org A\'s user');
     } finally {
       await new Promise((resolve) => server.close(resolve));
       await User.deleteMany({});

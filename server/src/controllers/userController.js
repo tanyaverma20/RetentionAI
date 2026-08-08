@@ -22,7 +22,7 @@ import { sendSuccess } from '../utils/response.js';
  */
 export async function createUser(request, response, next) {
   try {
-    const user = await userService.createManagedUser(request.validatedBody);
+    const user = await userService.createManagedUser(request.validatedBody, request.auth.organizationId);
     return sendSuccess(response, 201, user, request.requestId);
   } catch (error) {
     return next(error);
@@ -42,7 +42,7 @@ export async function listUsers(request, response, next) {
       roleId,
       departmentId,
       q,
-    });
+    }, request.auth.organizationId);
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
     return next(error);
@@ -54,7 +54,7 @@ export async function listUsers(request, response, next) {
  */
 export async function getUser(request, response, next) {
   try {
-    const user = await userService.getManagedUser(request.params.userId);
+    const user = await userService.getManagedUser(request.params.userId, request.auth.organizationId);
     return sendSuccess(response, 200, user, request.requestId);
   } catch (error) {
     return next(error);
@@ -66,7 +66,7 @@ export async function getUser(request, response, next) {
  */
 export async function updateUser(request, response, next) {
   try {
-    const user = await userService.updateManagedUser(request.params.userId, request.validatedBody);
+    const user = await userService.updateManagedUser(request.params.userId, request.validatedBody, request.auth.organizationId);
     return sendSuccess(response, 200, user, request.requestId);
   } catch (error) {
     return next(error);
@@ -78,7 +78,7 @@ export async function updateUser(request, response, next) {
  */
 export async function assignRole(request, response, next) {
   try {
-    const user = await userService.assignUserRole(request.params.userId, request.validatedBody.roleId);
+    const user = await userService.assignUserRole(request.params.userId, request.validatedBody.roleId, request.auth.organizationId);
     return sendSuccess(response, 200, user, request.requestId);
   } catch (error) {
     return next(error);
@@ -90,7 +90,7 @@ export async function assignRole(request, response, next) {
  */
 export async function deactivateUser(request, response, next) {
   try {
-    await userService.deactivateManagedUser(request.params.userId, request.auth.userId);
+    await userService.deactivateManagedUser(request.params.userId, request.auth.userId, request.auth.organizationId);
     return response.status(204).send();
   } catch (error) {
     return next(error);

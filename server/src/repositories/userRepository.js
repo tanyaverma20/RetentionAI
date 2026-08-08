@@ -93,7 +93,10 @@ export function findUserByResetToken(tokenHash) {
 
 /**
  * Find an active user by email without credential fields.
- * Used by the forgot-password and user-uniqueness checks.
+ * Used by the forgot-password flow, which — like login — looks a user up
+ * by email BEFORE any organization context exists, so this is intentionally
+ * NOT organization-scoped. For the admin-management "does this email
+ * already exist in MY org" check, use findUserByEmailInOrg below instead.
  *
  * @param {string} email - Normalised email address.
  * @returns {Promise<import('mongoose').Document | null>}
@@ -103,14 +106,53 @@ export function findUserByEmail(email) {
 }
 
 /**
+ * Find an active user by ID, scoped to one organization. Used by the
+ * ADMIN-facing user-management endpoints (userService.js) — unlike
+ * findUserById above (used by auth flows that establish identity from a
+ * token/email before any org context exists), this must never return a
+ * user belonging to a different organization than the caller's.
+ *
+ * @param {string} userId
+ * @param {string} organizationId
+ * @returns {Promise<import('mongoose').Document | null>}
+ */
+export function findUserByIdInOrg(userId, organizationId) {
+  return User.findOne({ _id: userId, organizationId, deletedAt: { $exists: false } }).populate(rolePopulation);
+}
+
+/**
+ * Find an active user by email, scoped to one organization. See
+ * findUserByIdInOrg's comment — used for the admin-management
+ * "does this email already exist in MY org" duplicate check, where
+ * findUserByEmail's global (cross-org) lookup would incorrectly block
+ * creating a user whose email merely happens to match one in a
+ * DIFFERENT organization (the schema's uniqueness is {organizationId,
+ * email}, not email alone).
+ *
+ * @param {string} email
+ * @param {string} organizationId
+ * @returns {Promise<import('mongoose').Document | null>}
+ */
+export function findUserByEmailInOrg(email, organizationId) {
+  return User.findOne({ email, organizationId, deletedAt: { $exists: false } }).populate(rolePopulation);
+}
+
+/**
  * List users with pagination, optional status/role/department filters,
- * and an optional text search across name and email.
+ * and an optional text search across name and email, scoped to one
+ * organization.
  *
  * @param {{ page: number, pageSize: number, status?: string, roleId?: string, departmentId?: string, q?: string }} options
+ * @param {string} organizationId
  * @returns {Promise<{ items: Array, totalItems: number }>}
  */
-export async function listUsers({ page, pageSize, status, roleId, departmentId, q }) {
-  const filter = { deletedAt: { $exists: false } };
+export async function listUsers({ page, pageSize, status, roleId, departmentId, q }, organizationId) {
+  const filter = {
+    organizationId: mongoose.Types.ObjectId.isValid(organizationId)
+      ? new mongoose.Types.ObjectId(organizationId)
+      : organizationId,
+    deletedAt: { $exists: false },
+  };
   if (status) filter.status = status;
   if (roleId) filter.roleId = new mongoose.Types.ObjectId(roleId);
   if (departmentId) filter.departmentId = new mongoose.Types.ObjectId(departmentId);

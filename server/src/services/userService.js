@@ -30,8 +30,8 @@ import {
 } from '../repositories/roleRepository.js';
 import {
   createUser,
-  findUserByEmail,
-  findUserById,
+  findUserByEmailInOrg,
+  findUserByIdInOrg,
   listUsers,
   updateUser,
 } from '../repositories/userRepository.js';
@@ -64,6 +64,7 @@ function toUserResponse(user, role) {
  * Create a managed user account. Only callable by a System Administrator.
  *
  * @param {{ firstName, lastName, email, password, role?, roleId?, departmentId?, status }} payload
+ * @param {string} organizationId
  * @returns {Promise<object>} Safe user response object.
  * @throws {AppError} 409 EMAIL_EXISTS | 422 INVALID_ROLE_SCOPE
  */
@@ -76,8 +77,8 @@ export async function createManagedUser({
   roleId,
   departmentId,
   status,
-}) {
-  if (await findUserByEmail(email)) {
+}, organizationId) {
+  if (await findUserByEmailInOrg(email, organizationId)) {
     throw new AppError(409, 'EMAIL_EXISTS', 'An account with this email already exists.');
   }
 
@@ -87,6 +88,7 @@ export async function createManagedUser({
   }
 
   const user = await createUser({
+    organizationId,
     name: `${firstName.trim()} ${lastName.trim()}`,
     email,
     passwordHash: await hashPassword(password),
@@ -102,10 +104,11 @@ export async function createManagedUser({
  * Return a paginated, filtered list of users.
  *
  * @param {{ page, pageSize, status?, roleId?, departmentId?, q?, sort? }} options
+ * @param {string} organizationId
  * @returns {Promise<{ items: object[], totalItems: number, page: number, pageSize: number, totalPages: number }>}
  */
-export async function listManagedUsers({ page = 1, pageSize = 25, status, roleId, departmentId, q }) {
-  const { items, totalItems } = await listUsers({ page, pageSize, status, roleId, departmentId, q });
+export async function listManagedUsers({ page = 1, pageSize = 25, status, roleId, departmentId, q }, organizationId) {
+  const { items, totalItems } = await listUsers({ page, pageSize, status, roleId, departmentId, q }, organizationId);
   return {
     items: items.map((u) => toUserResponse(u, u.roleId)),
     totalItems,
@@ -119,11 +122,12 @@ export async function listManagedUsers({ page = 1, pageSize = 25, status, roleId
  * Return a single user by ID.
  *
  * @param {string} userId
+ * @param {string} organizationId
  * @returns {Promise<object>}
  * @throws {AppError} 404 NOT_FOUND
  */
-export async function getManagedUser(userId) {
-  const user = await findUserById(userId);
+export async function getManagedUser(userId, organizationId) {
+  const user = await findUserByIdInOrg(userId, organizationId);
   if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found.');
   return toUserResponse(user, user.roleId);
 }
@@ -134,11 +138,12 @@ export async function getManagedUser(userId) {
  *
  * @param {string} userId
  * @param {{ name?, departmentId?, employeeId? }} payload
+ * @param {string} organizationId
  * @returns {Promise<object>}
  * @throws {AppError} 404 NOT_FOUND
  */
-export async function updateManagedUser(userId, payload) {
-  const user = await findUserById(userId);
+export async function updateManagedUser(userId, payload, organizationId) {
+  const user = await findUserByIdInOrg(userId, organizationId);
   if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found.');
 
   if (payload.name !== undefined) user.name = payload.name;
@@ -154,11 +159,12 @@ export async function updateManagedUser(userId, payload) {
  *
  * @param {string} userId
  * @param {string} newRoleId - MongoDB ObjectId of the target role.
+ * @param {string} organizationId
  * @returns {Promise<object>}
  * @throws {AppError} 404 NOT_FOUND | 422 INVALID_ROLE_SCOPE
  */
-export async function assignUserRole(userId, newRoleId) {
-  const [user, role] = await Promise.all([findUserById(userId), findRoleById(newRoleId)]);
+export async function assignUserRole(userId, newRoleId, organizationId) {
+  const [user, role] = await Promise.all([findUserByIdInOrg(userId, organizationId), findRoleById(newRoleId)]);
   if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found.');
   if (!role) throw new AppError(422, 'INVALID_ROLE_SCOPE', 'The selected role does not exist.');
 
@@ -173,20 +179,23 @@ export async function assignUserRole(userId, newRoleId) {
  *
  * @param {string} targetUserId  - User to deactivate.
  * @param {string} callerUserId  - ID of the requesting admin (from request.auth).
+ * @param {string} organizationId
  * @returns {Promise<void>}
  * @throws {AppError} 404 NOT_FOUND | 409 LAST_ADMIN | 409 SELF_DEACTIVATION
  */
-export async function deactivateManagedUser(targetUserId, callerUserId) {
+export async function deactivateManagedUser(targetUserId, callerUserId, organizationId) {
   if (targetUserId === callerUserId) {
     throw new AppError(409, 'SELF_DEACTIVATION', 'You cannot deactivate your own account.');
   }
 
-  const user = await findUserById(targetUserId);
+  const user = await findUserByIdInOrg(targetUserId, organizationId);
   if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found.');
 
-  // Guard: ensure at least one other active Admin will remain.
+  // Guard: ensure at least one other active Admin will remain IN THIS
+  // ORGANIZATION. countUsersWithRole is itself org-scoped now — see its
+  // comment in roleRepository.js for the cross-tenant bug this closes.
   if (user.roleId?.name === 'ADMIN') {
-    const adminCount = await countUsersWithRole(user.roleId.toString());
+    const adminCount = await countUsersWithRole(user.roleId.toString(), organizationId);
     if (adminCount <= 1) {
       throw new AppError(409, 'LAST_ADMIN', 'Cannot deactivate the last active administrator.');
     }
