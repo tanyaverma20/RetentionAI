@@ -131,7 +131,7 @@ export async function generateAlerts(req, res, next) {
 export async function dismissAlert(req, res, next) {
   try {
     const orgId = req.auth.organizationId;
-    const alert = await executiveService.dismissAlert(req.params.id, req.auth.userId);
+    const alert = await executiveService.dismissAlert(req.params.id, orgId, req.auth.userId);
     await recordAudit(orgId, 'EXECUTIVE_ALERT_ACKNOWLEDGED', req.auth.userId, { entityType: 'EXECUTIVE_ALERT', entityId: req.params.id, context: { action: 'DISMISSED' } });
     return sendSuccess(res, 200, alert, req.requestId);
   } catch (error) {
@@ -142,7 +142,7 @@ export async function dismissAlert(req, res, next) {
 export async function reviewAlert(req, res, next) {
   try {
     const orgId = req.auth.organizationId;
-    const alert = await executiveService.markAlertReviewed(req.params.id, req.auth.userId);
+    const alert = await executiveService.markAlertReviewed(req.params.id, orgId, req.auth.userId);
     await recordAudit(orgId, 'EXECUTIVE_ALERT_ACKNOWLEDGED', req.auth.userId, { entityType: 'EXECUTIVE_ALERT', entityId: req.params.id, context: { action: 'REVIEWED' } });
     return sendSuccess(res, 200, alert, req.requestId);
   } catch (error) {
@@ -156,7 +156,7 @@ export async function assignAlert(req, res, next) {
     if (!req.body?.assignedToUserId) {
       throw new AppError(422, 'VALIDATION_ERROR', 'assignedToUserId is required.');
     }
-    const alert = await executiveService.assignAlertOwner(req.params.id, req.body.assignedToUserId);
+    const alert = await executiveService.assignAlertOwner(req.params.id, orgId, req.body.assignedToUserId);
     await recordAudit(orgId, 'EXECUTIVE_ALERT_ACKNOWLEDGED', req.auth.userId, { entityType: 'EXECUTIVE_ALERT', entityId: req.params.id, context: { action: 'ASSIGNED', assignedToUserId: req.body.assignedToUserId } });
     return sendSuccess(res, 200, alert, req.requestId);
   } catch (error) {

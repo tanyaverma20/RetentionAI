@@ -80,8 +80,14 @@ class KnowledgeService {
     return doc;
   }
 
-  async reindexDocument(documentId) {
-    const doc = await KnowledgeDocument.findById(documentId);
+  // Prompt 1, Part 9/11 — previously unscoped: reindexDocument/deleteDocument/
+  // getDocument all trusted the document ID alone, letting any org's
+  // authenticated user reindex, DELETE (both the Mongo record and the file
+  // on disk), or read another org's knowledge document. organizationId now
+  // required and comes from the authenticated caller (Part 10); a mismatch
+  // reports 404, identical to a genuinely unknown ID (Part 14).
+  async reindexDocument(documentId, organizationId) {
+    const doc = await KnowledgeDocument.findOne({ _id: documentId, organizationId });
     if (!doc) {
       throw new AppError(404, 'DOCUMENT_NOT_FOUND', 'Knowledge document not found.');
     }
@@ -116,7 +122,7 @@ class KnowledgeService {
     let failed = 0;
     for (const doc of docs) {
       try {
-        await this.reindexDocument(doc._id);
+        await this.reindexDocument(doc._id, organizationId);
         succeeded += 1;
       } catch {
         failed += 1;
@@ -125,8 +131,8 @@ class KnowledgeService {
     return { totalCount: docs.length, succeeded, failed };
   }
 
-  async deleteDocument(documentId) {
-    const doc = await KnowledgeDocument.findById(documentId);
+  async deleteDocument(documentId, organizationId) {
+    const doc = await KnowledgeDocument.findOne({ _id: documentId, organizationId });
     if (!doc) {
       throw new AppError(404, 'DOCUMENT_NOT_FOUND', 'Knowledge document not found.');
     }
@@ -146,7 +152,7 @@ class KnowledgeService {
       if (err) logger.error('knowledge_file_delete_failed', { absolutePath, message: err.message });
     });
 
-    await KnowledgeDocument.deleteOne({ _id: documentId });
+    await KnowledgeDocument.deleteOne({ _id: documentId, organizationId });
     return { success: true };
   }
 
@@ -165,8 +171,8 @@ class KnowledgeService {
     return { items, totalItems, page: Number(page), limit: Number(limit), totalPages: Math.ceil(totalItems / limit) || 1 };
   }
 
-  async getDocument(documentId) {
-    const doc = await KnowledgeDocument.findById(documentId).populate('uploadedBy', 'name email');
+  async getDocument(documentId, organizationId) {
+    const doc = await KnowledgeDocument.findOne({ _id: documentId, organizationId }).populate('uploadedBy', 'name email');
     if (!doc) {
       throw new AppError(404, 'DOCUMENT_NOT_FOUND', 'Knowledge document not found.');
     }
@@ -185,7 +191,19 @@ class KnowledgeService {
 
   // ── Query / search ──────────────────────────────────────────────────────
 
-  async query({ question, userId, topK, documentType, filterDocument }) {
+  // Prompt 1 known limitation (documented, not silently left as if fixed —
+  // see the Prompt 1 report's "Remaining Risks"): organizationId is now
+  // threaded through to the ai-service so it's available once the RAG
+  // ingestion/retrieval pipeline supports per-tenant metadata filtering, but
+  // app/rag/* has NO organizationId concept today (grep-verified: zero
+  // matches in ai-service/app/rag/ or app/api/rag_routes.py) — the ChromaDB
+  // vector search itself is not yet tenant-scoped. This is out of scope for
+  // this reliability/security-hardening phase (Part 20 excludes new RAG
+  // architecture), is not currently reachable in production (RAG_AVAILABLE
+  // is False on the deployed lite image per docs/AUDIT_PROMPT0.md), and
+  // requires a real ai-service change (tag chunks with organizationId at
+  // ingestion, filter by it at retrieval) that a future phase should own.
+  async query({ question, userId, topK, documentType, filterDocument, organizationId }) {
     try {
       const response = await aiClient.post('/knowledge/query', {
         question,
@@ -193,6 +211,7 @@ class KnowledgeService {
         topK,
         documentType,
         filterDocument,
+        organizationId,
       });
       return response.data;
     } catch (err) {
@@ -202,10 +221,10 @@ class KnowledgeService {
     }
   }
 
-  async search({ q, mode, topK, documentType }) {
+  async search({ q, mode, topK, documentType, organizationId }) {
     try {
       const response = await aiClient.get('/knowledge/search', {
-        params: { q, mode, topK, documentType },
+        params: { q, mode, topK, documentType, organizationId },
       });
       return response.data;
     } catch (err) {
@@ -242,8 +261,8 @@ class KnowledgeService {
 
   // ── Employee Profile Knowledge Insights ─────────────────────────────────
 
-  async getEmployeeKnowledgeInsights(employeeId) {
-    const employee = await Employee.findById(employeeId).populate('departmentId', 'name');
+  async getEmployeeKnowledgeInsights(employeeId, organizationId) {
+    const employee = await Employee.findOne({ _id: employeeId, organizationId }).populate('departmentId', 'name');
     if (!employee) {
       throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee not found.');
     }

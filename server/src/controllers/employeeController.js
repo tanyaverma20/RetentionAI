@@ -124,10 +124,10 @@ export async function getEmployeeAiInsights(request, response, next) {
     await employeeService.getEmployeeProfile(employeeId, request.auth);
 
     const [prediction, explanation, intelligence, decision] = await Promise.all([
-      aiService.getPredictionForEmployee(employeeId).catch(() => null),
-      explainService.getStoredExplanation(employeeId).catch(() => null),
-      employeeIntelligenceService.getStored(employeeId).catch(() => null),
-      decisionService.getStored(employeeId).catch(() => null),
+      aiService.getPredictionForEmployee(employeeId, request.auth.organizationId).catch(() => null),
+      explainService.getStoredExplanation(employeeId, request.auth.organizationId).catch(() => null),
+      employeeIntelligenceService.getStored(employeeId, request.auth.organizationId).catch(() => null),
+      decisionService.getStored(employeeId, request.auth.organizationId).catch(() => null),
     ]);
 
     return sendSuccess(

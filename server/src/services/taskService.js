@@ -60,8 +60,14 @@ function list(organizationId, { status, priority, ownerUserId, departmentId, due
     .lean();
 }
 
-async function getById(taskId) {
-  const task = await Task.findById(taskId)
+// Prompt 1, Part 9/11/14 — previously unscoped: any org's authenticated
+// user could view/assign/complete/cancel/escalate another org's task by ID
+// alone (and could even direct a reassignment/escalation notification at an
+// arbitrary user in the victim org). organizationId now required and
+// comes from the authenticated caller (Part 10); a mismatch is reported as
+// 404, identical to a genuinely unknown ID (Part 14).
+async function getById(taskId, organizationId) {
+  const task = await Task.findOne({ _id: taskId, organizationId })
     .populate('ownerUserId', 'name email')
     .populate('createdByUserId', 'name email')
     .populate('escalatedToUserId', 'name email')
@@ -71,8 +77,8 @@ async function getById(taskId) {
   return task;
 }
 
-async function assign(taskId, ownerUserId, byUserId, note = '') {
-  const task = await Task.findById(taskId);
+async function assign(taskId, organizationId, ownerUserId, byUserId, note = '') {
+  const task = await Task.findOne({ _id: taskId, organizationId });
   if (!task) throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found.');
   const action = task.ownerUserId ? 'REASSIGNED' : 'ASSIGNED';
   const fromValue = task.ownerUserId ? String(task.ownerUserId) : null;
@@ -92,11 +98,11 @@ async function assign(taskId, ownerUserId, byUserId, note = '') {
   return task;
 }
 
-async function updateStatus(taskId, status, byUserId, note = '') {
+async function updateStatus(taskId, organizationId, status, byUserId, note = '') {
   if (!TASK_STATUSES.includes(status)) {
     throw new AppError(400, 'INVALID_STATUS', `Status must be one of: ${TASK_STATUSES.join(', ')}`);
   }
-  const task = await Task.findById(taskId);
+  const task = await Task.findOne({ _id: taskId, organizationId });
   if (!task) throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found.');
   if (['COMPLETED', 'CANCELLED'].includes(task.status)) {
     throw new AppError(409, 'TASK_ALREADY_CLOSED', `Task is already ${task.status} and cannot be changed.`);
@@ -117,11 +123,11 @@ async function updateStatus(taskId, status, byUserId, note = '') {
   return task;
 }
 
-const complete = (taskId, byUserId, note) => updateStatus(taskId, 'COMPLETED', byUserId, note);
-const cancel = (taskId, byUserId, note) => updateStatus(taskId, 'CANCELLED', byUserId, note);
+const complete = (taskId, organizationId, byUserId, note) => updateStatus(taskId, organizationId, 'COMPLETED', byUserId, note);
+const cancel = (taskId, organizationId, byUserId, note) => updateStatus(taskId, organizationId, 'CANCELLED', byUserId, note);
 
-async function escalate(taskId, escalateToUserId, byUserId, note = '') {
-  const task = await Task.findById(taskId);
+async function escalate(taskId, organizationId, escalateToUserId, byUserId, note = '') {
+  const task = await Task.findOne({ _id: taskId, organizationId });
   if (!task) throw new AppError(404, 'TASK_NOT_FOUND', 'Task not found.');
   if (['COMPLETED', 'CANCELLED'].includes(task.status)) {
     throw new AppError(409, 'TASK_ALREADY_CLOSED', `Task is already ${task.status} and cannot be escalated.`);

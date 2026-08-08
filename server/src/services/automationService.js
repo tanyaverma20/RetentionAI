@@ -118,7 +118,7 @@ async function runAutoCloseInterventions(organizationId) {
     if (linkedTasks.length === 0) continue;
     const allDone = linkedTasks.every((t) => t.status === 'COMPLETED');
     if (!allDone) continue;
-    await interventionService.transition(intervention._id, 'COMPLETED', systemUserId || intervention.createdByUserId, {
+    await interventionService.transition(intervention._id, organizationId, 'COMPLETED', systemUserId || intervention.createdByUserId, {
       note: 'Auto-closed: all linked tasks completed.',
     });
     closed += 1;

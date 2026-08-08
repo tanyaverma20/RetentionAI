@@ -27,7 +27,12 @@ async function create(organizationId, { entityType, entityId, file, attachmentId
   });
 
   if (entityType === 'TASK') {
-    await Task.findByIdAndUpdate(entityId, { $addToSet: { attachmentIds: attachment._id } });
+    // Part 9/11 — scoped by organizationId too: without this, a caller
+    // could upload a file tagged entityType:'TASK' with another org's task
+    // ID as entityId and get their attachment linked into that foreign
+    // task's attachmentIds array — an unauthorized cross-tenant write, even
+    // though the Attachment record itself stayed correctly org-tagged.
+    await Task.findOneAndUpdate({ _id: entityId, organizationId }, { $addToSet: { attachmentIds: attachment._id } });
   }
 
   await recordAudit(organizationId, 'ATTACHMENT_UPLOADED', uploadedByUserId, {
@@ -39,12 +44,18 @@ async function create(organizationId, { entityType, entityId, file, attachmentId
   return attachment;
 }
 
-function listForEntity(entityType, entityId) {
-  return Attachment.find({ entityType, entityId }).sort({ uploadedAt: -1 }).populate('uploadedByUserId', 'name email').lean();
+// Prompt 1, Part 9/11/15 — previously unscoped by organization on both
+// listing and single-record lookup. getById() in particular backs
+// downloadAttachment(), which was letting any authenticated user of ANY
+// org download ANY org's uploaded file by ID (Part 15: file upload/access
+// security) — this is the highest-severity fix in this pass since it's a
+// direct cross-tenant file content leak, not just metadata.
+function listForEntity(organizationId, entityType, entityId) {
+  return Attachment.find({ organizationId, entityType, entityId }).sort({ uploadedAt: -1 }).populate('uploadedByUserId', 'name email').lean();
 }
 
-async function getById(attachmentId) {
-  const attachment = await Attachment.findById(attachmentId).lean();
+async function getById(attachmentId, organizationId) {
+  const attachment = await Attachment.findOne({ _id: attachmentId, organizationId }).lean();
   if (!attachment) throw new AppError(404, 'ATTACHMENT_NOT_FOUND', 'Attachment not found.');
   return attachment;
 }

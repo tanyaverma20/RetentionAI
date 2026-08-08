@@ -25,7 +25,7 @@ export async function generateDecision(req, res, next) {
 
 export async function getDecision(req, res, next) {
   try {
-    const result = await decisionService.getStored(req.params.employeeId);
+    const result = await decisionService.getStored(req.params.employeeId, req.auth.organizationId);
     if (!result) {
       return next(new AppError(404, 'DECISION_NOT_FOUND', 'No AI recommendation found. Generate one first.'));
     }
@@ -37,7 +37,7 @@ export async function getDecision(req, res, next) {
 
 export async function getDecisionHistory(req, res, next) {
   try {
-    const result = await decisionService.getHistory(req.params.employeeId);
+    const result = await decisionService.getHistory(req.params.employeeId, req.auth.organizationId);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));
@@ -60,7 +60,7 @@ export async function updateDecisionStatus(req, res, next) {
     if (!status) {
       throw new AppError(422, 'VALIDATION_ERROR', 'status is required.');
     }
-    const result = await decisionService.updateStatus(req.params.id, status, req.auth.userId, note);
+    const result = await decisionService.updateStatus(req.params.id, req.auth.organizationId, status, req.auth.userId, note);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error instanceof AppError ? error : new AppError(error.statusCode || 502, error.code || 'DECISION_SERVICE_ERROR', error.message));

@@ -28,7 +28,7 @@ export const generateEmployeeIntelligence = async (req, res, next) => {
 export const getEmployeeIntelligence = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await employeeIntelligenceService.getStored(id);
+    const result = await employeeIntelligenceService.getStored(id, req.auth.organizationId);
     if (!result) {
       return next(new AppError(404, 'EMPLOYEE_INTELLIGENCE_NOT_FOUND', 'No Employee Intelligence profile found. Generate one first.'));
     }

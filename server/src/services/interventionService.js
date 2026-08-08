@@ -11,7 +11,11 @@ async function createManual(organizationId, payload, createdByUserId) {
   if (!employeeId || !title || !priority) {
     throw new AppError(422, 'VALIDATION_ERROR', 'employeeId, title, and priority are required.');
   }
-  const employee = await Employee.findById(employeeId).lean();
+  // Part 9/11 — previously unscoped: an Intervention could be created
+  // tagged with the caller's organizationId but referencing another org's
+  // employeeId, both leaking that employee's data into the response and
+  // corrupting cross-tenant data integrity.
+  const employee = await Employee.findOne({ _id: employeeId, organizationId }).lean();
   if (!employee) throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee not found.');
 
   const intervention = await Intervention.create({
@@ -71,8 +75,13 @@ function list(organizationId, { status, priority, assignedToUserId, employeeId, 
     .lean();
 }
 
-async function getById(interventionId) {
-  const intervention = await Intervention.findById(interventionId)
+// Prompt 1, Part 9/11 — previously unscoped: any org's authenticated user
+// could view another org's intervention (employee name, AI decision
+// reasoning, evidence) by ID alone. organizationId now comes from the
+// authenticated caller (Part 10); a mismatch is reported as 404, same as a
+// genuinely unknown ID (Part 14).
+async function getById(interventionId, organizationId) {
+  const intervention = await Intervention.findOne({ _id: interventionId, organizationId })
     .populate('employeeId', 'firstName lastName employeeCode departmentId')
     .populate('assignedToUserId', 'name email')
     .populate('createdByUserId', 'name email')
@@ -88,11 +97,13 @@ async function getById(interventionId) {
  * required step (e.g. DRAFT straight to COMPLETED), and every transition is
  * appended to statusHistory — the audit trail the spec requires.
  */
-async function transition(interventionId, targetStatus, userId, { note = '', assignedToUserId, cancelReason } = {}) {
+// organizationId required — Part 9/11/14: previously any org could
+// transition/reassign/cancel another org's intervention by ID alone.
+async function transition(interventionId, organizationId, targetStatus, userId, { note = '', assignedToUserId, cancelReason } = {}) {
   if (!INTERVENTION_STATUSES.includes(targetStatus)) {
     throw new AppError(400, 'INVALID_STATUS', `Status must be one of: ${INTERVENTION_STATUSES.join(', ')}`);
   }
-  const intervention = await Intervention.findById(interventionId);
+  const intervention = await Intervention.findOne({ _id: interventionId, organizationId });
   if (!intervention) throw new AppError(404, 'INTERVENTION_NOT_FOUND', 'Intervention not found.');
 
   const allowed = ALLOWED_TRANSITIONS[intervention.status] || [];
@@ -146,12 +157,12 @@ async function transition(interventionId, targetStatus, userId, { note = '', ass
 /** Called by approvalService's controller after an approval decision resolves the chain. */
 async function syncFromApproval(interventionId, approval, userId) {
   if (approval.overallStatus === 'APPROVED') {
-    return transition(interventionId, 'APPROVED', userId, { note: 'Approval chain completed.' });
+    return transition(interventionId, approval.organizationId, 'APPROVED', userId, { note: 'Approval chain completed.' });
   }
   if (approval.overallStatus === 'REJECTED') {
-    return transition(interventionId, 'REJECTED', userId, { note: 'Rejected during approval.' });
+    return transition(interventionId, approval.organizationId, 'REJECTED', userId, { note: 'Rejected during approval.' });
   }
-  return Intervention.findById(interventionId);
+  return Intervention.findOne({ _id: interventionId, organizationId: approval.organizationId });
 }
 
 async function listOverdue(organizationId) {

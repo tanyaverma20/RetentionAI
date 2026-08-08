@@ -27,8 +27,15 @@ export async function globalSearch(request, response, next) {
     const n = Number(limit);
     const orgId = request.auth.organizationId;
 
+    // Prompt 1, Part 9/11 — Employee/Department/Decision were previously
+    // unscoped by organization while Task/Intervention/Comment/Knowledge
+    // right below them already were: any authenticated user of ANY org
+    // could search up another org's employees (name/email/PII), department
+    // names, and AI recommendation reasoning through this one endpoint.
+    // organizationId now comes from the authenticated caller (Part 10).
     const [employees, departments, recommendations, tasks, interventions, comments, knowledge] = await Promise.all([
       Employee.find({
+        organizationId: orgId,
         isDeleted: false,
         $or: [
           { firstName: searchRegex }, { lastName: searchRegex }, { employeeCode: searchRegex },
@@ -40,11 +47,11 @@ export async function globalSearch(request, response, next) {
         .limit(n)
         .lean(),
 
-      Department.find({ $or: [{ name: searchRegex }, { code: searchRegex }, { location: searchRegex }] })
+      Department.find({ organizationId: orgId, $or: [{ name: searchRegex }, { code: searchRegex }, { location: searchRegex }] })
         .limit(n)
         .lean(),
 
-      Decision.find({ $or: [{ recommendationType: searchRegex }, { reasoning: searchRegex }] })
+      Decision.find({ organizationId: orgId, $or: [{ recommendationType: searchRegex }, { reasoning: searchRegex }] })
         .populate('employeeId', 'firstName lastName')
         .sort({ generatedAt: -1 })
         .limit(n)

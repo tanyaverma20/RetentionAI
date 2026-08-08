@@ -626,8 +626,12 @@ export async function listAlerts(organizationId, { status } = {}) {
   return ExecutiveAlert.find(filter).sort({ severity: -1, generatedAt: -1 }).populate('departmentId', 'name').populate('assignedToUserId', 'name email').lean();
 }
 
-export async function dismissAlert(alertId, userId) {
-  const alert = await ExecutiveAlert.findById(alertId);
+// Prompt 1, Part 9/11 — previously unscoped: any org's authenticated user
+// could dismiss/review/reassign another org's executive alert by ID alone.
+// organizationId now required and comes from the authenticated caller
+// (Part 10); a mismatch is reported as 404 (Part 14).
+export async function dismissAlert(alertId, organizationId, userId) {
+  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId });
   if (!alert) throw new AppError(404, 'ALERT_NOT_FOUND', 'Alert not found.');
   alert.status = 'DISMISSED';
   alert.dismissedByUserId = userId;
@@ -636,8 +640,8 @@ export async function dismissAlert(alertId, userId) {
   return alert;
 }
 
-export async function markAlertReviewed(alertId, userId) {
-  const alert = await ExecutiveAlert.findById(alertId);
+export async function markAlertReviewed(alertId, organizationId, userId) {
+  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId });
   if (!alert) throw new AppError(404, 'ALERT_NOT_FOUND', 'Alert not found.');
   alert.status = 'REVIEWED';
   alert.reviewedByUserId = userId;
@@ -646,8 +650,8 @@ export async function markAlertReviewed(alertId, userId) {
   return alert;
 }
 
-export async function assignAlertOwner(alertId, assignedToUserId) {
-  const alert = await ExecutiveAlert.findById(alertId);
+export async function assignAlertOwner(alertId, organizationId, assignedToUserId) {
+  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId });
   if (!alert) throw new AppError(404, 'ALERT_NOT_FOUND', 'Alert not found.');
   alert.assignedToUserId = assignedToUserId;
   await alert.save();

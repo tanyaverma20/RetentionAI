@@ -15,7 +15,7 @@ export const trainModel = async (req, res, next) => {
 export const getPrediction = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const prediction = await aiService.getPredictionForEmployee(id);
+    const prediction = await aiService.getPredictionForEmployee(id, req.auth.organizationId);
     if (!prediction) {
       return next(new AppError(404, 'PREDICTION_NOT_FOUND', 'No prediction has been generated for this employee yet.'));
     }
@@ -28,7 +28,7 @@ export const getPrediction = async (req, res, next) => {
 export const predictSingle = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const prediction = await aiService.predictSingle(id);
+    const prediction = await aiService.predictSingle(id, req.auth.organizationId);
     if (req.auth?.userId) {
       await recordAudit(req.auth.organizationId, 'PREDICTION_GENERATED', req.auth.userId, { entityType: 'EMPLOYEE', entityId: id });
     }
@@ -42,7 +42,7 @@ export const predictSingle = async (req, res, next) => {
 export const predictBatch = async (req, res, next) => {
   try {
     const { departmentId, employeeIds } = req.body;
-    const result = await aiService.predictBatch(departmentId, employeeIds);
+    const result = await aiService.predictBatch(departmentId, employeeIds, req.auth.organizationId);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(new AppError(error.statusCode || 502, error.code || 'AI_PREDICT_BATCH_FAILED', error.message));

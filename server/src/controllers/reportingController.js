@@ -33,9 +33,18 @@ function sendCsvResponse(response, data, filename, request) {
   }
 }
 
+// Prompt 1, Part 9/11/12 — the most severe finding in this audit pass:
+// every export function in this file queried with NO organizationId filter
+// at all, so any authenticated user able to reach these endpoints (HR/Admin
+// roles, per reportingRoutes.js) could download a CSV of literally every
+// other organization's employees, departments, attendance, performance,
+// training, and promotion records in one request — full cross-tenant data
+// exfiltration. organizationId now comes from the authenticated caller
+// (Part 10) on every query below.
+
 export async function exportEmployeeSummary(request, response, next) {
   try {
-    const employees = await Employee.find({ isDeleted: false })
+    const employees = await Employee.find({ organizationId: request.auth.organizationId, isDeleted: false })
       .populate('departmentId', 'name code')
       .lean();
 
@@ -59,12 +68,12 @@ export async function exportEmployeeSummary(request, response, next) {
 
 export async function exportDepartmentSummary(request, response, next) {
   try {
-    const departments = await Department.find({ isActive: true })
+    const departments = await Department.find({ organizationId: request.auth.organizationId, isActive: true })
       .populate('managerId', 'firstName lastName')
       .lean();
 
     const data = await Promise.all(departments.map(async (dept) => {
-      const empCount = await Employee.countDocuments({ departmentId: dept._id, isDeleted: false });
+      const empCount = await Employee.countDocuments({ organizationId: request.auth.organizationId, departmentId: dept._id, isDeleted: false });
       return {
         DepartmentCode: dept.code,
         DepartmentName: dept.name,
@@ -82,7 +91,7 @@ export async function exportDepartmentSummary(request, response, next) {
 
 export async function exportAttendanceReport(request, response, next) {
   try {
-    const records = await Attendance.find()
+    const records = await Attendance.find({ organizationId: request.auth.organizationId })
       .populate('employeeId', 'firstName lastName employeeCode')
       .limit(1000) // Limit for large exports without pagination
       .lean();
@@ -106,7 +115,7 @@ export async function exportAttendanceReport(request, response, next) {
 
 export async function exportPerformanceReport(request, response, next) {
   try {
-    const records = await Performance.find()
+    const records = await Performance.find({ organizationId: request.auth.organizationId })
       .populate('employeeId', 'firstName lastName employeeCode')
       .lean();
 
@@ -127,7 +136,7 @@ export async function exportPerformanceReport(request, response, next) {
 
 export async function exportTrainingReport(request, response, next) {
   try {
-    const records = await TrainingHistory.find()
+    const records = await TrainingHistory.find({ organizationId: request.auth.organizationId })
       .populate('employeeId', 'firstName lastName employeeCode')
       .lean();
 
@@ -150,7 +159,7 @@ export async function exportTrainingReport(request, response, next) {
 
 export async function exportPromotionReport(request, response, next) {
   try {
-    const records = await PromotionHistory.find()
+    const records = await PromotionHistory.find({ organizationId: request.auth.organizationId })
       .populate('employeeId', 'firstName lastName employeeCode')
       .lean();
 

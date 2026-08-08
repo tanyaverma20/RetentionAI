@@ -29,7 +29,7 @@ export const explainSingle = async (req, res, next) => {
 export const getExplanation = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const result = await explainService.getStoredExplanation(id);
+    const result = await explainService.getStoredExplanation(id, req.auth.organizationId);
     if (!result) {
       return next(new AppError(404, 'EXPLANATION_NOT_FOUND', 'No explanation found. Generate one first.'));
     }

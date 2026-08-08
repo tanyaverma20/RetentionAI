@@ -15,7 +15,7 @@ export async function listComments(req, res, next) {
   try {
     const { entityType, entityId } = req.query;
     if (!entityType || !entityId) throw new AppError(422, 'VALIDATION_ERROR', 'entityType and entityId are required.');
-    const result = await commentService.listForEntity(entityType, entityId);
+    const result = await commentService.listForEntity(req.auth.organizationId, entityType, entityId);
     return sendSuccess(res, 200, { comments: result }, req.requestId);
   } catch (error) {
     return next(error);
@@ -24,7 +24,7 @@ export async function listComments(req, res, next) {
 
 export async function deleteComment(req, res, next) {
   try {
-    const result = await commentService.softDelete(req.params.id, req.auth.userId, req.auth.role);
+    const result = await commentService.softDelete(req.params.id, req.auth.organizationId, req.auth.userId, req.auth.role);
     return sendSuccess(res, 200, result, req.requestId);
   } catch (error) {
     return next(error);
