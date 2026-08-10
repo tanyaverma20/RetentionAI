@@ -68,12 +68,28 @@ const LOCK_TTL_MS = 15 * 60 * 1000;
 // to — guards against process A's release accidentally clearing process
 // B's lock after A's own lock already expired and B legitimately acquired
 // it in between.
+//
+// Bug found and fixed during Prompt 1B's live verification (Part 9): the
+// stored value is the JSON payload `{name, startedAt, token}`, not the bare
+// token — comparing it directly against ARGV[1] (the bare token
+// acquireAiSlot() returns to callers) can never match, so releaseAiSlot()
+// silently failed to delete the key every single time (returned 0, no
+// error) and every lock sat until its 15-minute TTL expired instead of
+// being released on the caller's own `finally`. Live-reproduced: acquire →
+// release → immediate re-acquire failed with AI_PIPELINE_BUSY although
+// nothing was still running. Fixed by decoding the stored JSON in the
+// script itself (cjson, standard in Redis' Lua environment) and comparing
+// its `.token` field instead of the raw string.
 const RELEASE_SCRIPT = `
-if redis.call("get", KEYS[1]) == ARGV[1] then
-  return redis.call("del", KEYS[1])
-else
+local raw = redis.call("get", KEYS[1])
+if raw == false then
   return 0
 end
+local ok, decoded = pcall(cjson.decode, raw)
+if not ok or decoded.token ~= ARGV[1] then
+  return 0
+end
+return redis.call("del", KEYS[1])
 `;
 
 // In-process fallback, used only when Redis isn't configured.
