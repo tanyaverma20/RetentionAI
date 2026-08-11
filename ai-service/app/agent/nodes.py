@@ -313,21 +313,36 @@ For each strategy provide:
         recommendations = [
             {
                 "id": "REC-1",
+                "actionId": "REC-1",
                 "title": "Workload & Overtime Review",
                 "action": "Conduct immediate 1-on-1 workload rebalancing to address high overtime hours.",
                 "expectedImpact": "Reduces burnout risk and improves work-life balance rating.",
+                "interventionType": "WORKLOAD_REBALANCING",
+                "estimatedCost": 500,
+                "recommendedRole": "HR_MANAGER",
+                "targetSlaDays": 14,
             },
             {
                 "id": "REC-2",
+                "actionId": "REC-2",
                 "title": "Compensation & Career Path Alignment",
                 "action": "Review compensation benchmarking against role peers and outline a 6-month promotion pathway.",
                 "expectedImpact": "Addresses salary dissatisfaction and increases long-term commitment.",
+                "interventionType": "COMPENSATION_ALIGNMENT",
+                "estimatedCost": 2500,
+                "recommendedRole": "HR_ADMIN",
+                "targetSlaDays": 30,
             },
             {
                 "id": "REC-3",
+                "actionId": "REC-3",
                 "title": "Policy-Backed Engagement Check-in",
                 "action": "Implement bi-weekly check-ins aligned with company performance & wellness guidelines.",
                 "expectedImpact": "Enhances job satisfaction and communication.",
+                "interventionType": "ENGAGEMENT_CHECKIN",
+                "estimatedCost": 0,
+                "recommendedRole": "DEPARTMENT_HEAD",
+                "targetSlaDays": 7,
             },
         ]
         
@@ -338,9 +353,14 @@ For each strategy provide:
         state["recommendations"] = [
             {
                 "id": "REC-1",
+                "actionId": "REC-1",
                 "title": "Workload Optimization",
                 "action": "Review recent overtime assignments and redistribute tasks within the team.",
                 "expectedImpact": "Immediate reduction in burnout risk.",
+                "interventionType": "WORKLOAD_REBALANCING",
+                "estimatedCost": 500,
+                "recommendedRole": "HR_MANAGER",
+                "targetSlaDays": 14,
             }
         ]
         _add_trace(state, "RetentionStrategyAgent", "FALLBACK", f"Used rule-based fallback strategy due to LLM error: {e}")

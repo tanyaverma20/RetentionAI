@@ -2,9 +2,18 @@ import mongoose from 'mongoose';
 
 /** Task — Sprint 9 Part 2. HR work items, optionally spawned from an Intervention or Decision. */
 
-const TASK_STATUSES = ['OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ESCALATED'];
+const TASK_STATUSES = ['OPEN', 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ESCALATED'];
 const TASK_PRIORITIES = ['HIGH', 'MEDIUM', 'LOW'];
 const SOURCE_TYPES = ['INTERVENTION', 'RECOMMENDATION', 'MANUAL'];
+
+const ALLOWED_TASK_TRANSITIONS = {
+  OPEN: ['IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ESCALATED'],
+  PENDING: ['IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ESCALATED'],
+  IN_PROGRESS: ['COMPLETED', 'CANCELLED', 'ESCALATED'],
+  COMPLETED: [],
+  CANCELLED: [],
+  ESCALATED: ['IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+};
 
 const historyEntrySchema = new mongoose.Schema(
   {
@@ -47,4 +56,4 @@ taskSchema.index({ departmentId: 1, status: 1 });
 taskSchema.index({ organizationId: 1, createdAt: -1 });
 
 export const Task = mongoose.model('Task', taskSchema);
-export { TASK_STATUSES, TASK_PRIORITIES, SOURCE_TYPES };
+export { TASK_STATUSES, TASK_PRIORITIES, SOURCE_TYPES, ALLOWED_TASK_TRANSITIONS };

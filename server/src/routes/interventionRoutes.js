@@ -13,3 +13,8 @@ interventionRouter.get('/:id', authorize('permission:intervention.read'), interv
 interventionRouter.post('/', authorize('permission:intervention.write'), interventionController.createIntervention);
 interventionRouter.post('/from-decision', authorize('permission:intervention.write'), interventionController.createFromDecision);
 interventionRouter.patch('/:id/status', authorize('permission:intervention.write'), interventionController.transitionIntervention);
+interventionRouter.post('/:id/approve', authorize('permission:intervention.write'), interventionController.approveIntervention);
+interventionRouter.post('/:id/reject', authorize('permission:intervention.write'), interventionController.rejectIntervention);
+interventionRouter.post('/:id/start', authorize('permission:intervention.write'), interventionController.startIntervention);
+interventionRouter.post('/:id/complete', authorize('permission:intervention.write'), interventionController.completeIntervention);
+interventionRouter.post('/:id/cancel', authorize('permission:intervention.write'), interventionController.cancelIntervention);

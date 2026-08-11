@@ -4,6 +4,7 @@ import { interventionService, approvalService, attachmentService } from '../serv
 import CommentThread from '../components/CommentThread';
 
 const STATUS_STYLES = {
+  PROPOSED: 'bg-amber-500/10 text-amber-600 border-amber-500/30',
   DRAFT: 'bg-slate-500/10 text-slate-500 border-slate-500/30',
   PENDING_APPROVAL: 'bg-amber-50 text-amber-600 border-amber-100',
   APPROVED: 'bg-sky-50 text-sky-600 border-sky-100',
@@ -14,16 +15,24 @@ const STATUS_STYLES = {
   CANCELLED: 'bg-slate-600/10 text-slate-400 border-slate-600/30',
 };
 
+const SLA_STYLES = {
+  ON_TRACK: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+  DUE_SOON: 'bg-amber-50 text-amber-600 border-amber-200',
+  OVERDUE: 'bg-rose-50 text-rose-600 border-rose-200 animate-pulse',
+  COMPLETED: 'bg-slate-50 text-slate-500 border-slate-200',
+};
+
 const NEXT_STATUS = {
-  DRAFT: ['PENDING_APPROVAL', 'CANCELLED'],
-  PENDING_APPROVAL: ['CANCELLED'],
-  APPROVED: ['ASSIGNED', 'CANCELLED'],
+  PROPOSED: ['APPROVED', 'REJECTED', 'CANCELLED'],
+  DRAFT: ['PENDING_APPROVAL', 'APPROVED', 'CANCELLED'],
+  PENDING_APPROVAL: ['APPROVED', 'REJECTED', 'CANCELLED'],
+  APPROVED: ['ASSIGNED', 'IN_PROGRESS', 'CANCELLED'],
   ASSIGNED: ['IN_PROGRESS', 'CANCELLED'],
   IN_PROGRESS: ['COMPLETED', 'CANCELLED'],
 };
 
 function CreateInterventionForm({ onCreated, onClose }) {
-  const [form, setForm] = useState({ employeeId: '', title: '', description: '', priority: 'MEDIUM', dueDate: '' });
+  const [form, setForm] = useState({ employeeId: '', title: '', description: '', priority: 'MEDIUM', dueDate: '', targetSlaDays: 14 });
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -54,7 +63,10 @@ function CreateInterventionForm({ onCreated, onClose }) {
             <option value="MEDIUM">Medium</option>
             <option value="LOW">Low</option>
           </select>
-          <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-800" />
+          <div className="grid grid-cols-2 gap-2">
+            <input type="date" value={form.dueDate} onChange={(e) => setForm({ ...form, dueDate: e.target.value })} className="px-3 py-2 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-800" />
+            <input type="number" placeholder="Target SLA (Days)" value={form.targetSlaDays} onChange={(e) => setForm({ ...form, targetSlaDays: Number(e.target.value) })} className="px-3 py-2 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-800" />
+          </div>
         </div>
         {error && <p className="text-xs text-rose-600 mt-2">{error}</p>}
         <div className="flex justify-end gap-2 mt-4">
@@ -73,6 +85,7 @@ function DetailPanel({ id, onClose, onChanged }) {
   const [intervention, setIntervention] = useState(null);
   const [attachments, setAttachments] = useState([]);
   const [assignUserId, setAssignUserId] = useState('');
+  const [outcomeForm, setOutcomeForm] = useState({ currentRisk: 0.2, actualCost: 0, employeeRetained: true, outcomeNotes: '' });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -89,7 +102,7 @@ function DetailPanel({ id, onClose, onChanged }) {
     setBusy(true);
     setError('');
     try {
-      const extra = status === 'ASSIGNED' ? { assignedToUserId: assignUserId } : {};
+      const extra = status === 'ASSIGNED' ? { assignedToUserId: assignUserId } : status === 'COMPLETED' ? outcomeForm : {};
       await interventionService.transition(id, status, extra);
       await load();
       onChanged();
@@ -125,13 +138,19 @@ function DetailPanel({ id, onClose, onChanged }) {
 
   const currentLevel = intervention.approval?.chain?.find((c) => c.level === intervention.approval.currentLevel);
   const canDecideApproval = intervention.approval?.overallStatus === 'PENDING' && currentLevel?.role === user?.role;
+  const snapshot = intervention.aiEvidenceSnapshot;
 
   return (
     <div className="fixed inset-0 bg-black/60 z-50 flex justify-end" onClick={onClose}>
       <div className="w-full max-w-lg h-full bg-white border-l border-slate-100 overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-4">
           <div>
-            <span className={`inline-block px-2 py-1 text-[10px] font-bold rounded-full border ${STATUS_STYLES[intervention.status]}`}>{intervention.status}</span>
+            <div className="flex items-center gap-2">
+              <span className={`inline-block px-2 py-1 text-[10px] font-bold rounded-full border ${STATUS_STYLES[intervention.status]}`}>{intervention.status}</span>
+              {intervention.slaStatus && (
+                <span className={`inline-block px-2 py-0.5 text-[9px] font-bold rounded-full border ${SLA_STYLES[intervention.slaStatus] || SLA_STYLES.ON_TRACK}`}>SLA: {intervention.slaStatus}</span>
+              )}
+            </div>
             <h2 className="text-lg font-bold text-slate-900 mt-2">{intervention.title}</h2>
             <p className="text-xs text-slate-400">{intervention.employeeId?.firstName} {intervention.employeeId?.lastName} · {intervention.priority} priority</p>
           </div>
@@ -141,16 +160,75 @@ function DetailPanel({ id, onClose, onChanged }) {
         {intervention.description && <p className="text-xs text-slate-500 mb-4">{intervention.description}</p>}
         {error && <p className="text-xs text-rose-600 mb-3">{error}</p>}
 
-        {/* Transition actions */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {(NEXT_STATUS[intervention.status] || []).map((s) => (
-            <div key={s} className="flex gap-1 items-center">
-              {s === 'ASSIGNED' && (
-                <input placeholder="User ID" value={assignUserId} onChange={(e) => setAssignUserId(e.target.value)} className="px-2 py-1.5 text-[10px] bg-slate-50 border border-slate-100 rounded-lg text-slate-800 w-32" />
+        {/* AI Evidence Snapshot */}
+        {snapshot && (
+          <div className="p-4 bg-indigo-50/50 border border-indigo-100 rounded-2xl mb-4">
+            <h3 className="text-xs font-bold text-indigo-900 mb-1.5 flex items-center gap-1.5">
+              <span>🤖 AI Evidence Provenance</span>
+            </h3>
+            <div className="text-[11px] space-y-1 text-slate-700">
+              <p><span className="font-semibold text-slate-800">Initial Attrition Risk:</span> {snapshot.riskScore !== null ? `${Math.round(snapshot.riskScore * 100)}%` : 'N/A'} ({snapshot.riskLevel || 'N/A'})</p>
+              {snapshot.shapDrivers?.length > 0 && (
+                <div>
+                  <span className="font-semibold text-slate-800">Key Drivers:</span>
+                  <ul className="list-disc list-inside text-slate-600 pl-1">
+                    {snapshot.shapDrivers.map((d, idx) => (
+                      <li key={idx}>{typeof d === 'object' ? `${d.feature}: ${d.description || d.impact}` : String(d)}</li>
+                    ))}
+                  </ul>
+                </div>
               )}
-              <button onClick={() => handleTransition(s)} disabled={busy} className="px-3 py-1.5 text-[10px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg disabled:opacity-50">
-                Move to {s.replace('_', ' ')}
-              </button>
+              {snapshot.policyCitations?.length > 0 && (
+                <div>
+                  <span className="font-semibold text-slate-800">Policy Citations:</span>
+                  <ul className="list-disc list-inside text-slate-600 pl-1">
+                    {snapshot.policyCitations.map((p, idx) => (
+                      <li key={idx}>{typeof p === 'object' ? `${p.documentName}: ${p.content}` : String(p)}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Outcome Metrics display if completed */}
+        {intervention.status === 'COMPLETED' && (
+          <div className="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl mb-4">
+            <h3 className="text-xs font-bold text-emerald-900 mb-1.5">Outcome & ROI Metrics</h3>
+            <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div><span className="text-slate-400">Baseline Risk:</span> {intervention.baselineRisk ? `${Math.round(intervention.baselineRisk * 100)}%` : 'N/A'}</div>
+              <div><span className="text-slate-400">Post Risk:</span> {intervention.currentRisk ? `${Math.round(intervention.currentRisk * 100)}%` : 'N/A'}</div>
+              <div><span className="text-slate-400">Risk Reduction:</span> {intervention.riskDelta ? `${Math.round(intervention.riskDelta * 100)}%` : 'N/A'}</div>
+              <div><span className="text-slate-400">ROI:</span> {intervention.roiPercentage ? `${intervention.roiPercentage}%` : 'N/A'}</div>
+              <div><span className="text-slate-400">Retained:</span> {intervention.employeeRetained ? 'Yes' : 'No'}</div>
+              <div><span className="text-slate-400">Cost:</span> ${intervention.actualCost || 0}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Transition actions */}
+        <div className="space-y-2 mb-4">
+          {(NEXT_STATUS[intervention.status] || []).map((s) => (
+            <div key={s} className="flex flex-col gap-2 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-700">Transition to {s.replace('_', ' ')}</span>
+                <button onClick={() => handleTransition(s)} disabled={busy} className="px-3 py-1.5 text-[10px] font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg disabled:opacity-50">
+                  Confirm {s}
+                </button>
+              </div>
+              {s === 'ASSIGNED' && (
+                <input placeholder="Assignee User ID" value={assignUserId} onChange={(e) => setAssignUserId(e.target.value)} className="px-2 py-1.5 text-[10px] bg-white border border-slate-200 rounded-lg text-slate-800" />
+              )}
+              {s === 'COMPLETED' && (
+                <div className="space-y-1.5 text-[10px]">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <input type="number" step="0.01" placeholder="Post-Risk (0.0-1.0)" value={outcomeForm.currentRisk} onChange={(e) => setOutcomeForm({ ...outcomeForm, currentRisk: Number(e.target.value) })} className="px-2 py-1 bg-white border rounded text-slate-800" />
+                    <input type="number" placeholder="Actual Cost ($)" value={outcomeForm.actualCost} onChange={(e) => setOutcomeForm({ ...outcomeForm, actualCost: Number(e.target.value) })} className="px-2 py-1 bg-white border rounded text-slate-800" />
+                  </div>
+                  <input placeholder="Outcome Notes" value={outcomeForm.outcomeNotes} onChange={(e) => setOutcomeForm({ ...outcomeForm, outcomeNotes: e.target.value })} className="w-full px-2 py-1 bg-white border rounded text-slate-800" />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -178,7 +256,7 @@ function DetailPanel({ id, onClose, onChanged }) {
 
         {/* Status history / timeline */}
         <div className="mb-4">
-          <h3 className="text-xs font-bold text-slate-600 mb-2">Timeline</h3>
+          <h3 className="text-xs font-bold text-slate-600 mb-2">Timeline Audit Trail</h3>
           <div className="space-y-1.5">
             {intervention.statusHistory.map((h, i) => (
               <div key={i} className="text-[11px] text-slate-500">
@@ -232,7 +310,10 @@ export default function InterventionsPage() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-extrabold text-slate-900">Interventions</h1>
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900">Interventions</h1>
+          <p className="text-xs text-slate-500">Human-in-the-loop attrition mitigation and workflow tracking</p>
+        </div>
         <button onClick={() => setShowCreate(true)} className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl">+ New Intervention</button>
       </div>
 
@@ -247,6 +328,13 @@ export default function InterventionsPage() {
           <option value="MEDIUM">Medium</option>
           <option value="LOW">Low</option>
         </select>
+        <select onChange={(e) => setFilter((f) => ({ ...f, slaStatus: e.target.value || undefined }))} className="px-3 py-1.5 text-xs bg-slate-50 border border-slate-100 rounded-lg text-slate-600">
+          <option value="">All SLA Statuses</option>
+          <option value="ON_TRACK">On Track</option>
+          <option value="DUE_SOON">Due Soon</option>
+          <option value="OVERDUE">Overdue</option>
+          <option value="COMPLETED">Completed</option>
+        </select>
       </div>
 
       <div className="bg-white border border-slate-100 rounded-3xl overflow-hidden">
@@ -255,8 +343,13 @@ export default function InterventionsPage() {
         {interventions.map((iv) => (
           <button key={iv._id} onClick={() => setSelectedId(iv._id)} className="w-full text-left flex items-center justify-between px-5 py-3 border-b border-slate-100 last:border-0 hover:bg-slate-100/50">
             <div>
-              <p className="text-sm font-semibold text-slate-800">{iv.title}</p>
-              <p className="text-[11px] text-slate-400">{iv.employeeId?.firstName} {iv.employeeId?.lastName} · {iv.priority}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-semibold text-slate-800">{iv.title}</p>
+                {iv.slaStatus && (
+                  <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded-full border ${SLA_STYLES[iv.slaStatus] || SLA_STYLES.ON_TRACK}`}>SLA: {iv.slaStatus}</span>
+                )}
+              </div>
+              <p className="text-[11px] text-slate-400">{iv.employeeId?.firstName} {iv.employeeId?.lastName} · {iv.priority} priority</p>
             </div>
             <span className={`px-2 py-1 text-[10px] font-bold rounded-full border ${STATUS_STYLES[iv.status]}`}>{iv.status}</span>
           </button>
