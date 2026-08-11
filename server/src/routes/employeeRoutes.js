@@ -113,3 +113,10 @@ employeeRouter.get(
   validateEmployeeIdParam,
   employeeController.getEmployeeTimeline,
 );
+
+// Employee Risk Timeline (Historical Prediction Timeline)
+employeeRouter.get(
+  '/:employeeId/risk-timeline',
+  validateEmployeeIdParam,
+  employeeController.getEmployeeRiskTimeline,
+);

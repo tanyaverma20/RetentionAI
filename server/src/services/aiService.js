@@ -203,6 +203,24 @@ class AIService {
 
     return { counts, topHighRisk };
   }
+
+  async executeAgentDecision({ employeeId, question, organizationId }) {
+    const owned = await Employee.exists({ _id: employeeId, organizationId });
+    if (!owned) {
+      throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee not found.');
+    }
+
+    try {
+      const response = await aiClient.post('/agent/employee-decision', {
+        employeeId: String(employeeId),
+        organizationId: String(organizationId),
+        query: question || null,
+      }, { timeout: 60000 });
+      return response.data;
+    } catch (error) {
+      throw toServiceError(error, 'Failed to execute agentic decision workflow');
+    }
+  }
 }
 
 export const aiService = new AIService();

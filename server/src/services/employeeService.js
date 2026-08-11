@@ -12,11 +12,15 @@
 import { AppError } from '../errors/AppError.js';
 import * as departmentRepository from '../repositories/departmentRepository.js';
 import * as employeeRepository from '../repositories/employeeRepository.js';
-import { Attendance } from '../models/Attendance.js';
+import { Employee } from '../models/Employee.js';
+import { Import } from '../models/Import.js';
+import { EmployeeChange } from '../models/EmployeeChange.js';
+import { aiService } from './aiService.js';
 import { Performance } from '../models/Performance.js';
 import { Survey } from '../models/Survey.js';
 import { EmployeeFeedback } from '../models/EmployeeFeedback.js';
 import { ManagerNote } from '../models/ManagerNote.js';
+import { PredictionHistory } from '../models/PredictionHistory.js';
 import { TrainingHistory } from '../models/TrainingHistory.js';
 import { PromotionHistory } from '../models/PromotionHistory.js';
 
@@ -339,23 +343,30 @@ export function parseCSVText(csvText) {
 
 /**
  * Bulk import employees from an array of raw objects or parsed CSV rows.
- * Validates department existence, email uniqueness, and code uniqueness per row.
+ * Implements change detection (NEW, CHANGED, UNCHANGED, INACTIVE), uses employeeCode
+ * as canonical identity, stores an aggregate Import summary and granular EmployeeChange diffs,
+ * and triggers selective predictions for NEW and CHANGED employees.
  *
  * @param {Array<object>} rows
  * @param {string} organizationId
- * @returns {Promise<{ importedCount: number, failedCount: number, errors: Array<{ row: number, error: string }>, items: Array }>}
+ * @param {object} [options]
+ * @param {string} [options.mode='FULL_SNAPSHOT'] - 'FULL_SNAPSHOT' or 'PARTIAL_UPDATE'
+ * @param {string} [options.filename='import.csv']
+ * @param {string} [options.userId]
+ * @returns {Promise<{ uploadId: string, mode: string, total: number, new: number, changed: number, unchanged: number, inactive: number, validationErrors: number, errors: Array }>}
  */
-export async function bulkImportEmployees(rows, organizationId) {
+export async function bulkImportEmployees(rows, organizationId, options = {}) {
+  const { mode = 'FULL_SNAPSHOT', filename = 'import.csv', userId = null } = options;
   if (!Array.isArray(rows) || rows.length === 0) {
     throw new AppError(400, 'EMPTY_IMPORT_DATA', 'No employee records were provided for bulk import.');
   }
 
-  const errors = [];
-  const validRecords = [];
+  const uploadId = `IMP-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
 
-  // Pre-fetch departments map by code and name, scoped to this organization
-  // — otherwise a row referencing another tenant's department code/name by
-  // coincidence would silently link this org's new employee to it.
+  const errors = [];
+  const validRows = [];
+  const processedCodes = new Set();
+
   const departmentsList = await departmentRepository.listDepartments({}, organizationId);
   const deptCodeMap = new Map(departmentsList.map((d) => [d.code.toUpperCase(), d._id.toString()]));
   const deptNameMap = new Map(departmentsList.map((d) => [d.name.toLowerCase(), d._id.toString()]));
@@ -380,7 +391,14 @@ export async function bulkImportEmployees(rows, organizationId) {
         continue;
       }
 
-      // Resolve department
+      if (processedCodes.has(employeeCode)) {
+        errors.push({
+          row: rowNum,
+          error: `Duplicate employee code '${employeeCode}' within the same import file.`,
+        });
+        continue;
+      }
+
       let departmentId = deptCodeMap.get(deptKey.toUpperCase()) || deptNameMap.get(deptKey.toLowerCase());
       if (!departmentId) {
         errors.push({
@@ -390,54 +408,201 @@ export async function bulkImportEmployees(rows, organizationId) {
         continue;
       }
 
-      const existingCode = await employeeRepository.findEmployeeByCode(employeeCode, organizationId);
-      if (existingCode) {
-        errors.push({ row: rowNum, error: `Employee code '${employeeCode}' already exists.` });
-        continue;
-      }
-
-      const existingEmail = await employeeRepository.findEmployeeByEmail(email, organizationId);
-      if (existingEmail) {
-        errors.push({ row: rowNum, error: `Employee email '${email}' already exists.` });
-        continue;
-      }
-
-      validRecords.push({
+      processedCodes.add(employeeCode);
+      validRows.push({
+        rowNum,
         employeeCode,
         firstName,
         lastName,
         email,
-        organizationId,
+        departmentId,
+        designation,
         phone: row.phone || row.Phone || '',
         gender: ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'].includes(row.gender?.toUpperCase())
           ? row.gender.toUpperCase()
           : 'PREFER_NOT_TO_SAY',
         dateOfBirth: row.dateOfBirth || row.DOB ? new Date(row.dateOfBirth || row.DOB) : null,
-        departmentId,
-        designation,
         joiningDate: row.joiningDate || row.Joining_Date ? new Date(row.joiningDate || row.Joining_Date) : new Date(),
         employmentType: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN'].includes(row.employmentType?.toUpperCase())
           ? row.employmentType.toUpperCase()
           : 'FULL_TIME',
         salary: Number(row.salary || row.Salary) || 0,
         workLocation: row.workLocation || row.Location || 'Office',
-        status: 'ACTIVE',
       });
     } catch (err) {
       errors.push({ row: rowNum, error: err.message || 'Row parsing error.' });
     }
   }
 
-  let importedItems = [];
-  if (validRecords.length > 0) {
-    importedItems = await employeeRepository.bulkInsertEmployees(validRecords);
+  // Pre-fetch all existing employees for this organization indexed by employeeCode
+  const existingEmployees = await Employee.find({ organizationId }).lean();
+  const existingCodeMap = new Map(existingEmployees.map((e) => [e.employeeCode.toUpperCase(), e]));
+
+  let newCount = 0;
+  let changedCount = 0;
+  let unchangedCount = 0;
+  let inactiveCount = 0;
+
+  const predictEmployeeIds = [];
+  const changesToInsert = [];
+
+  for (const item of validRows) {
+    const existing = existingCodeMap.get(item.employeeCode);
+
+    if (!existing) {
+      // NEW employee
+      const created = await employeeRepository.createEmployee({
+        ...item,
+        organizationId,
+        status: 'ACTIVE',
+      });
+      newCount++;
+      predictEmployeeIds.push(created._id.toString());
+    } else {
+      // Compare tracked fields
+      const diffs = [];
+
+      const checkField = (field, oldVal, newVal) => {
+        if (field === 'departmentId') {
+          const oldDeptStr = oldVal?._id ? oldVal._id.toString() : oldVal ? oldVal.toString() : '';
+          const newDeptStr = newVal ? newVal.toString() : '';
+          if (oldDeptStr !== newDeptStr) {
+            diffs.push({ field, previousValue: oldDeptStr, newValue: newDeptStr });
+          }
+          return;
+        }
+        if (field === 'salary') {
+          if (Number(oldVal || 0) !== Number(newVal || 0)) {
+            diffs.push({ field, previousValue: oldVal, newValue: newVal });
+          }
+          return;
+        }
+        if (String(oldVal || '').trim() !== String(newVal || '').trim()) {
+          diffs.push({ field, previousValue: oldVal, newValue: newVal });
+        }
+      };
+
+      checkField('firstName', existing.firstName, item.firstName);
+      checkField('lastName', existing.lastName, item.lastName);
+      checkField('email', existing.email, item.email);
+      checkField('departmentId', existing.departmentId, item.departmentId);
+      checkField('designation', existing.designation, item.designation);
+      checkField('salary', existing.salary, item.salary);
+      checkField('workLocation', existing.workLocation, item.workLocation);
+      checkField('employmentType', existing.employmentType, item.employmentType);
+      checkField('gender', existing.gender, item.gender);
+
+      const statusRestored = existing.status !== 'ACTIVE' || existing.isDeleted;
+
+      if (diffs.length > 0 || statusRestored) {
+        // CHANGED employee
+        await Employee.findByIdAndUpdate(
+          existing._id,
+          {
+            $set: {
+              firstName: item.firstName,
+              lastName: item.lastName,
+              email: item.email,
+              departmentId: item.departmentId,
+              designation: item.designation,
+              salary: item.salary,
+              workLocation: item.workLocation,
+              employmentType: item.employmentType,
+              gender: item.gender,
+              phone: item.phone,
+              status: 'ACTIVE',
+              isDeleted: false,
+            },
+          },
+          { new: true },
+        );
+
+        if (diffs.length > 0) {
+          changesToInsert.push({
+            organizationId,
+            uploadId,
+            employeeId: existing._id,
+            employeeCode: item.employeeCode,
+            changedFields: diffs,
+          });
+        }
+
+        changedCount++;
+        predictEmployeeIds.push(existing._id.toString());
+      } else {
+        // UNCHANGED employee
+        unchangedCount++;
+      }
+    }
+  }
+
+  // Insert change details into EmployeeChange collection (unbounded scale safe)
+  if (changesToInsert.length > 0) {
+    await EmployeeChange.insertMany(changesToInsert);
+  }
+
+  // Handle FULL_SNAPSHOT mode for missing active employees
+  if (mode === 'FULL_SNAPSHOT') {
+    const incomingCodesUpper = new Set(validRows.map((r) => r.employeeCode));
+    const missingActiveEmployees = existingEmployees.filter(
+      (e) => e.status === 'ACTIVE' && !e.isDeleted && !incomingCodesUpper.has(e.employeeCode.toUpperCase()),
+    );
+
+    if (missingActiveEmployees.length > 0) {
+      const missingIds = missingActiveEmployees.map((e) => e._id);
+      await Employee.updateMany(
+        { _id: { $in: missingIds } },
+        { $set: { status: 'INACTIVE' } },
+      );
+      inactiveCount = missingActiveEmployees.length;
+    }
+  }
+
+  let predictionStatus = 'SKIPPED';
+  if (predictEmployeeIds.length > 0) {
+    predictionStatus = 'PROCESSING';
+  }
+
+  const importDoc = await Import.create({
+    organizationId,
+    uploadId,
+    uploadedBy: userId,
+    mode,
+    status: 'COMPLETED',
+    filename,
+    totalRows: rows.length,
+    newCount,
+    changedCount,
+    unchangedCount,
+    inactiveCount,
+    validationErrorCount: errors.length,
+    validationErrors: errors,
+    predictionStatus,
+    completedAt: new Date(),
+  });
+
+  // Trigger Selective Predictions for NEW and CHANGED employees
+  if (predictEmployeeIds.length > 0) {
+    aiService.predictBatch(null, predictEmployeeIds, organizationId)
+      .then(() => {
+        Import.findByIdAndUpdate(importDoc._id, { $set: { predictionStatus: 'COMPLETED' } }).catch(() => {});
+      })
+      .catch((err) => {
+        console.error(`Prediction batch failed for import ${uploadId}:`, err.message);
+        Import.findByIdAndUpdate(importDoc._id, { $set: { predictionStatus: 'FAILED' } }).catch(() => {});
+      });
   }
 
   return {
-    importedCount: importedItems.length,
-    failedCount: errors.length,
+    uploadId,
+    mode,
+    total: rows.length,
+    new: newCount,
+    changed: changedCount,
+    unchanged: unchangedCount,
+    inactive: inactiveCount,
+    validationErrors: errors.length,
     errors,
-    items: importedItems,
   };
 }
 
@@ -512,4 +677,43 @@ export async function getEmployeeTimeline(employeeId, authContext) {
   // Sort all events by date descending
   events.sort((a, b) => new Date(b.date) - new Date(a.date));
   return events;
+}
+
+/**
+ * Fetch chronological prediction history for an employee (Risk Timeline).
+ * Enforces tenant ownership and caller RBAC scope restrictions.
+ *
+ * @param {string} employeeId
+ * @param {object} authContext
+ * @param {{ page?: number, limit?: number }} [pagination]
+ * @returns {Promise<{ items: Array, totalItems: number, page: number, limit: number, totalPages: number }>}
+ */
+export async function getEmployeeRiskTimeline(employeeId, authContext, pagination = {}) {
+  await getEmployeeProfile(employeeId, authContext);
+
+  const page = Math.max(pagination.page || 1, 1);
+  const limit = Math.min(pagination.limit || 20, 100);
+  const skip = (page - 1) * limit;
+
+  const filter = {
+    organizationId: authContext.organizationId,
+    employeeId,
+  };
+
+  const [totalItems, history] = await Promise.all([
+    PredictionHistory.countDocuments(filter),
+    PredictionHistory.find(filter)
+      .sort({ predictedAt: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+  ]);
+
+  return {
+    items: history,
+    totalItems,
+    page,
+    limit,
+    totalPages: Math.ceil(totalItems / limit) || 1,
+  };
 }

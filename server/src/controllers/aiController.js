@@ -75,3 +75,23 @@ export const getDashboardAnalytics = async (req, res, next) => {
     next(new AppError(error.statusCode || 500, error.code || 'AI_DASHBOARD_FAILED', error.message));
   }
 };
+
+export const executeAgentDecision = async (req, res, next) => {
+  try {
+    const { employeeId, question } = req.body;
+    if (!employeeId) {
+      return next(new AppError(400, 'INVALID_REQUEST', 'employeeId is required.'));
+    }
+    const result = await aiService.executeAgentDecision({
+      employeeId,
+      question,
+      organizationId: req.auth.organizationId,
+    });
+    if (req.auth?.userId) {
+      await recordAudit(req.auth.organizationId, 'AGENT_DECISION_EXECUTED', req.auth.userId, { entityType: 'EMPLOYEE', entityId: employeeId });
+    }
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(new AppError(error.statusCode || 502, error.code || 'AGENT_DECISION_FAILED', error.message));
+  }
+};

@@ -58,6 +58,7 @@ class KnowledgeService {
       const response = await aiClient.post('/documents/upload', {
         documentId: String(documentId),
         filePath: getKnowledgeDocumentAbsolutePath(relativeFilePath),
+        organizationId: String(organizationId),
         documentType: doc.documentType,
         tags: doc.tags,
         uploadedBy: String(uploadedByUserId),
@@ -96,6 +97,7 @@ class KnowledgeService {
       const response = await aiClient.post('/documents/reindex', {
         documentId: String(documentId),
         filePath: getKnowledgeDocumentAbsolutePath(doc.filePath),
+        organizationId: String(organizationId),
         documentType: doc.documentType,
         tags: doc.tags,
         uploadedBy: String(doc.uploadedBy),
@@ -138,7 +140,9 @@ class KnowledgeService {
     }
 
     try {
-      await aiClient.delete(`/documents/${String(documentId)}`);
+      await aiClient.delete(`/documents/${String(documentId)}`, {
+        params: { organizationId: String(organizationId) },
+      });
     } catch (err) {
       // Proceed with removing the Mongo record / file even if Chroma cleanup
       // fails — an orphaned Chroma entry is recoverable via reindex-all;
@@ -179,7 +183,9 @@ class KnowledgeService {
 
     let chunkDetail = null;
     try {
-      const response = await aiClient.get(`/knowledge/document/${String(documentId)}`);
+      const response = await aiClient.get(`/knowledge/document/${String(documentId)}`, {
+        params: { organizationId: String(organizationId) },
+      });
       chunkDetail = response.data;
     } catch {
       // Chunk-level preview is supplementary — the Mongo record is the
@@ -211,7 +217,7 @@ class KnowledgeService {
         topK,
         documentType,
         filterDocument,
-        organizationId,
+        organizationId: String(organizationId),
       });
       return response.data;
     } catch (err) {
@@ -224,7 +230,7 @@ class KnowledgeService {
   async search({ q, mode, topK, documentType, organizationId }) {
     try {
       const response = await aiClient.get('/knowledge/search', {
-        params: { q, mode, topK, documentType, organizationId },
+        params: { q, mode, topK, documentType, organizationId: String(organizationId) },
       });
       return response.data;
     } catch (err) {
@@ -241,7 +247,9 @@ class KnowledgeService {
       querySuccessRate: 0,
     };
     try {
-      const response = await aiClient.get('/knowledge/statistics');
+      const response = await aiClient.get('/knowledge/statistics', {
+        params: { organizationId: String(organizationId) }
+      });
       aiStats = response.data;
     } catch (err) {
       logger.error('knowledge_statistics_fetch_failed', { message: err.message });
@@ -276,6 +284,7 @@ class KnowledgeService {
             userId: `employee-profile:${employeeId}`,
             topK: 3,
             documentType,
+            organizationId: String(organizationId),
           });
           return { key, label, question, ...result.data };
         } catch (err) {

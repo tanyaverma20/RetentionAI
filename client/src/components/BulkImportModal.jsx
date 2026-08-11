@@ -29,6 +29,7 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
   const [csvText, setCsvText] = useState('');
   const [activeTab, setActiveTab] = useState('text'); // 'text' | 'file'
   const [collection, setCollection] = useState(defaultCollection);
+  const [mode, setMode] = useState('FULL_SNAPSHOT');
   const [isPredicting, setIsPredicting] = useState(false);
   const dispatch = useDispatch();
 
@@ -51,7 +52,7 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!csvText.trim()) return;
-    onImport({ csvText, collection });
+    onImport({ csvText, collection, mode });
   };
 
   const handleDownloadSample = () => {
@@ -141,19 +142,37 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="mb-4">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
-              Select Data Collection
-            </label>
-            <select
-              value={collection}
-              onChange={(e) => { setCollection(e.target.value); setCsvText(''); }}
-              className="w-full sm:w-1/2 px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-sm outline-none"
-            >
-              {COLLECTION_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-              ))}
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                Select Data Collection
+              </label>
+              <select
+                value={collection}
+                onChange={(e) => { setCollection(e.target.value); setCsvText(''); }}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-sm outline-none"
+              >
+                {COLLECTION_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {collection === 'employees' && (
+              <div>
+                <label className="block text-xs font-semibold uppercase tracking-wider text-slate-600 mb-2">
+                  Import Mode
+                </label>
+                <select
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-100 focus:border-indigo-500 rounded-xl text-slate-800 text-sm outline-none"
+                >
+                  <option value="FULL_SNAPSHOT">Full Snapshot (Deactivates Missing)</option>
+                  <option value="PARTIAL_UPDATE">Partial Update (Preserves Missing)</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {activeTab === 'text' ? (
@@ -200,11 +219,27 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
           {/* Import Summary Results */}
           {importSummary && (
             <div className="p-4 bg-slate-50 border border-slate-100 rounded-xl space-y-3">
-              <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider">
-                <span className="text-emerald-600">Imported: {importSummary.importedCount}</span>
-                <span className={importSummary.failedCount > 0 ? 'text-rose-600' : 'text-slate-500'}>
-                  Failed: {importSummary.failedCount}
-                </span>
+              <div className="grid grid-cols-5 gap-2 text-center text-xs font-bold uppercase tracking-wider">
+                <div className="p-2 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100">
+                  <div>New</div>
+                  <div className="text-base font-extrabold">{importSummary.new ?? importSummary.importedCount ?? 0}</div>
+                </div>
+                <div className="p-2 bg-amber-50 text-amber-700 rounded-lg border border-amber-100">
+                  <div>Changed</div>
+                  <div className="text-base font-extrabold">{importSummary.changed ?? 0}</div>
+                </div>
+                <div className="p-2 bg-slate-100 text-slate-700 rounded-lg border border-slate-200">
+                  <div>Unchanged</div>
+                  <div className="text-base font-extrabold">{importSummary.unchanged ?? 0}</div>
+                </div>
+                <div className="p-2 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-100">
+                  <div>Inactive</div>
+                  <div className="text-base font-extrabold">{importSummary.inactive ?? 0}</div>
+                </div>
+                <div className="p-2 bg-rose-50 text-rose-700 rounded-lg border border-rose-100">
+                  <div>Errors</div>
+                  <div className="text-base font-extrabold">{importSummary.validationErrors ?? importSummary.failedCount ?? 0}</div>
+                </div>
               </div>
 
               {importSummary.errors && importSummary.errors.length > 0 && (
@@ -216,6 +251,8 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
                   ))}
                 </div>
               )}
+            </div>
+          )}
 
               {collection === 'employees' && importSummary.importedCount > 0 && (
                 <div className="mt-4 pt-4 border-t border-slate-100">

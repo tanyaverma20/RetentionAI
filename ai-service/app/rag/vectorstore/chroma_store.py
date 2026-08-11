@@ -32,14 +32,15 @@ def index_documents(documents: List[Document]) -> List[str]:
     vectorstore.add_documents(documents, ids=ids)
     return ids
 
-def delete_document_chunks(document_id: str):
+def delete_document_chunks(document_id: str, organization_id: str = None):
     """
-    Deletes every chunk belonging to one document (by documentId metadata) —
-    used by document deletion and by reindexing a single document (old chunks
-    must go before the new ones are added, otherwise stale duplicates remain).
+    Deletes every chunk belonging to one document (by documentId metadata and optional organizationId).
     """
     vectorstore = get_vectorstore()
-    vectorstore._collection.delete(where={"documentId": document_id})
+    where_clause = {"documentId": document_id}
+    if organization_id:
+        where_clause = {"$and": [{"documentId": document_id}, {"organizationId": organization_id}]}
+    vectorstore._collection.delete(where=where_clause)
 
 def clear_vectorstore():
     """
@@ -48,3 +49,36 @@ def clear_vectorstore():
     vectorstore = get_vectorstore()
     # Delete the collection
     vectorstore.delete_collection()
+
+def migrate_tenant_metadata(default_org_id: str = "60d5ec388832a828f8000000") -> int:
+    """
+    Safe, idempotent, duplication-free migration of existing ChromaDB chunks.
+    Stamps organizationId = default_org_id on any legacy chunk missing organizationId.
+    Does NOT delete, re-embed, or duplicate any vectors.
+    """
+    vectorstore = get_vectorstore()
+    try:
+        data = vectorstore._collection.get(include=["metadatas"])
+        ids = data.get("ids", [])
+        metadatas = data.get("metadatas", [])
+
+        update_ids = []
+        update_metadatas = []
+
+        for chunk_id, meta in zip(ids, metadatas):
+            if meta is None:
+                meta = {}
+            if "organizationId" not in meta or not meta["organizationId"]:
+                updated_meta = dict(meta)
+                updated_meta["organizationId"] = default_org_id
+                update_ids.append(chunk_id)
+                update_metadatas.append(updated_meta)
+
+        if update_ids:
+            vectorstore._collection.update(ids=update_ids, metadatas=update_metadatas)
+            return len(update_ids)
+        return 0
+    except Exception as e:
+        print(f"Error during ChromaDB tenant metadata migration: {e}")
+        return 0
+

@@ -86,6 +86,7 @@ def _to_error_detail(exc: Exception) -> str:
 async def documents_upload(request: DocumentIndexRequest):
     try:
         metadata = {
+            "organizationId": request.organizationId or "60d5ec388832a828f8000000",
             "documentType": request.documentType,
             "tags": request.tags or [],
             "uploadedBy": request.uploadedBy,
@@ -108,6 +109,7 @@ async def documents_upload(request: DocumentIndexRequest):
 async def documents_reindex(request: DocumentIndexRequest):
     try:
         metadata = {
+            "organizationId": request.organizationId or "60d5ec388832a828f8000000",
             "documentType": request.documentType,
             "tags": request.tags or [],
             "uploadedBy": request.uploadedBy,
@@ -127,9 +129,9 @@ async def documents_reindex(request: DocumentIndexRequest):
 # ---------------------------------------------------------------------------
 
 @router.delete("/documents/{documentId}", dependencies=[Depends(verify_auth_token)])
-async def documents_delete(documentId: str):
+async def documents_delete(documentId: str, organizationId: Optional[str] = Query(None)):
     try:
-        result = delete_document(documentId)
+        result = delete_document(documentId, organization_id=organizationId)
         return {"success": True, "data": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete document: {e}")
@@ -143,10 +145,13 @@ async def documents_delete(documentId: str):
 async def knowledge_query(request: RAGQueryRequest):
     if not request.question.strip():
         raise HTTPException(status_code=422, detail="Question cannot be empty.")
+    if not request.organizationId:
+        raise HTTPException(status_code=400, detail="Missing organizationId context for tenant-isolated query.")
 
     try:
         result = await query_rag(
             question=request.question,
+            organization_id=request.organizationId,
             user_id=request.userId or "anonymous",
             filter_document=request.filterDocument,
             document_type=request.documentType,
@@ -160,7 +165,7 @@ async def knowledge_query(request: RAGQueryRequest):
             retrievedChunksCount=result["retrievedChunksCount"],
         )
     except ValueError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e))
     except TimeoutError as e:
         raise HTTPException(status_code=504, detail=str(e))
     except RuntimeError as e:
@@ -176,12 +181,13 @@ async def knowledge_query(request: RAGQueryRequest):
 @router.get("/knowledge/search", response_model=SearchResponse, dependencies=[Depends(verify_auth_token)])
 async def knowledge_search(
     q: str = Query(..., min_length=1),
+    organizationId: str = Query(..., min_length=1),
     mode: str = Query("semantic", pattern="^(semantic|keyword)$"),
     topK: int = Query(10, ge=1, le=50),
     documentType: Optional[str] = Query(None),
 ):
     try:
-        result = search_knowledge(q, mode=mode, top_k=topK, document_type=documentType)
+        result = search_knowledge(q, organization_id=organizationId, mode=mode, top_k=topK, document_type=documentType)
         return SearchResponse(**result)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Search failed: {e}")
@@ -192,9 +198,9 @@ async def knowledge_search(
 # ---------------------------------------------------------------------------
 
 @router.get("/knowledge/document/{documentId}", response_model=DocumentDetailResponse, dependencies=[Depends(verify_auth_token)])
-async def knowledge_document_detail(documentId: str):
+async def knowledge_document_detail(documentId: str, organizationId: Optional[str] = Query(None)):
     try:
-        result = get_document_chunks(documentId)
+        result = get_document_chunks(documentId, organization_id=organizationId)
         if result["chunkCount"] == 0:
             raise HTTPException(status_code=404, detail=f"No indexed chunks found for document {documentId}")
         return DocumentDetailResponse(**result)

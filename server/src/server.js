@@ -9,6 +9,9 @@ import { seedDemoData } from './seeders/seedDemoData.js';
 import { Employee } from './models/Employee.js';
 import { automationService } from './services/automationService.js';
 
+import { DEFAULT_ORGANIZATION_ID } from './config/tenancy.js';
+import { materializeDemoOrganization } from './seeders/materializeDemoOrganization.js';
+
 async function seedAdminUser() {
   const adminEmail = 'admin@example.test';
   const existing = await findUserByEmail(adminEmail);
@@ -20,6 +23,7 @@ async function seedAdminUser() {
         email: adminEmail,
         passwordHash: await hashPassword('Admin#12345'),
         roleId: adminRole.id,
+        organizationId: DEFAULT_ORGANIZATION_ID,
         status: 'ACTIVE'
       });
       console.log('Seeded demo admin account: admin@example.test');
@@ -48,6 +52,7 @@ async function seedEmployeeDemoUser() {
     email: demoEmail,
     passwordHash: await hashPassword('Employee#12345'),
     roleId: employeeRole.id,
+    organizationId: DEFAULT_ORGANIZATION_ID,
     departmentId: linkedEmployee.departmentId,
     employeeId: linkedEmployee._id,
     status: 'ACTIVE',
@@ -84,6 +89,7 @@ async function seedWorkflowDemoUsers() {
       email: account.email,
       passwordHash: await hashPassword(account.password),
       roleId: role.id,
+      organizationId: DEFAULT_ORGANIZATION_ID,
       status: 'ACTIVE',
     });
     console.log(`Seeded demo ${account.role} account: ${account.email}`);
@@ -93,6 +99,7 @@ async function seedWorkflowDemoUsers() {
 async function startServer() {
   await connectDatabase();
   await ensureSystemRoles();
+  await materializeDemoOrganization();
   await seedAdminUser();
   await seedDemoData();
   await seedEmployeeDemoUser();

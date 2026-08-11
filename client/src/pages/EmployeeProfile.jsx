@@ -7,6 +7,7 @@ import { fetchEmployee360, fetchEmployeeTimeline, updateEmployee, uploadEmployee
 import { aiService } from '../services/aiService';
 import { knowledgeService } from '../services/knowledgeService';
 import { decisionService } from '../services/decisionService';
+import { employeeService } from '../services/employeeService';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 const fmt = (d) => (d ? new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '—');
@@ -405,7 +406,7 @@ const RISK_COLORS = {
 };
 
 function TabAIInsights({
-  prediction, explanation, intelligence, knowledgeInsights, decision,
+  prediction, explanation, intelligence, knowledgeInsights, decision, riskTimeline = [],
   onGenerate, onExplain, onGenerateIntelligence, onLoadKnowledgeInsights, onGenerateDecision, onUpdateDecisionStatus,
   aiLoading, explainLoading, intelligenceLoading, knowledgeLoading, decisionLoading, decisionActionLoading,
   aiError, explainError, intelligenceError, knowledgeError, decisionError,
@@ -441,6 +442,32 @@ function TabAIInsights({
               <div className="text-xs text-slate-500">Model: <span className="font-mono text-indigo-600">{prediction.modelVersion}</span></div>
             </div>
           </div>
+
+          {/* Historical Risk Timeline list */}
+          {riskTimeline.length > 0 && (
+            <div className="mb-5 space-y-2">
+              <h3 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">📜 Prediction History Timeline</h3>
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {riskTimeline.map((item, idx) => {
+                  const style = RISK_COLORS[item.riskLevel] || RISK_COLORS.LOW;
+                  return (
+                    <div key={item._id || idx} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-0.5 font-bold uppercase rounded-md border ${style.bg} ${style.border} ${style.text}`}>
+                          {item.riskLevel}
+                        </span>
+                        <span className="font-bold text-slate-800">{(item.riskScore * 100).toFixed(0)}% Risk</span>
+                      </div>
+                      <div className="text-slate-400 font-mono">
+                        {new Date(item.predictedAt).toLocaleDateString()}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-center">
               <div className="text-xs text-slate-400 uppercase tracking-wider mb-1">Prediction Date</div>
@@ -808,6 +835,8 @@ export default function EmployeeProfile() {
   const [knowledgeError, setKnowledgeError] = useState('');
   const [decisionError, setDecisionError] = useState('');
 
+  const [riskTimeline, setRiskTimeline] = useState([]);
+
   const { user } = useSelector((state) => state.auth);
   const { departments } = useSelector((state) => state.department);
   const { employee360, employeeTimeline, currentEmployee, loading, error } = useSelector((state) => state.employee);
@@ -819,9 +848,11 @@ export default function EmployeeProfile() {
       dispatch(fetchEmployee360(id));
       dispatch(fetchEmployeeTimeline(id));
       dispatch(fetchDepartments());
-      // Single merged AI request (Decision Intelligence sprint requirement:
-      // "Employee Profile should require only one AI request") instead of
-      // separately fetching prediction/explanation/intelligence/decision.
+      employeeService.getEmployeeRiskTimeline(id)
+        .then((res) => setRiskTimeline(res?.items || []))
+        .catch(() => {});
+
+      // Single merged AI request
       aiService.getEmployeeAiInsights(id)
         .then((data) => {
           setPrediction(data?.prediction || null);
@@ -966,6 +997,7 @@ export default function EmployeeProfile() {
         intelligence={intelligence}
         knowledgeInsights={knowledgeInsights}
         decision={decision}
+        riskTimeline={riskTimeline}
         onGenerate={handleGenerate}
         onExplain={() => handleExplain(true)}
         onGenerateIntelligence={handleGenerateIntelligence}

@@ -90,20 +90,14 @@ async def log_rag_query(query: str, response: str, sources: List[Dict], user_id:
 
 def index_single_document(file_path: str, document_id: str, metadata: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """
-    Loads, cleans, chunks, and indexes ONE file, tagged with documentId (and
-    any other metadata) on every chunk. Deletes any previously-indexed
-    chunks for this documentId first, so re-indexing a changed file can't
-    leave stale chunks behind alongside the new ones.
-
-    Chunk IDs are deterministic (see text_chunker.py), so calling this twice
-    with unchanged content is a no-op re-write, not a duplication — this is
-    the "avoid duplicate embeddings / incremental indexing" requirement.
+    Loads, cleans, chunks, and indexes ONE file, tagged with documentId and organizationId.
     """
     full_metadata = {"documentId": document_id, **(metadata or {})}
     raw_docs = load_single_document(file_path, full_metadata)
     chunks = _clean_and_chunk(raw_docs)
 
-    delete_document_chunks(document_id)
+    org_id = full_metadata.get("organizationId")
+    delete_document_chunks(document_id, organization_id=org_id)
     if chunks:
         index_documents(chunks)
 
@@ -115,17 +109,18 @@ def index_single_document(file_path: str, document_id: str, metadata: Optional[D
     }
 
 
-def index_knowledge_base(directory: str = None) -> Dict[str, Any]:
+def index_knowledge_base(directory: str = None, organization_id: str = "60d5ec388832a828f8000000") -> Dict[str, Any]:
     """
-    Loads, chunks, and indexes all documents from the (fixed, server-side)
-    knowledge_base directory. `directory` is only ever set internally
-    (never from a request) — see load_documents()'s docstring.
+    Loads, chunks, and indexes all documents from the fixed knowledge_base directory for an organization.
     """
     kb_dir = directory or KNOWLEDGE_BASE_DIR
     raw_docs = load_documents(kb_dir)
 
     if not raw_docs:
         return {"success": False, "message": "No documents found.", "documentsIndexed": 0, "chunksIndexed": 0}
+
+    for d in raw_docs:
+        d.metadata["organizationId"] = organization_id
 
     chunks = _clean_and_chunk(raw_docs)
     index_documents(chunks)
@@ -140,19 +135,19 @@ def index_knowledge_base(directory: str = None) -> Dict[str, Any]:
     }
 
 
-def reindex_knowledge_base(directory: str = None) -> Dict[str, Any]:
+def reindex_knowledge_base(directory: str = None, organization_id: str = "60d5ec388832a828f8000000") -> Dict[str, Any]:
     """Clears the existing vector store and re-indexes the fixed directory from scratch."""
     try:
         clear_vectorstore()
     except Exception as e:
         print(f"Warning during clear: {e}")
 
-    return index_knowledge_base(directory)
+    return index_knowledge_base(directory, organization_id=organization_id)
 
 
-def delete_document(document_id: str) -> Dict[str, Any]:
-    """Removes every chunk belonging to one document from the vector store."""
-    delete_document_chunks(document_id)
+def delete_document(document_id: str, organization_id: Optional[str] = None) -> Dict[str, Any]:
+    """Removes every chunk belonging to one document from the vector store for an organization."""
+    delete_document_chunks(document_id, organization_id=organization_id)
     return {"success": True, "message": f"Deleted chunks for document {document_id}."}
 
 
@@ -160,22 +155,22 @@ def delete_document(document_id: str) -> Dict[str, Any]:
 # Retrieval helpers
 # ---------------------------------------------------------------------------
 
-def _build_filter(document_type: Optional[str], filter_document: Optional[str]) -> Optional[Dict[str, Any]]:
-    clauses = []
+def _build_filter(organization_id: str, document_type: Optional[str], filter_document: Optional[str]) -> Dict[str, Any]:
+    clauses = [{"organizationId": organization_id}]
     if filter_document:
         clauses.append({"source": filter_document})
     if document_type:
         clauses.append({"documentType": document_type})
-    if not clauses:
-        return None
     if len(clauses) == 1:
         return clauses[0]
     return {"$and": clauses}
 
 
-def _retrieve(question: str, top_k: int, document_type: Optional[str], filter_document: Optional[str]):
+def _retrieve(question: str, top_k: int, organization_id: str, document_type: Optional[str], filter_document: Optional[str]):
+    if not organization_id or not str(organization_id).strip():
+        raise ValueError("Tenant context (organizationId) is required for RAG operations.")
     vectorstore = get_vectorstore()
-    filter_dict = _build_filter(document_type, filter_document)
+    filter_dict = _build_filter(organization_id, document_type, filter_document)
     try:
         return vectorstore.similarity_search_with_relevance_scores(question, k=top_k, filter=filter_dict)
     except Exception as e:
@@ -183,15 +178,11 @@ def _retrieve(question: str, top_k: int, document_type: Optional[str], filter_do
 
 
 def _to_source_document(doc, score: float) -> Dict[str, Any]:
-    # Chroma/langchain's relevance-score conversion isn't guaranteed to stay
-    # within [0, 1] for every distance metric (it can go slightly negative
-    # for weak matches) — clip only for display; MIN_RELEVANCE_SCORE
-    # filtering above uses the raw score so genuinely weak matches are still
-    # correctly excluded.
     display_score = max(0.0, min(1.0, float(score)))
     return {
         "documentName": doc.metadata.get("documentName", doc.metadata.get("source", "Unknown")),
         "documentId": doc.metadata.get("documentId"),
+        "organizationId": doc.metadata.get("organizationId"),
         "pageNumber": doc.metadata.get("pageNumber", doc.metadata.get("page")),
         "chunkId": doc.metadata.get("chunkId"),
         "content": doc.page_content[:300],
@@ -205,6 +196,7 @@ def _to_source_document(doc, score: float) -> Dict[str, Any]:
 
 async def query_rag(
     question: str,
+    organization_id: str,
     user_id: str = "anonymous",
     filter_document: str = None,
     document_type: str = None,
@@ -212,14 +204,35 @@ async def query_rag(
 ) -> Dict[str, Any]:
     """
     Runs the full RAG pipeline: retrieve relevant chunks, generate a grounded
-    answer. Returns answer, per-passage similarity scores/citations,
-    confidence, and latency.
+    answer. Enforces tenant isolation and fail-closed defense-in-depth checks.
     """
     start = time.time()
     top_k = max(1, min(top_k, 20))
 
-    scored = _retrieve(question, top_k, document_type, filter_document)
-    scored = [(doc, score) for doc, score in scored if score >= MIN_RELEVANCE_SCORE]
+    if not organization_id or not str(organization_id).strip():
+        # FAIL CLOSED guard — missing organizationId returns zero chunks immediately
+        latency_ms = round((time.time() - start) * 1000, 2)
+        return {
+            "answer": _NOT_AVAILABLE_ANSWER,
+            "sourceDocuments": [],
+            "confidenceScore": 0.0,
+            "latencyMs": latency_ms,
+            "retrievedChunksCount": 0,
+        }
+
+    scored = _retrieve(question, top_k, organization_id, document_type, filter_document)
+
+    # DEFENSE-IN-DEPTH TENANT VALIDATION (User Constraint 5):
+    # Verify every retrieved document matches the requested organizationId
+    validated_scored = []
+    for doc, score in scored:
+        doc_org = doc.metadata.get("organizationId")
+        if doc_org != organization_id:
+            raise ValueError(f"Tenant integrity error: retrieved document organizationId '{doc_org}' does not match requested organizationId '{organization_id}'.")
+        if score >= MIN_RELEVANCE_SCORE:
+            validated_scored.append((doc, score))
+
+    scored = validated_scored
 
     if not scored:
         # Hard grounding guard — the LLM is never called with no evidence.
@@ -275,19 +288,20 @@ async def query_rag(
 
 def search_knowledge(
     query_text: str,
+    organization_id: str,
     mode: str = "semantic",
     top_k: int = 10,
     document_type: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
-    Enterprise search over indexed chunks — either semantic (embedding
-    similarity) or keyword (plain substring match), no LLM call. Powers the
-    Knowledge Management search UI, distinct from the grounded-answer
-    /knowledge/query endpoint.
+    Enterprise search over indexed chunks filtered strictly by organizationId.
     """
+    if not organization_id or not str(organization_id).strip():
+        return {"mode": mode, "results": [], "resultCount": 0}
+
     top_k = max(1, min(top_k, 50))
     vectorstore = get_vectorstore()
-    filter_dict = {"documentType": document_type} if document_type else None
+    filter_dict = _build_filter(organization_id, document_type, None)
 
     if mode == "keyword":
         data = vectorstore.get(include=["metadatas", "documents"], where=filter_dict)
@@ -298,6 +312,7 @@ def search_knowledge(
                 results.append({
                     "documentName": meta.get("documentName", meta.get("source", "Unknown")),
                     "documentId": meta.get("documentId"),
+                    "organizationId": meta.get("organizationId"),
                     "pageNumber": meta.get("pageNumber", meta.get("page")),
                     "chunkId": meta.get("chunkId"),
                     "content": (doc_text or "")[:300],
@@ -315,9 +330,12 @@ def search_knowledge(
 # Document detail — chunk-level view of one document (admin drill-down)
 # ---------------------------------------------------------------------------
 
-def get_document_chunks(document_id: str) -> Dict[str, Any]:
+def get_document_chunks(document_id: str, organization_id: Optional[str] = None) -> Dict[str, Any]:
     vectorstore = get_vectorstore()
-    data = vectorstore.get(where={"documentId": document_id}, include=["metadatas", "documents"])
+    where_clause = {"documentId": document_id}
+    if organization_id:
+        where_clause = {"$and": [{"documentId": document_id}, {"organizationId": organization_id}]}
+    data = vectorstore.get(where=where_clause, include=["metadatas", "documents"])
     chunks = []
     for doc_text, meta in zip(data.get("documents", []), data.get("metadatas", [])):
         chunks.append({

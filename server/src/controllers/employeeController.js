@@ -183,7 +183,7 @@ export async function bulkSoftDeleteAllEmployees(request, response, next) {
 
 export async function bulkImport(request, response, next) {
   try {
-    const { csvText, records } = request.validatedBody || {};
+    const { csvText, records, mode = 'FULL_SNAPSHOT', filename = 'import.csv' } = request.validatedBody || {};
     let rowsToImport = [];
 
     if (csvText) {
@@ -192,7 +192,11 @@ export async function bulkImport(request, response, next) {
       rowsToImport = records;
     }
 
-    const result = await employeeService.bulkImportEmployees(rowsToImport, request.auth.organizationId);
+    const result = await employeeService.bulkImportEmployees(
+      rowsToImport,
+      request.auth.organizationId,
+      { mode, filename, userId: request.auth.userId },
+    );
     return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
     return next(error);
@@ -223,6 +227,20 @@ export async function getEmployeeTimeline(request, response, next) {
       request.auth,
     );
     return sendSuccess(response, 200, timeline, request.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
+
+export async function getEmployeeRiskTimeline(request, response, next) {
+  try {
+    const { page = 1, limit = 20 } = request.query;
+    const result = await employeeService.getEmployeeRiskTimeline(
+      request.params.employeeId,
+      request.auth,
+      { page: parseInt(page, 10) || 1, limit: Math.min(parseInt(limit, 10) || 20, 100) },
+    );
+    return sendSuccess(response, 200, result, request.requestId);
   } catch (error) {
     return next(error);
   }

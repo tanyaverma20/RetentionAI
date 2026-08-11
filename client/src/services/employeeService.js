@@ -26,6 +26,11 @@ export const employeeService = {
     return response.data.data;
   },
 
+  async getEmployeeRiskTimeline(id) {
+    const response = await api.get(`/employees/${id}/risk-timeline`);
+    return response.data.data;
+  },
+
   async createEmployee(data) {
     const response = await api.post('/employees', data);
     return response.data.data;

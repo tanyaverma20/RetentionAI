@@ -127,6 +127,8 @@ export const bulkImportSchema = z
   .object({
     csvText: z.string().optional(),
     records: z.array(z.record(z.any())).optional(),
+    mode: z.enum(['FULL_SNAPSHOT', 'PARTIAL_UPDATE']).optional().default('FULL_SNAPSHOT'),
+    filename: z.string().optional().default('import.csv'),
   })
   .strict()
   .refine((val) => Boolean(val.csvText) || (Array.isArray(val.records) && val.records.length > 0), {

@@ -3,6 +3,7 @@ from typing import List, Optional
 
 class RAGQueryRequest(BaseModel):
     question: str
+    organizationId: Optional[str] = None
     userId: Optional[str] = None
     filterDocument: Optional[str] = None  # Filter by documentName/source
     documentType: Optional[str] = None
@@ -58,6 +59,7 @@ class DocumentIndexRequest(BaseModel):
     """
     documentId: str
     filePath: str = Field(..., description="Server-controlled path (set by Express, never a raw client path) to the uploaded file")
+    organizationId: Optional[str] = None
     documentType: Optional[str] = None
     tags: Optional[List[str]] = None
     uploadedBy: Optional[str] = None

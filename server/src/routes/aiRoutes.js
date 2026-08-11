@@ -8,7 +8,8 @@ import {
   getPrediction,
   getModelInfo,
   getModelMetrics,
-  getDashboardAnalytics
+  getDashboardAnalytics,
+  executeAgentDecision,
 } from '../controllers/aiController.js';
 
 const router = express.Router();
@@ -25,5 +26,6 @@ router.post('/predict/:id', predictSingle);
 router.get('/model/info', getModelInfo);
 router.get('/model/metrics', getModelMetrics);
 router.get('/dashboard', getDashboardAnalytics);
+router.post('/employee-decision', executeAgentDecision);
 
 export { router as aiRouter };
