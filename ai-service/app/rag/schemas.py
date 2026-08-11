@@ -8,6 +8,7 @@ class RAGQueryRequest(BaseModel):
     filterDocument: Optional[str] = None  # Filter by documentName/source
     documentType: Optional[str] = None
     topK: Optional[int] = Field(4, ge=1, le=20)
+    retrievalMode: Optional[str] = Field("hybrid", description="Retrieval mode: hybrid, dense, or sparse")
 
 class SourceDocument(BaseModel):
     documentName: str
@@ -23,6 +24,14 @@ class RAGQueryResponse(BaseModel):
     confidenceScore: float
     latencyMs: float
     retrievedChunksCount: int
+    groundednessScore: Optional[float] = None
+    retrievalLatencyMs: Optional[float] = None
+    generationLatencyMs: Optional[float] = None
+    totalLatencyMs: Optional[float] = None
+    candidateCount: Optional[int] = None
+    citationCount: Optional[int] = 0
+    cacheHit: Optional[bool] = False
+    retrievalMode: Optional[str] = "hybrid"
 
 class RAGIndexRequest(BaseModel):
     directory: Optional[str] = None  # Defaults to knowledge_base/ — internal use only, never exposed to a public path param

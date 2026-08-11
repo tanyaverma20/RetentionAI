@@ -73,7 +73,10 @@ def test_index_with_no_documents_fails_gracefully():
 @pytest.fixture(scope="module")
 def client():
     from app.main import app
-    return TestClient(app)
+    from app.api.rag_routes import verify_auth_token
+    app.dependency_overrides[verify_auth_token] = lambda: True
+    yield TestClient(app)
+    app.dependency_overrides.clear()
 
 
 def test_rag_health_endpoint(client):
@@ -108,7 +111,8 @@ async def test_rag_query_endpoint(client):
         
         response = client.post("/rag/query", json={
             "question": "How many annual leave days do I get?",
-            "userId": "test_user"
+            "userId": "test_user",
+            "organizationId": "60d5ec388832a828f8000000"
         })
         
         assert response.status_code == 200
@@ -119,7 +123,7 @@ async def test_rag_query_endpoint(client):
 
 
 def test_rag_query_empty_question(client):
-    response = client.post("/rag/query", json={"question": ""})
+    response = client.post("/rag/query", json={"question": "", "organizationId": "60d5ec388832a828f8000000"})
     assert response.status_code == 422
 
 
@@ -131,7 +135,7 @@ def test_rag_index_endpoint(client):
             "documentsIndexed": 5,
             "chunksIndexed": 42
         }
-        response = client.post("/rag/index", json={})
+        response = client.post("/rag/index", json={"organizationId": "60d5ec388832a828f8000000"})
         assert response.status_code == 200
         data = response.json()
         assert data["success"] is True

@@ -50,11 +50,13 @@ def sanitize_retrieved_text(text: str) -> str:
     return cleaned
 
 
-def wrap_as_untrusted_document(document_name: str, text: str) -> str:
+def wrap_as_untrusted_document(document_name: str, text: str, page_number: Optional[int] = None, chunk_id: Optional[str] = None) -> str:
     """Wraps one retrieved chunk in explicit delimiters for the prompt context."""
     safe_text = sanitize_retrieved_text(text)
+    page_attr = f' page="{page_number}"' if page_number is not None else ""
+    chunk_attr = f' chunkId="{chunk_id}"' if chunk_id else ""
     return (
-        f"<<<DOCUMENT source=\"{document_name}\">>>\n"
+        f"<<<DOCUMENT source=\"{document_name}\"{page_attr}{chunk_attr}>>>\n"
         f"{safe_text}\n"
         f"<<<END DOCUMENT>>>"
     )

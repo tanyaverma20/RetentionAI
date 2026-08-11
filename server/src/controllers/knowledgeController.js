@@ -84,7 +84,7 @@ export async function getDocument(request, response, next) {
 
 export async function queryKnowledge(request, response, next) {
   try {
-    const { question, topK, documentType, filterDocument } = request.body || {};
+    const { question, topK, documentType, filterDocument, retrievalMode } = request.body || {};
     if (!question || !String(question).trim()) {
       throw new AppError(422, 'VALIDATION_ERROR', 'A question is required.');
     }
@@ -95,6 +95,7 @@ export async function queryKnowledge(request, response, next) {
       documentType,
       filterDocument,
       organizationId: request.auth.organizationId,
+      retrievalMode,
     });
     await recordAudit(request.auth.organizationId, 'KNOWLEDGE_REFERENCED', request.auth.userId, {
       entityType: 'KNOWLEDGE_DOCUMENT',

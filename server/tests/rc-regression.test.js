@@ -55,6 +55,9 @@ test('RC1 regressions: HR validation returns 400, and employee self-scope RBAC i
   await connectDatabase();
   await ensureSystemRoles();
 
+  await User.deleteMany({ email: { $in: ['rc.admin@example.test', 'self.scoped.login@example.test'] } });
+  await Employee.deleteMany({ email: { $in: ['self.scoped@example.test', 'someone.else@example.test'] } });
+
   const adminRole = await Role.findOne({ name: 'ADMIN' });
   const employeeRole = await Role.findOne({ name: 'EMPLOYEE' });
 
@@ -63,8 +66,9 @@ test('RC1 regressions: HR validation returns 400, and employee self-scope RBAC i
     email: 'rc.admin@example.test',
     passwordHash: await hashPassword('Admin#12345'),
     roleId: adminRole.id,
+    organizationId: '60d5ec388832a828f8000000',
   });
-  const adminToken = createAccessToken({ id: admin.id, role: adminRole });
+  const adminToken = createAccessToken({ id: admin.id, role: adminRole, organizationId: '60d5ec388832a828f8000000' });
 
   const ownEmployee = await Employee.create({
     organizationId: '60d5ec388832a828f8000000',
@@ -98,11 +102,12 @@ test('RC1 regressions: HR validation returns 400, and employee self-scope RBAC i
     passwordHash: await hashPassword('Employee#12345'),
     roleId: employeeRole.id,
     employeeId: ownEmployee.id,
+    organizationId: '60d5ec388832a828f8000000',
   });
   ownEmployee.userId = employeeUser.id;
   await ownEmployee.save();
 
-  const employeeToken = createAccessToken({ id: employeeUser.id, role: employeeRole });
+  const employeeToken = createAccessToken({ id: employeeUser.id, role: employeeRole, organizationId: '60d5ec388832a828f8000000' });
 
   const server = app.listen(0);
   const baseUrl = `http://127.0.0.1:${server.address().port}/api/v1`;

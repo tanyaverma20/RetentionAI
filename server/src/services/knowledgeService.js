@@ -1,11 +1,13 @@
 import axios from 'axios';
 import fs from 'fs';
+import crypto from 'crypto';
 import { KnowledgeDocument } from '../models/KnowledgeDocument.js';
 import { Employee } from '../models/Employee.js';
 import { getKnowledgeDocumentAbsolutePath } from '../middlewares/uploadMiddleware.js';
 import { toAiServiceError } from '../utils/aiServiceError.js';
 import { AppError } from '../errors/AppError.js';
 import { logger } from '../utils/logger.js';
+import { getRedisClient, isRedisConfigured } from '../utils/redisClient.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
@@ -18,6 +20,50 @@ const aiClient = axios.create({
   },
   timeout: 45000, // grounded LLM queries can legitimately take longer than a typical API call
 });
+
+const localRagCache = new Map();
+const RAG_CACHE_VERSION = 'v1';
+
+function getTenantRagCacheKey(organizationId, question, topK, documentType, filterDocument, retrievalMode) {
+  const normalizedStr = `${String(question).trim().toLowerCase()}:${topK || 4}:${documentType || ''}:${filterDocument || ''}:${retrievalMode || 'hybrid'}`;
+  const hash = crypto.createHash('sha256').update(normalizedStr).digest('hex').substring(0, 16);
+  return `rag:query:${organizationId}:${RAG_CACHE_VERSION}:${hash}`;
+}
+
+async function getCachedRagQuery(key) {
+  if (isRedisConfigured()) {
+    try {
+      const redis = getRedisClient();
+      const val = await redis.get(key);
+      if (val) return typeof val === 'string' ? JSON.parse(val) : val;
+    } catch {
+      // Fall through to local cache
+    }
+  }
+  return localRagCache.get(key) || null;
+}
+
+async function setCachedRagQuery(key, value, ttlSeconds = 3600) {
+  if (isRedisConfigured()) {
+    try {
+      const redis = getRedisClient();
+      await redis.set(key, JSON.stringify(value), { ex: ttlSeconds });
+      return;
+    } catch {
+      // Fall through to local cache
+    }
+  }
+  localRagCache.set(key, value);
+}
+
+function clearTenantRagCache(organizationId) {
+  if (organizationId) {
+    const prefix = `rag:query:${organizationId}:`;
+    for (const k of localRagCache.keys()) {
+      if (k.startsWith(prefix)) localRagCache.delete(k);
+    }
+  }
+}
 
 /**
  * Canned, templated knowledge lookups shown on the Employee Profile. These
@@ -69,6 +115,7 @@ class KnowledgeService {
       doc.status = 'INDEXED';
       doc.chunkCount = response.data.chunksIndexed || 0;
       await doc.save();
+      clearTenantRagCache(organizationId);
     } catch (err) {
       doc.status = 'FAILED';
       doc.errorMessage = err.response?.data?.detail || err.message;
@@ -108,6 +155,7 @@ class KnowledgeService {
       doc.chunkCount = response.data.chunksIndexed || 0;
       doc.errorMessage = '';
       await doc.save();
+      clearTenantRagCache(organizationId);
     } catch (err) {
       doc.status = 'FAILED';
       doc.errorMessage = err.response?.data?.detail || err.message;
@@ -130,6 +178,7 @@ class KnowledgeService {
         failed += 1;
       }
     }
+    clearTenantRagCache(organizationId);
     return { totalCount: docs.length, succeeded, failed };
   }
 
@@ -157,6 +206,7 @@ class KnowledgeService {
     });
 
     await KnowledgeDocument.deleteOne({ _id: documentId, organizationId });
+    clearTenantRagCache(organizationId);
     return { success: true };
   }
 
@@ -197,19 +247,20 @@ class KnowledgeService {
 
   // ── Query / search ──────────────────────────────────────────────────────
 
-  // Prompt 1 known limitation (documented, not silently left as if fixed —
-  // see the Prompt 1 report's "Remaining Risks"): organizationId is now
-  // threaded through to the ai-service so it's available once the RAG
-  // ingestion/retrieval pipeline supports per-tenant metadata filtering, but
-  // app/rag/* has NO organizationId concept today (grep-verified: zero
-  // matches in ai-service/app/rag/ or app/api/rag_routes.py) — the ChromaDB
-  // vector search itself is not yet tenant-scoped. This is out of scope for
-  // this reliability/security-hardening phase (Part 20 excludes new RAG
-  // architecture), is not currently reachable in production (RAG_AVAILABLE
-  // is False on the deployed lite image per docs/AUDIT_PROMPT0.md), and
-  // requires a real ai-service change (tag chunks with organizationId at
-  // ingestion, filter by it at retrieval) that a future phase should own.
-  async query({ question, userId, topK, documentType, filterDocument, organizationId }) {
+  async query({ question, userId, topK, documentType, filterDocument, organizationId, retrievalMode = 'hybrid' }) {
+    if (!organizationId) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Tenant context (organizationId) is required.');
+    }
+    const cacheKey = getTenantRagCacheKey(organizationId, question, topK, documentType, filterDocument, retrievalMode);
+    try {
+      const cached = await getCachedRagQuery(cacheKey);
+      if (cached) {
+        return { ...cached, cacheHit: true };
+      }
+    } catch (err) {
+      logger.warn('rag_cache_read_error', { message: err.message });
+    }
+
     try {
       const response = await aiClient.post('/knowledge/query', {
         question,
@@ -218,8 +269,13 @@ class KnowledgeService {
         documentType,
         filterDocument,
         organizationId: String(organizationId),
+        retrievalMode,
       });
-      return response.data;
+      const data = response.data;
+      if (data && (data.confidenceScore > 0 || (data.groundednessScore && data.groundednessScore > 0))) {
+        await setCachedRagQuery(cacheKey, data);
+      }
+      return { ...data, cacheHit: false };
     } catch (err) {
       throw toAiServiceError(err, 'Knowledge query failed', {
         notReadyMessage: 'The knowledge assistant is not ready yet. Please train/index the knowledge base first.',

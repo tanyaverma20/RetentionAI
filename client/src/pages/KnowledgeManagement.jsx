@@ -175,6 +175,216 @@ function SearchPanel() {
   );
 }
 
+function renderAnswerWithCitations(answer, sourceDocuments, onSelectSource) {
+  if (!answer) return null;
+  const regex = /\[Doc:\s*([^,\]]+)(?:,\s*Page\s*(\d+))?\]/g;
+  const parts = [];
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(answer)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(answer.substring(lastIndex, match.index));
+    }
+    const docName = match[1].trim();
+    const pageNum = match[2] ? parseInt(match[2], 10) : null;
+    const matchingSource = (sourceDocuments || []).find(
+      (s) => s.documentName?.toLowerCase() === docName.toLowerCase() || (pageNum != null && s.pageNumber === pageNum)
+    ) || (sourceDocuments || [])[0];
+
+    parts.push(
+      <button
+        key={match.index}
+        type="button"
+        onClick={() => onSelectSource && matchingSource && onSelectSource(matchingSource)}
+        className="inline-flex items-center gap-1 mx-1 px-2 py-0.5 text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors cursor-pointer"
+        title="Click to preview source chunk context"
+      >
+        <span>📄 {docName}{pageNum ? `, Pg ${pageNum}` : ''}</span>
+      </button>
+    );
+    lastIndex = regex.lastIndex;
+  }
+
+  if (lastIndex < answer.length) {
+    parts.push(answer.substring(lastIndex));
+  }
+
+  return <div className="text-sm text-slate-800 leading-relaxed whitespace-pre-line">{parts}</div>;
+}
+
+function SourcePreviewDrawer({ source, isOpen, onClose }) {
+  if (!isOpen || !source) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-xs animate-fade-in">
+      <div className="w-full max-w-lg h-full bg-white shadow-2xl p-6 flex flex-col space-y-6 overflow-y-auto border-l border-slate-100">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-indigo-600">Tenant-Safe Source Preview</span>
+            <h3 className="text-lg font-extrabold text-slate-900 truncate max-w-xs">{source.documentName}</h3>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-700 rounded-xl hover:bg-slate-100 text-lg font-bold">✕</button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase">Page Number</span>
+            <p className="text-sm font-bold text-slate-800">{source.pageNumber != null ? source.pageNumber : 'N/A'}</p>
+          </div>
+          <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase">Relevance Score</span>
+            <p className="text-sm font-bold text-emerald-600">{source.similarityScore != null ? `${(source.similarityScore * 100).toFixed(1)}%` : 'N/A'}</p>
+          </div>
+          <div className="p-3 bg-slate-50 border border-slate-100 rounded-2xl col-span-2">
+            <span className="text-[10px] font-semibold text-slate-400 uppercase">Chunk ID</span>
+            <p className="text-xs font-mono text-slate-700 truncate">{source.chunkId || 'N/A'}</p>
+          </div>
+        </div>
+
+        <div className="space-y-2 flex-1">
+          <label className="text-xs font-bold text-slate-700">Retrieved Evidence Content</label>
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-slate-700 whitespace-pre-wrap leading-relaxed max-h-96 overflow-y-auto">
+            {source.content}
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100 flex justify-end">
+          <button onClick={onClose} className="px-5 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl">Close Preview</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PolicyAssistantPanel({ onSelectSource }) {
+  const [question, setQuestion] = useState('');
+  const [retrievalMode, setRetrievalMode] = useState('hybrid');
+  const [result, setResult] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAsk = async (e) => {
+    e.preventDefault();
+    if (!question.trim()) return;
+    try {
+      setLoading(true);
+      setError('');
+      const data = await knowledgeService.query({ question, retrievalMode });
+      setResult(data);
+    } catch (err) {
+      setError(extractErrorMessage(err, 'Policy assistant query failed.'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="p-6 bg-white border border-slate-100 rounded-3xl shadow-card space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <span className="text-[10px] font-mono font-bold text-indigo-600 uppercase tracking-widest">Grounded Policy AI</span>
+          <h2 className="text-xl font-extrabold text-slate-900">Policy AI Assistant</h2>
+        </div>
+        <div className="flex bg-slate-50 border border-slate-100 rounded-xl p-1 text-xs">
+          {[
+            { id: 'hybrid', label: 'Hybrid RRF' },
+            { id: 'dense', label: 'Dense Vector' },
+            { id: 'sparse', label: 'Sparse BM25' },
+          ].map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              onClick={() => setRetrievalMode(m.id)}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-colors ${retrievalMode === m.id ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-500'}`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <form onSubmit={handleAsk} className="flex gap-3">
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="Ask a policy question, e.g., 'What is the remote work policy for senior engineers?'"
+          className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-100 rounded-2xl text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-indigo-500 transition-all"
+        />
+        <button
+          type="submit"
+          disabled={loading}
+          className="px-6 py-2.5 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-2xl shadow-lg shadow-indigo-600/25 disabled:opacity-50 transition-all transform hover:-translate-y-0.5"
+        >
+          {loading ? 'Analyzing…' : 'Ask Assistant'}
+        </button>
+      </form>
+
+      {error && <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-xs">{error}</div>}
+
+      {result && (
+        <div className="mt-4 p-5 bg-slate-50/80 border border-slate-100 rounded-2xl space-y-4 animate-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
+            <div className="flex items-center gap-2">
+              <span className={`px-2.5 py-1 text-[10px] font-mono font-bold uppercase rounded-full border ${
+                result.confidenceScore > 0 && result.groundednessScore !== 0
+                  ? 'bg-emerald-50 text-emerald-600 border-emerald-100'
+                  : 'bg-rose-50 text-rose-600 border-rose-100'
+              }`}>
+                {result.confidenceScore > 0 && result.groundednessScore !== 0
+                  ? `Grounded (${((result.groundednessScore ?? result.confidenceScore) * 100).toFixed(0)}%)`
+                  : 'No Policy Evidence'}
+              </span>
+              {result.cacheHit && (
+                <span className="px-2 py-0.5 text-[10px] font-mono text-amber-700 bg-amber-50 border border-amber-200 rounded-md">⚡ Cached Hit</span>
+              )}
+            </div>
+            <div className="flex items-center gap-3 text-[10px] font-mono text-slate-400">
+              <span>Mode: {result.retrievalMode || retrievalMode}</span>
+              <span>Total: {result.totalLatencyMs || result.latencyMs}ms</span>
+              {result.retrievalLatencyMs != null && <span>Retrieval: {result.retrievalLatencyMs}ms</span>}
+            </div>
+          </div>
+
+          <div>
+            {result.confidenceScore === 0 || result.answer.includes("not available in the company's policy documents") ? (
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-medium">
+                ⚠️ No supporting policy evidence found in uploaded company documents. The assistant refused to fabricate an unbacked policy answer.
+              </div>
+            ) : (
+              renderAnswerWithCitations(result.answer, result.sourceDocuments, onSelectSource)
+            )}
+          </div>
+
+          {result.sourceDocuments && result.sourceDocuments.length > 0 && (
+            <div className="pt-2">
+              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-slate-400 mb-2 block">Retrieved Supporting Evidence ({result.sourceDocuments.length})</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {result.sourceDocuments.map((src, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => onSelectSource && onSelectSource(src)}
+                    className="p-3 text-left bg-white border border-slate-200/80 hover:border-indigo-400 hover:shadow-sm rounded-xl transition-all group"
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-bold text-slate-800 group-hover:text-indigo-600 truncate">{src.documentName}</span>
+                      <span className="text-[10px] font-mono text-slate-400">{(src.similarityScore * 100).toFixed(0)}% match</span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 line-clamp-2">{src.content}</p>
+                    <div className="mt-1 text-[9px] font-mono text-indigo-500 font-semibold">Click to preview chunk →</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function KnowledgeManagement() {
   const { user } = useSelector((state) => state.auth);
   const [documents, setDocuments] = useState([]);
@@ -185,6 +395,13 @@ export default function KnowledgeManagement() {
   const [isReindexingAll, setIsReindexingAll] = useState(false);
   const [message, setMessage] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
+  const [selectedSource, setSelectedSource] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+
+  const handleSelectSource = (source) => {
+    setSelectedSource(source);
+    setIsDrawerOpen(true);
+  };
 
   const canManage = user?.role === 'ADMIN' || user?.role === 'HR_MANAGER';
 
@@ -277,6 +494,8 @@ export default function KnowledgeManagement() {
           <button onClick={() => setError('')} className="text-rose-600 hover:text-rose-600 font-bold">×</button>
         </div>
       )}
+
+      <PolicyAssistantPanel onSelectSource={handleSelectSource} />
 
       <SearchPanel />
 
@@ -389,6 +608,8 @@ export default function KnowledgeManagement() {
           </div>
         </div>
       )}
+
+      <SourcePreviewDrawer source={selectedSource} isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} />
     </div>
   );
 }

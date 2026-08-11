@@ -156,6 +156,7 @@ async def knowledge_query(request: RAGQueryRequest):
             filter_document=request.filterDocument,
             document_type=request.documentType,
             top_k=request.topK or 4,
+            retrieval_mode=request.retrievalMode or "hybrid",
         )
         return RAGQueryResponse(
             answer=result["answer"],
@@ -163,6 +164,14 @@ async def knowledge_query(request: RAGQueryRequest):
             confidenceScore=result["confidenceScore"],
             latencyMs=result["latencyMs"],
             retrievedChunksCount=result["retrievedChunksCount"],
+            groundednessScore=result.get("groundednessScore"),
+            retrievalLatencyMs=result.get("retrievalLatencyMs"),
+            generationLatencyMs=result.get("generationLatencyMs"),
+            totalLatencyMs=result.get("totalLatencyMs"),
+            candidateCount=result.get("candidateCount"),
+            citationCount=result.get("citationCount", 0),
+            cacheHit=result.get("cacheHit", False),
+            retrievalMode=result.get("retrievalMode", "hybrid"),
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

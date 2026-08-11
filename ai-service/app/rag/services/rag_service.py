@@ -67,7 +67,24 @@ def _clean_and_chunk(raw_docs):
 # Query logging
 # ---------------------------------------------------------------------------
 
-async def log_rag_query(query: str, response: str, sources: List[Dict], user_id: str, latency_ms: float, grounded: bool):
+# ---------------------------------------------------------------------------
+# Query logging
+# ---------------------------------------------------------------------------
+
+async def log_rag_query(
+    query: str,
+    response: str,
+    sources: List[Dict],
+    user_id: str,
+    latency_ms: float,
+    grounded: bool,
+    organization_id: Optional[str] = None,
+    groundedness_score: Optional[float] = None,
+    retrieval_latency_ms: Optional[float] = None,
+    generation_latency_ms: Optional[float] = None,
+    citation_count: Optional[int] = 0,
+    retrieval_mode: Optional[str] = "hybrid",
+):
     """Logs RAG query metadata to MongoDB for analytics."""
     try:
         db = get_db()
@@ -78,6 +95,12 @@ async def log_rag_query(query: str, response: str, sources: List[Dict], user_id:
             "grounded": grounded,
             "latencyMs": latency_ms,
             "userId": user_id,
+            "organizationId": organization_id,
+            "groundednessScore": groundedness_score,
+            "retrievalLatencyMs": retrieval_latency_ms,
+            "generationLatencyMs": generation_latency_ms,
+            "citationCount": citation_count,
+            "retrievalMode": retrieval_mode,
             "timestamp": datetime.datetime.now(datetime.timezone.utc),
         })
     except Exception as e:
@@ -152,8 +175,16 @@ def delete_document(document_id: str, organization_id: Optional[str] = None) -> 
 
 
 # ---------------------------------------------------------------------------
-# Retrieval helpers
+# Retrieval helpers (Dense, BM25 Sparse, and Hybrid Reciprocal Rank Fusion)
 # ---------------------------------------------------------------------------
+
+import re
+try:
+    from rank_bm25 import BM25Okapi
+except ImportError:
+    BM25Okapi = None
+from langchain_core.documents import Document
+
 
 def _build_filter(organization_id: str, document_type: Optional[str], filter_document: Optional[str]) -> Dict[str, Any]:
     clauses = [{"organizationId": organization_id}]
@@ -177,6 +208,102 @@ def _retrieve(question: str, top_k: int, organization_id: str, document_type: Op
         raise RuntimeError(f"Vector database unavailable: {e}")
 
 
+def _tokenize(text: str) -> List[str]:
+    return [w for w in re.findall(r"\w+", (text or "").lower()) if len(w) > 1]
+
+
+def _sparse_bm25_retrieve(
+    question: str,
+    top_k: int,
+    organization_id: str,
+    document_type: Optional[str],
+    filter_document: Optional[str]
+) -> List[tuple]:
+    if not organization_id or not str(organization_id).strip():
+        raise ValueError("Tenant context (organizationId) is required for RAG operations.")
+    vectorstore = get_vectorstore()
+    filter_dict = _build_filter(organization_id, document_type, filter_document)
+    data = vectorstore.get(where=filter_dict, include=["metadatas", "documents"])
+
+    docs_raw = data.get("documents", [])
+    metas_raw = data.get("metadatas", [])
+    if not docs_raw or not BM25Okapi:
+        return []
+
+    corpus_tokens = [_tokenize(doc_text) for doc_text in docs_raw]
+    query_tokens = _tokenize(question)
+    if not query_tokens or not any(corpus_tokens):
+        return []
+
+    bm25 = BM25Okapi(corpus_tokens)
+    scores = bm25.get_scores(query_tokens)
+    max_score = max(scores) if len(scores) > 0 and max(scores) > 0 else 1.0
+
+    doc_score_pairs = []
+    for doc_text, meta, raw_score in zip(docs_raw, metas_raw, scores):
+        if raw_score <= 0:
+            continue
+        norm_score = float(raw_score / max_score)
+        doc_obj = Document(page_content=doc_text, metadata=meta)
+        doc_score_pairs.append((doc_obj, norm_score))
+
+    doc_score_pairs.sort(key=lambda x: (x[1], x[0].metadata.get("chunkId", "")), reverse=True)
+    return doc_score_pairs[:top_k]
+
+
+def _hybrid_retrieve(
+    question: str,
+    top_k: int,
+    organization_id: str,
+    document_type: Optional[str] = None,
+    filter_document: Optional[str] = None,
+    mode: str = "hybrid"
+) -> List[tuple]:
+    if not organization_id or not str(organization_id).strip():
+        raise ValueError("Tenant context (organizationId) is required for RAG operations.")
+
+    if mode == "dense":
+        return _retrieve(question, top_k, organization_id, document_type, filter_document)
+
+    if mode == "sparse":
+        return _sparse_bm25_retrieve(question, top_k, organization_id, document_type, filter_document)
+
+    # Hybrid RRF fusion mode
+    fetch_k = max(top_k * 2, 10)
+    dense_results = _retrieve(question, fetch_k, organization_id, document_type, filter_document)
+    sparse_results = _sparse_bm25_retrieve(question, fetch_k, organization_id, document_type, filter_document)
+
+    rrf_map = {}
+    for rank, (doc, score) in enumerate(dense_results):
+        cid = doc.metadata.get("chunkId") or hash(doc.page_content)
+        if cid not in rrf_map:
+            rrf_map[cid] = {"doc": doc, "rrf_score": 0.0, "dense_score": score, "sparse_score": 0.0}
+        rrf_map[cid]["rrf_score"] += 1.0 / (60.0 + rank + 1)
+
+    for rank, (doc, score) in enumerate(sparse_results):
+        cid = doc.metadata.get("chunkId") or hash(doc.page_content)
+        if cid not in rrf_map:
+            rrf_map[cid] = {"doc": doc, "rrf_score": 0.0, "dense_score": 0.0, "sparse_score": score}
+        else:
+            rrf_map[cid]["sparse_score"] = score
+        rrf_map[cid]["rrf_score"] += 1.0 / (60.0 + rank + 1)
+
+    if not rrf_map:
+        return []
+
+    max_rrf = max(v["rrf_score"] for v in rrf_map.values()) or 1.0
+
+    merged = []
+    for cid, entry in rrf_map.items():
+        doc = entry["doc"]
+        norm_rrf = round(entry["rrf_score"] / max_rrf, 4)
+        effective_score = max(norm_rrf, entry["dense_score"])
+        merged.append((doc, effective_score))
+
+    merged.sort(key=lambda x: (x[1], x[0].metadata.get("chunkId", "")), reverse=True)
+    return merged[:top_k]
+
+
 def _to_source_document(doc, score: float) -> Dict[str, Any]:
     display_score = max(0.0, min(1.0, float(score)))
     return {
@@ -190,6 +317,43 @@ def _to_source_document(doc, score: float) -> Dict[str, Any]:
     }
 
 
+def _evaluate_groundedness(answer: str, sources: List[Dict], scored_docs: List[tuple]) -> tuple[float, int, bool]:
+    """
+    Evaluates answer groundedness against retrieved context.
+    Returns (groundedness_score [0.0-1.0], citation_count, is_grounded).
+    """
+    if not answer or _NOT_AVAILABLE_ANSWER.lower() in answer.lower() or not sources:
+        return 0.0, 0, False
+
+    citations = re.findall(r"\[Doc:\s*[^\]]+\]", answer)
+    citation_count = len(citations)
+
+    context_text = " ".join([doc.page_content for doc, _ in scored_docs]).lower()
+    context_words = set(re.findall(r"\w+", context_text))
+
+    raw_sentences = [s.strip() for s in re.split(r"[.!?]\s+", answer) if s.strip()]
+    if not raw_sentences:
+        return (1.0 if citation_count > 0 else 0.8), citation_count, True
+
+    supported_count = 0
+    for sentence in raw_sentences:
+        clean_sentence = re.sub(r"\[Doc:\s*[^\]]+\]", "", sentence).strip()
+        sent_words = set(re.findall(r"\w+", clean_sentence.lower()))
+        if len(sent_words) <= 2:
+            supported_count += 1
+            continue
+
+        overlap = sent_words.intersection(context_words)
+        overlap_ratio = len(overlap) / float(len(sent_words)) if sent_words else 0
+        if overlap_ratio >= 0.4:
+            supported_count += 1
+
+    groundedness_score = round(min(1.0, max(0.0, supported_count / float(len(raw_sentences)))), 2)
+    is_grounded = groundedness_score >= 0.5 or citation_count > 0
+
+    return groundedness_score, citation_count, is_grounded
+
+
 # ---------------------------------------------------------------------------
 # RAG query (grounded generation)
 # ---------------------------------------------------------------------------
@@ -201,26 +365,38 @@ async def query_rag(
     filter_document: str = None,
     document_type: str = None,
     top_k: int = 4,
+    retrieval_mode: str = "hybrid",
 ) -> Dict[str, Any]:
     """
-    Runs the full RAG pipeline: retrieve relevant chunks, generate a grounded
-    answer. Enforces tenant isolation and fail-closed defense-in-depth checks.
+    Runs the full RAG pipeline: retrieve relevant chunks (hybrid dense+BM25 with RRF),
+    generate a grounded answer with inline citations, evaluate groundedness.
+    Enforces tenant isolation and fail-closed defense-in-depth checks.
     """
-    start = time.time()
+    start_total = time.time()
     top_k = max(1, min(top_k, 20))
 
     if not organization_id or not str(organization_id).strip():
         # FAIL CLOSED guard — missing organizationId returns zero chunks immediately
-        latency_ms = round((time.time() - start) * 1000, 2)
+        latency_ms = round((time.time() - start_total) * 1000, 2)
         return {
             "answer": _NOT_AVAILABLE_ANSWER,
             "sourceDocuments": [],
             "confidenceScore": 0.0,
             "latencyMs": latency_ms,
             "retrievedChunksCount": 0,
+            "groundednessScore": 0.0,
+            "retrievalLatencyMs": latency_ms,
+            "generationLatencyMs": 0.0,
+            "totalLatencyMs": latency_ms,
+            "candidateCount": 0,
+            "citationCount": 0,
+            "cacheHit": False,
+            "retrievalMode": retrieval_mode,
         }
 
-    scored = _retrieve(question, top_k, organization_id, document_type, filter_document)
+    start_retrieval = time.time()
+    scored = _hybrid_retrieve(question, top_k, organization_id, document_type, filter_document, mode=retrieval_mode)
+    candidate_count = len(scored)
 
     # DEFENSE-IN-DEPTH TENANT VALIDATION (User Constraint 5):
     # Verify every retrieved document matches the requested organizationId
@@ -233,28 +409,48 @@ async def query_rag(
             validated_scored.append((doc, score))
 
     scored = validated_scored
+    retrieval_latency_ms = round((time.time() - start_retrieval) * 1000, 2)
 
     if not scored:
         # Hard grounding guard — the LLM is never called with no evidence.
-        latency_ms = round((time.time() - start) * 1000, 2)
-        await log_rag_query(question, _NOT_AVAILABLE_ANSWER, [], user_id, latency_ms, grounded=False)
+        total_latency_ms = round((time.time() - start_total) * 1000, 2)
+        await log_rag_query(
+            question, _NOT_AVAILABLE_ANSWER, [], user_id, total_latency_ms,
+            grounded=False, organization_id=organization_id, groundedness_score=0.0,
+            retrieval_latency_ms=retrieval_latency_ms, generation_latency_ms=0.0,
+            citation_count=0, retrieval_mode=retrieval_mode
+        )
         return {
             "answer": _NOT_AVAILABLE_ANSWER,
             "sourceDocuments": [],
             "confidenceScore": 0.0,
-            "latencyMs": latency_ms,
+            "latencyMs": total_latency_ms,
             "retrievedChunksCount": 0,
+            "groundednessScore": 0.0,
+            "retrievalLatencyMs": retrieval_latency_ms,
+            "generationLatencyMs": 0.0,
+            "totalLatencyMs": total_latency_ms,
+            "candidateCount": candidate_count,
+            "citationCount": 0,
+            "cacheHit": False,
+            "retrievalMode": retrieval_mode,
         }
 
     sources = [_to_source_document(doc, score) for doc, score in scored]
     context_text = "\n\n".join(
-        wrap_as_untrusted_document(source["documentName"], doc.page_content)
+        wrap_as_untrusted_document(
+            source["documentName"],
+            doc.page_content,
+            page_number=source.get("pageNumber"),
+            chunk_id=source.get("chunkId"),
+        )
         for (doc, _), source in zip(scored, sources)
     )
 
     llm = get_llm()
     formatted_prompt = prompt_template.format(context=context_text, question=question)
 
+    start_gen = time.time()
     loop = asyncio.get_event_loop()
     try:
         response = await asyncio.wait_for(
@@ -264,21 +460,35 @@ async def query_rag(
     except asyncio.TimeoutError:
         raise TimeoutError("The knowledge assistant timed out generating an answer. Please try again.")
 
+    generation_latency_ms = round((time.time() - start_gen) * 1000, 2)
     answer = response.content if hasattr(response, "content") else str(response)
-    latency_ms = round((time.time() - start) * 1000, 2)
+    total_latency_ms = round((time.time() - start_total) * 1000, 2)
 
-    is_grounded = _NOT_AVAILABLE_ANSWER.lower() not in answer.lower()
+    groundedness_score, citation_count, is_grounded = _evaluate_groundedness(answer, sources, scored)
     avg_score = sum(s["similarityScore"] for s in sources) / len(sources)
     confidence_score = round(avg_score, 2) if is_grounded else 0.1
 
-    await log_rag_query(question, answer, sources, user_id, latency_ms, grounded=is_grounded)
+    await log_rag_query(
+        question, answer, sources, user_id, total_latency_ms,
+        grounded=is_grounded, organization_id=organization_id, groundedness_score=groundedness_score,
+        retrieval_latency_ms=retrieval_latency_ms, generation_latency_ms=generation_latency_ms,
+        citation_count=citation_count, retrieval_mode=retrieval_mode
+    )
 
     return {
         "answer": answer,
         "sourceDocuments": sources,
         "confidenceScore": confidence_score,
-        "latencyMs": latency_ms,
+        "latencyMs": total_latency_ms,
         "retrievedChunksCount": len(sources),
+        "groundednessScore": groundedness_score,
+        "retrievalLatencyMs": retrieval_latency_ms,
+        "generationLatencyMs": generation_latency_ms,
+        "totalLatencyMs": total_latency_ms,
+        "candidateCount": candidate_count,
+        "citationCount": citation_count,
+        "cacheHit": False,
+        "retrievalMode": retrieval_mode,
     }
 
 

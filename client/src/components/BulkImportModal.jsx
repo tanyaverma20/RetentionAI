@@ -251,10 +251,8 @@ export default function BulkImportModal({ isOpen, onClose, onImport, loading = f
                   ))}
                 </div>
               )}
-            </div>
-          )}
 
-              {collection === 'employees' && importSummary.importedCount > 0 && (
+              {collection === 'employees' && (importSummary.importedCount > 0 || importSummary.new > 0) && (
                 <div className="mt-4 pt-4 border-t border-slate-100">
                   <p className="text-xs text-slate-500 mb-2">New employees added. Would you like to generate AI attrition predictions for the workforce?</p>
                   <button

@@ -37,8 +37,8 @@ export const knowledgeService = {
     return response.data.data;
   },
 
-  async query({ question, topK, documentType, filterDocument }) {
-    const response = await api.post('/knowledge/query', { question, topK, documentType, filterDocument });
+  async query({ question, topK, documentType, filterDocument, retrievalMode = 'hybrid' }) {
+    const response = await api.post('/knowledge/query', { question, topK, documentType, filterDocument, retrievalMode });
     return response.data.data;
   },
 
