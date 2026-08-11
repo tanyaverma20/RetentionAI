@@ -31,6 +31,27 @@ export const employeeService = {
     return response.data.data;
   },
 
+  async getSentimentTimeline(id) {
+    const response = await api.get(`/employees/${id}/sentiment-timeline`);
+    return response.data.data;
+  },
+
+  async getEmployeeFeedback(id) {
+    const response = await api.get(`/employees/${id}/feedback`);
+    return response.data.data;
+  },
+
+  async createFeedback(id, data) {
+    const response = await api.post(`/employees/${id}/feedback`, data);
+    return response.data.data;
+  },
+
+  async analyzeFeedback(id, feedbackId) {
+    const response = await api.post(`/employees/${id}/feedback/${feedbackId}/analyze`);
+    return response.data.data;
+  },
+
+
   async createEmployee(data) {
     const response = await api.post('/employees', data);
     return response.data.data;

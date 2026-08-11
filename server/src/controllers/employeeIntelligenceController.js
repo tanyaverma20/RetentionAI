@@ -65,3 +65,60 @@ export const getEmployeeIntelligenceDashboard = async (req, res, next) => {
     next(new AppError(error.statusCode || 502, error.code || 'EMPLOYEE_INTELLIGENCE_ERROR', error.message));
   }
 };
+
+/**
+ * POST /api/v1/employees/:employeeId/feedback
+ * Submit textual feedback for an employee with tenant scoping and NLP auto-analysis.
+ */
+export const createFeedback = async (req, res, next) => {
+  try {
+    const employeeId = req.params.employeeId || req.params.id || req.body?.employeeId;
+    const result = await employeeIntelligenceService.createFeedback(req.auth.organizationId, employeeId, req.body || {});
+    res.status(201).json({ success: true, data: result });
+  } catch (error) {
+    next(new AppError(error.statusCode || 400, error.code || 'FEEDBACK_ERROR', error.message));
+  }
+};
+
+/**
+ * GET /api/v1/employees/:employeeId/feedback
+ * Fetch feedback history for an employee within the authenticated organization.
+ */
+export const getEmployeeFeedback = async (req, res, next) => {
+  try {
+    const employeeId = req.params.employeeId || req.params.id;
+    const result = await employeeIntelligenceService.getEmployeeFeedback(req.auth.organizationId, employeeId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(new AppError(error.statusCode || 400, error.code || 'FEEDBACK_ERROR', error.message));
+  }
+};
+
+/**
+ * POST /api/v1/employees/:employeeId/feedback/:feedbackId/analyze
+ * Run or re-run NLP sentiment analysis on a specific feedback record.
+ */
+export const analyzeFeedback = async (req, res, next) => {
+  try {
+    const employeeId = req.params.employeeId || req.params.id;
+    const feedbackId = req.params.feedbackId;
+    const result = await employeeIntelligenceService.analyzeFeedback(req.auth.organizationId, employeeId, feedbackId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(new AppError(error.statusCode || 400, error.code || 'FEEDBACK_ANALYSIS_ERROR', error.message));
+  }
+};
+
+/**
+ * GET /api/v1/employees/:employeeId/sentiment-timeline
+ * Retrieve chronological sentiment history and aggregate profiles.
+ */
+export const getSentimentTimeline = async (req, res, next) => {
+  try {
+    const employeeId = req.params.employeeId || req.params.id;
+    const result = await employeeIntelligenceService.getSentimentTimeline(employeeId, req.auth.organizationId);
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    next(new AppError(error.statusCode || 400, error.code || 'SENTIMENT_TIMELINE_ERROR', error.message));
+  }
+};

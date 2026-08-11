@@ -148,8 +148,8 @@ EMP-003,Carol,White,carol.white@example.test,TECH,UX Designer,2024-04-10,95000`;
     });
     const bulkBody = await bulkResponse.json();
     assert.equal(bulkResponse.status, 200);
-    assert.equal(bulkBody.data.importedCount, 2);
-    assert.equal(bulkBody.data.failedCount, 0);
+    assert.equal(bulkBody.data.new, 2);
+    assert.equal(bulkBody.data.validationErrors, 0);
 
     // Verify total count is now 3
     const finalCount = await Employee.countDocuments({ isDeleted: false });

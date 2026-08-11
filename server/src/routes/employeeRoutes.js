@@ -11,6 +11,7 @@
 import { Router } from 'express';
 import { ROLE_NAMES } from '../config/roles.js';
 import * as employeeController from '../controllers/employeeController.js';
+import * as employeeIntelligenceController from '../controllers/employeeIntelligenceController.js';
 import { AppError } from '../errors/AppError.js';
 import { authenticate } from '../middlewares/authenticate.js';
 import { authorize } from '../middlewares/authorize.js';
@@ -119,4 +120,30 @@ employeeRouter.get(
   '/:employeeId/risk-timeline',
   validateEmployeeIdParam,
   employeeController.getEmployeeRiskTimeline,
+);
+
+// Employee Sentiment Timeline
+employeeRouter.get(
+  '/:employeeId/sentiment-timeline',
+  validateEmployeeIdParam,
+  employeeIntelligenceController.getSentimentTimeline,
+);
+
+// Employee Feedback CRUD & Analysis
+employeeRouter.post(
+  '/:employeeId/feedback',
+  validateEmployeeIdParam,
+  employeeIntelligenceController.createFeedback,
+);
+
+employeeRouter.get(
+  '/:employeeId/feedback',
+  validateEmployeeIdParam,
+  employeeIntelligenceController.getEmployeeFeedback,
+);
+
+employeeRouter.post(
+  '/:employeeId/feedback/:feedbackId/analyze',
+  validateEmployeeIdParam,
+  employeeIntelligenceController.analyzeFeedback,
 );

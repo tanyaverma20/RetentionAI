@@ -26,7 +26,7 @@ test('RC1 regressions: HR validation returns 400, and employee self-scope RBAC i
   // download+lock-acquisition when several other MongoMemoryServer-backed
   // processes are already running concurrently in this environment.
   process.env.NODE_ENV = 'test';
-  process.env.MONGODB_URI = process.env.AUTH_TEST_MONGODB_URI || 'mongodb://127.0.0.1:27017';
+  process.env.MONGODB_URI = process.env.AUTH_TEST_MONGODB_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
   process.env.MONGODB_DB_NAME = 'retentionai_rc_regression_test';
   process.env.JWT_ACCESS_SECRET = 'test-access-secret-that-is-at-least-32-characters';
   process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-that-is-at-least-32-characters';

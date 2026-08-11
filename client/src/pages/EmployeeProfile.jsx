@@ -326,9 +326,13 @@ function TabSurveys({ records }) {
   );
 }
 
-function TabFeedback({ records }) {
-  if (!records?.length)
-    return <p className="text-sm text-slate-400 text-center py-8">No feedback records found.</p>;
+function TabFeedback({ records, employeeId, canEdit, onRefresh360 }) {
+  const [feedbackText, setFeedbackText] = useState('');
+  const [category, setCategory] = useState('WORK_ENVIRONMENT');
+  const [source, setSource] = useState('FEEDBACK');
+  const [submitting, setSubmitting] = useState(false);
+  const [analyzingId, setAnalyzingId] = useState(null);
+  const [error, setError] = useState('');
 
   const catStyles = {
     MANAGEMENT: 'bg-amber-50 text-amber-600 border-amber-100',
@@ -337,20 +341,149 @@ function TabFeedback({ records }) {
     BENEFITS: 'bg-violet-50 text-violet-600 border-violet-100',
     OTHER: 'bg-slate-500/10 text-slate-500 border-slate-500/20'
   };
+
+  const sentimentStyles = {
+    Positive: 'bg-emerald-50 text-emerald-600 border-emerald-100',
+    Negative: 'bg-rose-50 text-rose-600 border-rose-100',
+    Neutral: 'bg-slate-100 text-slate-600 border-slate-200',
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!feedbackText.trim()) return;
+    try {
+      setSubmitting(true);
+      setError('');
+      await employeeService.createFeedback(employeeId, {
+        feedbackText,
+        category,
+        source,
+      });
+      setFeedbackText('');
+      if (onRefresh360) onRefresh360();
+    } catch (err) {
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to submit feedback.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleAnalyze = async (feedbackId) => {
+    try {
+      setAnalyzingId(feedbackId);
+      await employeeService.analyzeFeedback(employeeId, feedbackId);
+      if (onRefresh360) onRefresh360();
+    } catch (err) {
+      setError(err?.response?.data?.error?.message || err?.message || 'Failed to analyze feedback sentiment.');
+    } finally {
+      setAnalyzingId(null);
+    }
+  };
+
   return (
-    <div className="space-y-3">
-      {records.map((f) => {
-        const style = catStyles[f.category] || catStyles.OTHER;
-        return (
-          <div key={f._id} className="p-5 bg-white border border-slate-100 rounded-2xl space-y-2">
-            <div className="flex items-center justify-between">
-              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${style}`}>{f.category?.replace('_', ' ')}</span>
-              <span className="text-xs text-slate-400 font-mono">{fmt(f.feedbackDate)}</span>
+    <div className="space-y-6">
+      {canEdit && (
+        <form onSubmit={handleSubmit} className="p-5 bg-white border border-slate-100 rounded-3xl space-y-4 shadow-sm">
+          <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <span>💬</span> Submit Employee Feedback
+          </h3>
+          {error && <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs text-rose-600">{error}</div>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <option value="WORK_ENVIRONMENT">Work Environment</option>
+                <option value="MANAGEMENT">Management</option>
+                <option value="COMPENSATION">Compensation</option>
+                <option value="BENEFITS">Benefits</option>
+                <option value="OTHER">Other</option>
+              </select>
             </div>
-            <p className="text-sm text-slate-600 leading-relaxed">{f.feedbackText}</p>
+            <div>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Source</label>
+              <select value={source} onChange={(e) => setSource(e.target.value)} className="w-full text-xs p-2.5 bg-slate-50 border border-slate-200 rounded-xl">
+                <option value="FEEDBACK">Direct Feedback</option>
+                <option value="SURVEY">1-on-1 Survey</option>
+                <option value="EXIT_INTERVIEW">Exit Interview</option>
+                <option value="MANAGER_NOTE">Manager Observation</option>
+              </select>
+            </div>
           </div>
-        );
-      })}
+          <div>
+            <textarea
+              rows={3}
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder="Enter detailed feedback or employee sentiment notes..."
+              className="w-full text-xs p-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button
+              type="submit"
+              disabled={submitting || !feedbackText.trim()}
+              className="px-4 py-2 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl disabled:opacity-50 transition-all shadow-md shadow-indigo-600/20"
+            >
+              {submitting ? 'Analyzing & Submitting…' : 'Submit & Analyze'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {!records?.length ? (
+        <p className="text-sm text-slate-400 text-center py-8">No feedback records found.</p>
+      ) : (
+        <div className="space-y-3">
+          {records.map((f) => {
+            const style = catStyles[f.category] || catStyles.OTHER;
+            const sentStyle = sentimentStyles[f.sentiment] || sentimentStyles.Neutral;
+            return (
+              <div key={f._id} className="p-5 bg-white border border-slate-100 rounded-2xl space-y-3 shadow-sm">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${style}`}>{f.category?.replace('_', ' ')}</span>
+                    {f.sentiment ? (
+                      <span className={`px-2.5 py-0.5 text-xs font-bold rounded-full border ${sentStyle}`}>
+                        {f.sentiment} ({( (f.sentimentScore ?? 0.5) * 100 ).toFixed(0)}%)
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 text-xs text-slate-400 bg-slate-100 rounded-full">Unanalyzed</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-mono">{fmt(f.feedbackDate || f.submittedAt)}</span>
+                    {canEdit && !f.sentiment && (
+                      <button
+                        onClick={() => handleAnalyze(f._id)}
+                        disabled={analyzingId === f._id}
+                        className="px-2 py-1 text-[10px] font-semibold text-violet-600 bg-violet-50 hover:bg-violet-100 border border-violet-200 rounded-lg"
+                      >
+                        {analyzingId === f._id ? 'Analyzing…' : 'Analyze NLP'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <p className="text-sm text-slate-700 leading-relaxed">{f.feedbackText}</p>
+
+                {f.topics?.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {f.topics.map((t, i) => (
+                      <span key={i} className="px-2 py-0.5 text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 rounded-md">
+                        #{t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {f.summary && f.summary !== f.feedbackText && (
+                  <div className="p-2.5 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-500 italic">
+                    Summary: {f.summary}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
@@ -1021,7 +1154,7 @@ export default function EmployeeProfile() {
     Attendance: <TabAttendance records={attendance} />,
     Performance: <TabPerformance records={performance} />,
     Surveys: <TabSurveys records={surveys} />,
-    Feedback: <TabFeedback records={feedback} />,
+    Feedback: <TabFeedback records={feedback} employeeId={id} canEdit={canEdit} onRefresh360={() => dispatch(fetchEmployee360(id))} />,
     Notes: <TabNotes records={managerNotes} />,
   };
 

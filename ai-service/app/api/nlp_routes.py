@@ -27,6 +27,7 @@ router = APIRouter(prefix="/nlp", tags=["NLP"])
 # may run before we give up and return a clear timeout error instead of
 # hanging the request indefinitely.
 INFERENCE_TIMEOUT_SECONDS = float(os.getenv("NLP_INFERENCE_TIMEOUT_SECONDS", "30"))
+MAX_TEXT_LENGTH = int(os.getenv("MAX_TEXT_LENGTH", "5000"))
 
 
 # Mirrors verify_auth_token in routes.py / explain_routes.py /
@@ -51,6 +52,9 @@ def _text_hash(text: str) -> str:
 async def process_single_record(record: NLPAnalyzeRequest) -> NLPInsightsResponse:
     if not record.text or not record.text.strip():
         raise HTTPException(status_code=400, detail="Text is required and cannot be empty.")
+
+    if len(record.text) > MAX_TEXT_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Text length exceeds maximum allowed limit of {MAX_TEXT_LENGTH} characters.")
 
     detected_lang = detect_language(record.text)
     if detected_lang not in (SUPPORTED_LANGUAGE, "unknown"):
@@ -186,3 +190,17 @@ async def get_nlp_statistics():
         return stats
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch statistics: {str(e)}")
+
+@router.get("/health", dependencies=[Depends(verify_auth_token)])
+async def get_nlp_health():
+    """
+    Returns NLP service health status and model metadata.
+    """
+    return {
+        "status": "healthy",
+        "nlpProvider": "VADER+Transformers",
+        "nlpModel": "roberta-go_emotions+distilbart",
+        "nlpVersion": "1.0.0",
+        "supportedLanguage": SUPPORTED_LANGUAGE,
+        "maxTextLength": MAX_TEXT_LENGTH
+    }

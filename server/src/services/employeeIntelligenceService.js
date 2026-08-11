@@ -1,20 +1,50 @@
 import axios from 'axios';
 import mongoose from 'mongoose';
 import EmployeeIntelligence from '../models/EmployeeIntelligence.js';
+import { Employee } from '../models/Employee.js';
+import { EmployeeFeedback } from '../models/EmployeeFeedback.js';
+import { AppError } from '../errors/AppError.js';
+import { getRedisClient, isRedisConfigured } from '../utils/redisClient.js';
 import { toAiServiceError } from '../utils/aiServiceError.js';
 import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
 const AI_API_URL = process.env.AI_SERVICE_URL || 'http://localhost:8000';
 const AI_API_TOKEN = process.env.AI_SERVICE_TOKEN || 'replace-with-a-service-token';
 
-// Default budget for the small single-employee/dashboard calls, which return
-// in well under a second. The workforce-wide batch gets its own budget below:
-// even fully optimized it runs the NLP models over every distinct text in the
-// corpus, which is seconds-to-minutes of genuine compute, not a hung request.
-// Kept under Node's 300s default server.requestTimeout so Express doesn't kill
-// the inbound request before axios reports on the outbound one.
 const AI_DEFAULT_TIMEOUT_MS = 30000;
 const AI_BATCH_TIMEOUT_MS = 240000;
+
+const localNlpCache = new Map();
+
+function makeNlpCacheKey(organizationId, employeeId, feedbackId, nlpVersion = '1.0.0') {
+  return `nlp:${organizationId}:${employeeId}:${feedbackId}:${nlpVersion}`;
+}
+
+async function getCachedNlp(key) {
+  if (isRedisConfigured()) {
+    try {
+      const redis = getRedisClient();
+      const val = await redis.get(key);
+      if (val) return typeof val === 'string' ? JSON.parse(val) : val;
+    } catch {
+      // Ignore cache read failures
+    }
+  }
+  return localNlpCache.get(key) || null;
+}
+
+async function setCachedNlp(key, value, ttlSeconds = 86400) {
+  if (isRedisConfigured()) {
+    try {
+      const redis = getRedisClient();
+      await redis.set(key, JSON.stringify(value), { ex: ttlSeconds });
+      return;
+    } catch {
+      // Fall through to local cache
+    }
+  }
+  localNlpCache.set(key, value);
+}
 
 const aiClient = axios.create({
   baseURL: AI_API_URL,
@@ -51,7 +81,7 @@ class EmployeeIntelligenceService {
    */
   async generateForEmployee(employeeId, organizationId, forceRefresh = false) {
     if (!forceRefresh) {
-      const cached = await EmployeeIntelligence.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+      const cached = await EmployeeIntelligence.findOne({ employeeId, organizationId }).sort({ generatedAt: -1 }).lean();
       if (cached) return cached;
     }
 
@@ -244,6 +274,198 @@ class EmployeeIntelligenceService {
       topConcerns,
       departmentBreakdown,
       trendOverTime,
+    };
+  }
+
+  /**
+   * Create a new employee feedback record with tenant isolation and optional NLP auto-analysis.
+   */
+  async createFeedback(organizationId, employeeId, data) {
+    const employee = await Employee.findOne({ _id: employeeId, organizationId, isDeleted: { $ne: true } });
+    if (!employee) {
+      throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found for this organization.');
+    }
+
+    const {
+      feedbackText,
+      feedbackDate,
+      submittedAt,
+      category = 'OTHER',
+      source = 'FEEDBACK',
+      anonymous = false,
+      visibility = 'HR_ONLY',
+      attachments = [],
+    } = data;
+
+    if (!feedbackText || !feedbackText.trim()) {
+      throw new AppError(400, 'VALIDATION_ERROR', 'Feedback text is required.');
+    }
+
+    let nlpAnalysis = null;
+    try {
+      const response = await aiClient.post('/nlp/analyze', {
+        employeeId: String(employeeId),
+        sourceCollection: 'employeefeedbacks',
+        sourceDocumentId: new mongoose.Types.ObjectId().toString(),
+        text: feedbackText,
+      });
+      nlpAnalysis = response.data;
+    } catch (err) {
+      console.warn('NLP auto-analysis unavailable during feedback creation, saving unanalyzed record:', err.message);
+    }
+
+    const feedbackDoc = await EmployeeFeedback.create({
+      organizationId,
+      employeeId,
+      feedbackText: feedbackText.trim(),
+      feedbackDate: feedbackDate || submittedAt || new Date(),
+      submittedAt: submittedAt || new Date(),
+      category,
+      source,
+      anonymous: !!anonymous,
+      visibility,
+      attachments,
+      sentiment: nlpAnalysis?.sentiment || undefined,
+      sentimentScore: nlpAnalysis?.sentimentScore !== undefined ? nlpAnalysis.sentimentScore : undefined,
+      confidence: nlpAnalysis?.confidence !== undefined ? nlpAnalysis.confidence : undefined,
+      topics: nlpAnalysis?.detectedTopics || [],
+      emotionSignals: nlpAnalysis?.detectedEmotions || {},
+      summary: nlpAnalysis?.summary || '',
+      nlpProvider: 'VADER+Transformers',
+      nlpModel: 'roberta-go_emotions+distilbart',
+      nlpVersion: '1.0.0',
+      analyzedAt: nlpAnalysis ? new Date() : undefined,
+    });
+
+    if (nlpAnalysis) {
+      const cacheKey = makeNlpCacheKey(organizationId, employeeId, feedbackDoc._id, '1.0.0');
+      await setCachedNlp(cacheKey, feedbackDoc.toObject());
+    }
+
+    return feedbackDoc;
+  }
+
+  /**
+   * Get employee feedback history scoped strictly by organizationId and employeeId.
+   */
+  async getEmployeeFeedback(organizationId, employeeId) {
+    const employee = await Employee.findOne({ _id: employeeId, organizationId, isDeleted: { $ne: true } });
+    if (!employee) {
+      throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found for this organization.');
+    }
+
+    return EmployeeFeedback.find({ organizationId, employeeId }).sort({ submittedAt: -1, feedbackDate: -1 }).lean();
+  }
+
+  /**
+   * Run or re-run NLP sentiment analysis on an existing feedback item.
+   */
+  async analyzeFeedback(organizationId, employeeId, feedbackId) {
+    const employee = await Employee.findOne({ _id: employeeId, organizationId, isDeleted: { $ne: true } });
+    if (!employee) {
+      throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found for this organization.');
+    }
+
+    const feedback = await EmployeeFeedback.findOne({ _id: feedbackId, employeeId, organizationId });
+    if (!feedback) {
+      throw new AppError(404, 'FEEDBACK_NOT_FOUND', 'Feedback record not found for this employee/organization.');
+    }
+
+    const cacheKey = makeNlpCacheKey(organizationId, employeeId, feedbackId, '1.0.0');
+    const cached = await getCachedNlp(cacheKey);
+    if (cached && cached.analyzedAt) {
+      return cached;
+    }
+
+    let nlpAnalysis;
+    try {
+      const response = await aiClient.post('/nlp/analyze', {
+        employeeId: String(employeeId),
+        sourceCollection: 'employeefeedbacks',
+        sourceDocumentId: String(feedbackId),
+        text: feedback.feedbackText,
+      });
+      nlpAnalysis = response.data;
+    } catch (err) {
+      throw toAiServiceError(err, 'Feedback sentiment analysis failed', {
+        notReadyMessage: 'NLP models are preparing. Please try again shortly.',
+      });
+    }
+
+    feedback.sentiment = nlpAnalysis.sentiment;
+    feedback.sentimentScore = nlpAnalysis.sentimentScore;
+    feedback.confidence = nlpAnalysis.confidence;
+    feedback.topics = nlpAnalysis.detectedTopics || [];
+    feedback.emotionSignals = nlpAnalysis.detectedEmotions || {};
+    feedback.summary = nlpAnalysis.summary || '';
+    feedback.nlpProvider = 'VADER+Transformers';
+    feedback.nlpModel = 'roberta-go_emotions+distilbart';
+    feedback.nlpVersion = '1.0.0';
+    feedback.analyzedAt = new Date();
+
+    await feedback.save();
+    const updated = feedback.toObject();
+    await setCachedNlp(cacheKey, updated);
+    return updated;
+  }
+
+  /**
+   * Retrieve chronological sentiment timeline for an employee.
+   * Scoped strictly by organizationId.
+   */
+  async getSentimentTimeline(employeeId, organizationId) {
+    const employee = await Employee.findOne({ _id: employeeId, organizationId, isDeleted: { $ne: true } });
+    if (!employee) {
+      throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee profile not found for this organization.');
+    }
+
+    const feedbackList = await EmployeeFeedback.find({ organizationId, employeeId }).sort({ submittedAt: 1, feedbackDate: 1 }).lean();
+    const intelligenceList = await EmployeeIntelligence.find({ organizationId, employeeId }).sort({ generatedAt: 1 }).lean();
+
+    const timelineEvents = [];
+
+    for (const fb of feedbackList) {
+      timelineEvents.push({
+        id: String(fb._id),
+        date: fb.submittedAt || fb.feedbackDate || fb.createdAt,
+        type: 'FEEDBACK',
+        source: fb.source || 'FEEDBACK',
+        category: fb.category || 'OTHER',
+        sentiment: fb.sentiment || 'Neutral',
+        sentimentScore: fb.sentimentScore ?? 0.5,
+        confidence: fb.confidence ?? 0.5,
+        topics: fb.topics || [],
+        emotionSignals: fb.emotionSignals || {},
+        summary: fb.summary || fb.feedbackText || '',
+        nlpVersion: fb.nlpVersion || '1.0.0',
+      });
+    }
+
+    for (const intel of intelligenceList) {
+      timelineEvents.push({
+        id: String(intel._id),
+        date: intel.generatedAt,
+        type: 'AGGREGATED_INTELLIGENCE',
+        source: 'AGGREGATED_NLP',
+        sentiment: intel.sentiment || 'Neutral',
+        sentimentScore: intel.sentimentScore ?? 0.5,
+        confidence: intel.confidence ?? 0.5,
+        burnoutRisk: intel.burnoutRisk || 'Low',
+        burnoutScore: intel.burnoutScore ?? 0.0,
+        dominantEmotion: intel.emotion || 'Satisfied',
+        topics: intel.topics || [],
+        summary: intel.summary || '',
+        nlpVersion: '1.0.0',
+      });
+    }
+
+    timelineEvents.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    return {
+      employeeId: String(employeeId),
+      organizationId: String(organizationId),
+      totalEvents: timelineEvents.length,
+      timeline: timelineEvents,
     };
   }
 }

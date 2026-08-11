@@ -174,6 +174,8 @@ async def employee_context_agent_node(state: AgentState) -> AgentState:
         return state
 
     emp_context = state.get("employeeContext", {})
+    emp_id = emp_context.get("employeeId")
+    org_id = state.get("organizationId")
     recent_changes = []
     
     if emp_context.get("overtime") in ["Yes", "TRUE", True]:
@@ -183,9 +185,48 @@ async def employee_context_agent_node(state: AgentState) -> AgentState:
     if not recent_changes:
         recent_changes.append("Stable tenure with routine performance milestones.")
 
+    # Fetch additive NLP observations for this employee & organization
+    nlp_obs = []
+    try:
+        db = get_db()
+        if db is not None and emp_id and org_id:
+            emp_obj = ObjectId(emp_id) if ObjectId.is_valid(emp_id) else emp_id
+            org_obj = ObjectId(org_id) if ObjectId.is_valid(org_id) else org_id
+            intel = await db["employeeintelligences"].find_one(
+                {"employeeId": emp_obj, "organizationId": org_obj},
+                sort=[("generatedAt", -1)]
+            )
+            if intel:
+                nlp_obs.append({
+                    "source": "Employee Intelligence",
+                    "sentiment": intel.get("sentiment", "Neutral"),
+                    "sentimentScore": intel.get("sentimentScore", 0.5),
+                    "dominantEmotion": intel.get("emotion", "Satisfied"),
+                    "burnoutRisk": intel.get("burnoutRisk", "Low"),
+                    "topics": intel.get("topics", []),
+                    "summary": intel.get("summary", ""),
+                })
+
+            cursor = db["employeefeedbacks"].find(
+                {"employeeId": emp_obj, "organizationId": org_obj}
+            ).sort("submittedAt", -1).limit(3)
+
+            async for fb in cursor:
+                if fb.get("sentiment"):
+                    nlp_obs.append({
+                        "source": fb.get("source", "FEEDBACK"),
+                        "sentiment": fb.get("sentiment", "Neutral"),
+                        "sentimentScore": fb.get("sentimentScore", 0.5),
+                        "topics": fb.get("topics", []),
+                        "summary": fb.get("summary") or fb.get("feedbackText", ""),
+                    })
+    except Exception as exc:
+        logger.warning(f"Could not load NLP observations for graph context: {exc}")
+
     emp_context["recentChanges"] = recent_changes
+    emp_context["nlpObservations"] = nlp_obs
     state["employeeContext"] = emp_context
-    _add_trace(state, "EmployeeContextAgent", "SUCCESS", f"Compiled employee historical timeline with {len(recent_changes)} observations")
+    _add_trace(state, "EmployeeContextAgent", "SUCCESS", f"Compiled employee historical timeline with {len(recent_changes)} observations and {len(nlp_obs)} NLP signals")
     return state
 
 # ---------------------------------------------------------------------------
@@ -358,6 +399,7 @@ async def final_decision_node(state: AgentState) -> AgentState:
             "modelVersion": prediction.get("modelVersion"),
         },
         "shapDrivers": state.get("shapEvidence", []),
+        "nlpObservations": emp_ctx.get("nlpObservations", []),
         "recentChanges": emp_ctx.get("recentChanges", []),
         "policyCitations": state.get("citations", []),
         "recommendedActions": state.get("recommendations", []),
