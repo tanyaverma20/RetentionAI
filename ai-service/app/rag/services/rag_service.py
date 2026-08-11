@@ -331,10 +331,15 @@ def search_knowledge(
 # ---------------------------------------------------------------------------
 
 def get_document_chunks(document_id: str, organization_id: Optional[str] = None) -> Dict[str, Any]:
+    if not organization_id or not str(organization_id).strip():
+        return {
+            "documentId": document_id,
+            "chunkCount": 0,
+            "chunks": [],
+        }
+
     vectorstore = get_vectorstore()
-    where_clause = {"documentId": document_id}
-    if organization_id:
-        where_clause = {"$and": [{"documentId": document_id}, {"organizationId": organization_id}]}
+    where_clause = {"$and": [{"documentId": document_id}, {"organizationId": organization_id}]}
     data = vectorstore.get(where=where_clause, include=["metadatas", "documents"])
     chunks = []
     for doc_text, meta in zip(data.get("documents", []), data.get("metadatas", [])):
