@@ -2,6 +2,7 @@ import axios from 'axios';
 import mongoose from 'mongoose';
 import Explanation from '../models/Explanation.js';
 import { Prediction } from '../models/Prediction.js';
+import { Employee } from '../models/Employee.js';
 import { GlobalFeatureImportance } from '../models/GlobalFeatureImportance.js';
 import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
 
@@ -136,12 +137,26 @@ class ExplainService {
    * Checks MongoDB cache first; falls back to calling FastAPI.
    */
   async explainSingle(employeeId, organizationId, forceRefresh = false) {
+    // 0. Verify employee belongs to organizationId
+    const employee = await Employee.findOne({
+      _id: employeeId,
+      organizationId,
+      isDeleted: { $ne: true },
+    }).lean();
+
+    if (!employee) {
+      const err = new Error('Employee not found or access denied.');
+      err.statusCode = 404;
+      err.code = 'EXPLANATION_NOT_FOUND';
+      throw err;
+    }
+
     // 1. Find the associated prediction
-    const prediction = await Prediction.findOne({ employeeId }).sort({ createdAt: -1 }).lean();
+    const prediction = await Prediction.findOne({ employeeId, organizationId }).sort({ createdAt: -1 }).lean();
 
     // 2. Check cache
     if (!forceRefresh) {
-      const cached = await Explanation.findOne({ employeeId }).sort({ generatedAt: -1 }).lean();
+      const cached = await Explanation.findOne({ employeeId, organizationId }).sort({ generatedAt: -1 }).lean();
       // Reuse explanations whenever the prediction has not changed.
       // If there is no prediction yet (prediction?._id is undefined), this checks if cached.predictionId is null.
       if (cached && String(cached.predictionId || 'null') === String(prediction?._id || 'null')) {
@@ -174,7 +189,28 @@ class ExplainService {
    */
   async explainBatch(organizationId, employeeIds = null) {
     const payload = {};
-    if (employeeIds?.length) payload.employeeIds = employeeIds;
+    let validEmployeeIds = null;
+    if (employeeIds?.length) {
+      const validEmps = await Employee.find({
+        _id: { $in: employeeIds },
+        organizationId,
+        isDeleted: { $ne: true },
+      }).select('_id').lean();
+      validEmployeeIds = validEmps.map((e) => String(e._id));
+      if (validEmployeeIds.length === 0) {
+        return { processed: 0, skipped: employeeIds.length };
+      }
+    } else {
+      const validEmps = await Employee.find({
+        organizationId,
+        isDeleted: { $ne: true },
+      }).select('_id').lean();
+      validEmployeeIds = validEmps.map((e) => String(e._id));
+      if (validEmployeeIds.length === 0) {
+        return { processed: 0, skipped: 0 };
+      }
+    }
+    payload.employeeIds = validEmployeeIds;
 
     // Claims the single process-wide AI-heavy-job slot (see
     // aiConcurrencyGate.js) — verified via production logs that this
@@ -187,16 +223,6 @@ class ExplainService {
     try {
       let batchResults;
       try {
-        // /explain/batch now returns a jobId immediately and computes in the
-        // background — a full-workforce batch takes ~90-160s even after
-        // parallelizing/tuning the ai-service's own enrichment concurrency,
-        // and holding one request open that long proved unreliable against
-        // production no matter how that duration was trimmed (three different
-        // configurations all still landed in the 90-166s failure zone). This
-        // polls a status endpoint with short, individually-fast requests
-        // instead — the fix already used by /train — so no single request
-        // held open by either side risks whatever timeout was cutting the
-        // long one off.
         const startResponse = await aiClient.post('/explain/batch', payload);
         const jobId = startResponse.data?.jobId;
         if (!jobId) {
@@ -207,13 +233,6 @@ class ExplainService {
         }
         batchResults = (await pollExplainBatchJob(jobId)).explanations || [];
       } catch (err) {
-        // pollExplainBatchJob (and the jobId check above) already produce a
-        // well-formed {statusCode, code} error — re-throw those as-is.
-        // toExplainError expects a raw axios error shape (it inspects
-        // err.response/err.code) and would otherwise flatten a specific
-        // "job failed: <reason>" into a generic "AI service is currently
-        // unavailable", discarding exactly the detail this rewrite was
-        // meant to surface.
         if (err.statusCode) throw err;
         throw toExplainError(err, 'Batch SHAP explanation failed');
       }
@@ -224,6 +243,7 @@ class ExplainService {
 
       const predictions = await Prediction.find({
         employeeId: { $in: batchResults.map((item) => item.employeeId) },
+        organizationId,
       }).sort({ createdAt: -1 });
       const predictionByEmployee = new Map();
       for (const p of predictions) {
