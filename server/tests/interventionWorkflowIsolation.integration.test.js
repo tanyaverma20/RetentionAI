@@ -1,19 +1,26 @@
-import 'dotenv/config';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+
+const mongoServer = await MongoMemoryServer.create();
+const MONGODB_URI = mongoServer.getUri();
+process.env.NODE_ENV = 'test';
+process.env.MONGODB_URI = MONGODB_URI;
+process.env.JWT_ACCESS_SECRET = 'test-access-secret-that-is-at-least-32-characters';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-that-is-at-least-32-characters';
+process.env.CORS_ORIGINS = 'http://localhost:5173';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
-import { interventionService } from '../src/services/interventionService.js';
-import { Intervention } from '../src/models/Intervention.js';
-import { Decision } from '../src/models/Decision.js';
-import { Employee } from '../src/models/Employee.js';
-import { Organization } from '../src/models/Organization.js';
-import { User } from '../src/models/User.js';
-import { AppError } from '../src/errors/AppError.js';
 
-import { Department } from '../src/models/Department.js';
-import { Role } from '../src/models/Role.js';
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tanyaverma202003_db_user:LMw7XVa3o334EPTE@cluster0.mmbebq2.mongodb.net/retentionai?retryWrites=true&w=majority&appName=Cluster0';
+const { interventionService } = await import('../src/services/interventionService.js');
+const { Intervention } = await import('../src/models/Intervention.js');
+const { Decision } = await import('../src/models/Decision.js');
+const { Employee } = await import('../src/models/Employee.js');
+const { Organization } = await import('../src/models/Organization.js');
+const { User } = await import('../src/models/User.js');
+const { AppError } = await import('../src/errors/AppError.js');
+const { Department } = await import('../src/models/Department.js');
+const { Role } = await import('../src/models/Role.js');
 
 test.describe('Prompt 7 — Actionable Interventions, Workflow Automation & Safeguards Tests', () => {
   let orgAId;

@@ -3,8 +3,13 @@ import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 
+import { MongoMemoryServer } from 'mongodb-memory-server';
+
+const mongoServer = await MongoMemoryServer.create();
+const MONGODB_URI = mongoServer.getUri();
+
 process.env.NODE_ENV = 'test';
-process.env.MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tanyaverma202003_db_user:LMw7XVa3o334EPTE@cluster0.mmbebq2.mongodb.net/retentionai?retryWrites=true&w=majority&appName=Cluster0';
+process.env.MONGODB_URI = MONGODB_URI;
 process.env.JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || 'test-access-secret-that-is-at-least-32-characters';
 process.env.JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'test-refresh-secret-that-is-at-least-32-characters';
 process.env.CORS_ORIGINS = process.env.CORS_ORIGINS || 'http://localhost:5173';
@@ -21,8 +26,6 @@ let Role;
 let Prediction;
 let AuditLog;
 let app;
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tanyaverma202003_db_user:LMw7XVa3o334EPTE@cluster0.mmbebq2.mongodb.net/retentionai?retryWrites=true&w=majority&appName=Cluster0';
 const JWT_SECRET = process.env.JWT_ACCESS_SECRET || 'test-access-secret-that-is-at-least-32-characters';
 
 let createAccessToken;
@@ -85,6 +88,7 @@ test.describe('Prompt 8 — Executive Escalations, Closed-Loop Outcomes & Audit 
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(MONGODB_URI);
     }
+    await ExecutiveAlert.init();
 
     server = app.listen(0);
     baseUrl = `http://127.0.0.1:${server.address().port}/api/v1`;

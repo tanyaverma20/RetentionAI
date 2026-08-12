@@ -707,7 +707,7 @@ export async function generateAlerts(organizationId, filter = {}) {
       });
       created.push(alert);
     } catch (err) {
-      if (err.code === 11000) {
+      if (err.code === 11000 || (err.message && (err.message.includes('11000') || err.message.includes('duplicate key')))) {
         const found = await ExecutiveAlert.findOne({ organizationId: orgOid, idempotencyKey });
         if (found) created.push(found);
       } else {

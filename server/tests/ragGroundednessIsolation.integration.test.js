@@ -1,13 +1,22 @@
-import 'dotenv/config';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+
+const mongoServer = await MongoMemoryServer.create();
+const MONGODB_URI = mongoServer.getUri();
+
+process.env.NODE_ENV = 'test';
+process.env.MONGODB_URI = MONGODB_URI;
+process.env.JWT_ACCESS_SECRET = 'test-access-secret-that-is-at-least-32-characters';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-that-is-at-least-32-characters';
+process.env.CORS_ORIGINS = 'http://localhost:5173';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
-import { knowledgeService } from '../src/services/knowledgeService.js';
-import { Organization } from '../src/models/Organization.js';
-import { User } from '../src/models/User.js';
-import { Role } from '../src/models/Role.js';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tanyaverma202003_db_user:LMw7XVa3o334EPTE@cluster0.mmbebq2.mongodb.net/retentionai?retryWrites=true&w=majority&appName=Cluster0';
+const { knowledgeService } = await import('../src/services/knowledgeService.js');
+const { Organization } = await import('../src/models/Organization.js');
+const { User } = await import('../src/models/User.js');
+const { Role } = await import('../src/models/Role.js');
 
 test.describe('Prompt 6 — Grounded RAG, Hybrid Retrieval & Tenant-Isolated Caching Tests', () => {
   let orgAId;
@@ -55,6 +64,7 @@ test.describe('Prompt 6 — Grounded RAG, Hybrid Retrieval & Tenant-Isolated Cac
     await Organization.deleteMany({ name: { $in: ['RAG_Groundedness_Org_A', 'RAG_Groundedness_Org_B'] } });
     await User.deleteMany({ email: 'userA@groundeda.test' });
     await mongoose.disconnect();
+    if (mongoServer) await mongoServer.stop();
   });
 
   test('1. Hybrid Retrieval and Groundedness Response Contract', async () => {

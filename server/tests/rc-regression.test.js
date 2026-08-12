@@ -1,37 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { MongoMemoryServer } from 'mongodb-memory-server';
 
-/**
- * Regression tests for the two Priority-1 RC1 defects fixed in Sprint 7.6:
- *
- * 1. Validation — invalid input to the generic /api/v1/hr/:collection routes
- *    must return 400, never 500 (errorHandler.js previously had no ZodError
- *    case, so hrService.js's raw schema.parse() calls leaked as uncaught
- *    exceptions).
- * 2. RBAC self-scope — an EMPLOYEE-role user must never be able to read
- *    another employee's profile (salary/PII included) via GET
- *    /api/v1/employees/:id (employeeService.js's isOwnProfile check had a
- *    tautological second clause that made it always true for every caller).
- *
- * Both scenarios share one MongoMemoryServer instance and run sequentially
- * within a single test() — node's test runner executes top-level test()
- * blocks concurrently by default, and both scenarios mutate the shared,
- * process-global process.env.MONGODB_URI, so splitting them into separate
- * top-level tests would race.
- */
+const mongoServer = await MongoMemoryServer.create();
+const MONGODB_URI = mongoServer.getUri();
+
+process.env.NODE_ENV = 'test';
+process.env.MONGODB_URI = MONGODB_URI;
+process.env.JWT_ACCESS_SECRET = 'test-access-secret-that-is-at-least-32-characters';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-that-is-at-least-32-characters';
+process.env.CORS_ORIGINS = 'http://localhost:5173';
 test('RC1 regressions: HR validation returns 400, and employee self-scope RBAC is enforced', async () => {
-  // Reuses whatever MongoDB is already reachable (the real dev instance in
-  // this environment) with a throwaway database name, rather than spinning
-  // up a fresh mongodb-memory-server instance — avoids a slow/stuck first
-  // download+lock-acquisition when several other MongoMemoryServer-backed
-  // processes are already running concurrently in this environment.
-  process.env.NODE_ENV = 'test';
-  process.env.MONGODB_URI = process.env.AUTH_TEST_MONGODB_URI || process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
-  process.env.MONGODB_DB_NAME = 'retentionai_rc_regression_test';
-  process.env.JWT_ACCESS_SECRET = 'test-access-secret-that-is-at-least-32-characters';
-  process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-that-is-at-least-32-characters';
-  process.env.CORS_ORIGINS = 'http://localhost:5173';
-
   const [
     { connectDatabase },
     { ensureSystemRoles },

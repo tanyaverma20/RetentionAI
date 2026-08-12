@@ -27,6 +27,15 @@ export const recordTelemetry = async (data) => {
       return null;
     }
 
+    function redactSensitiveText(str) {
+      if (!str) return str;
+      return String(str)
+        .replace(/eyJ[A-Za-z0-9-_=]+\.[A-Za-z0-9-_=]+\.?[A-Za-z0-9-_.+/=]*/g, '[REDACTED_JWT]')
+        .replace(/(?:sk|pk|api|key)_[a-zA-Z0-9]{24,}/gi, '[REDACTED_API_KEY]')
+        .replace(/Bearer\s+[A-Za-z0-9-_=.]+/gi, 'Bearer [REDACTED_TOKEN]')
+        .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g, '[REDACTED_EMAIL]');
+    }
+
     const telemetry = await AiTelemetry.create({
       organizationId,
       requestId,
@@ -39,7 +48,7 @@ export const recordTelemetry = async (data) => {
       groundednessScore,
       citationCount,
       status,
-      errorMessage,
+      errorMessage: redactSensitiveText(errorMessage),
     });
 
     return telemetry;

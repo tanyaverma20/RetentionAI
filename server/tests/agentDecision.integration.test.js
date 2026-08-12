@@ -1,16 +1,29 @@
-import 'dotenv/config';
+let mongoServer;
+let MONGODB_URI = process.env.AUTH_TEST_MONGODB_URI || process.env.MONGODB_URI;
+try {
+  const { MongoMemoryServer } = await import('mongodb-memory-server');
+  mongoServer = await MongoMemoryServer.create({ instance: { dbName: `test_${Date.now()}` } });
+  MONGODB_URI = mongoServer.getUri();
+} catch (err) {
+  // Fall back to process.env MONGODB_URI
+}
+
+process.env.NODE_ENV = 'test';
+process.env.MONGODB_URI = MONGODB_URI;
+process.env.JWT_ACCESS_SECRET = 'test-access-secret-that-is-at-least-32-characters';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-that-is-at-least-32-characters';
+process.env.CORS_ORIGINS = 'http://localhost:5173';
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import mongoose from 'mongoose';
-import { aiService } from '../src/services/aiService.js';
-import { Employee } from '../src/models/Employee.js';
-import { Organization } from '../src/models/Organization.js';
-import { User } from '../src/models/User.js';
-import { Role } from '../src/models/Role.js';
 
-import { Department } from '../src/models/Department.js';
-
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tanyaverma202003_db_user:LMw7XVa3o334EPTE@cluster0.mmbebq2.mongodb.net/retentionai?retryWrites=true&w=majority&appName=Cluster0';
+const { aiService } = await import('../src/services/aiService.js');
+const { Employee } = await import('../src/models/Employee.js');
+const { Organization } = await import('../src/models/Organization.js');
+const { User } = await import('../src/models/User.js');
+const { Role } = await import('../src/models/Role.js');
+const { Department } = await import('../src/models/Department.js');
 
 test.describe('LangGraph Agentic Decision Orchestration Integration Tests', () => {
   let orgId;
@@ -23,9 +36,9 @@ test.describe('LangGraph Agentic Decision Orchestration Integration Tests', () =
       await mongoose.connect(MONGODB_URI);
     }
 
-    let org = await Organization.findOne({ slug: 'demo-org' });
+    let org = await Organization.findOne({ name: 'Agent_Org_A' });
     if (!org) {
-      org = await Organization.findOne({});
+      org = await Organization.create({ name: 'Agent_Org_A', slug: 'agent-org-a', domain: 'agent-a.test' });
     }
     orgId = String(org._id);
 
@@ -35,8 +48,24 @@ test.describe('LangGraph Agentic Decision Orchestration Integration Tests', () =
     }
     otherOrgId = String(otherOrg._id);
 
-    const emp = await Employee.findOne({ organizationId: orgId });
-    assert.ok(emp, 'Existing employee required for test');
+    let dept = await Department.findOne({ organizationId: orgId });
+    if (!dept) {
+      dept = await Department.create({ name: 'Engineering', code: 'ENG', organizationId: orgId });
+    }
+
+    let emp = await Employee.findOne({ organizationId: orgId });
+    if (!emp) {
+      emp = await Employee.create({
+        organizationId: orgId,
+        departmentId: dept._id,
+        employeeCode: 'EMP_AGENT_A_001',
+        firstName: 'AgentA',
+        lastName: 'User',
+        email: 'agenta@test.com',
+        designation: 'Senior Developer',
+        joiningDate: new Date(),
+      });
+    }
     employeeId = String(emp._id);
 
     let role = await Role.findOne({ name: 'HR_ADMIN' });
@@ -44,16 +73,16 @@ test.describe('LangGraph Agentic Decision Orchestration Integration Tests', () =
       role = await Role.create({ name: 'HR_ADMIN', permissions: ['ALL'] });
     }
 
-    let dept = await Department.findOne({ organizationId: otherOrgId });
-    if (!dept) {
-      dept = await Department.create({ name: 'Agent Operations', code: 'AOP', organizationId: otherOrgId });
+    let deptOther = await Department.findOne({ organizationId: otherOrgId });
+    if (!deptOther) {
+      deptOther = await Department.create({ name: 'Agent Operations', code: 'AOP', organizationId: otherOrgId });
     }
 
     let otherEmp = await Employee.findOne({ organizationId: otherOrgId });
     if (!otherEmp) {
       otherEmp = await Employee.create({
         organizationId: otherOrgId,
-        departmentId: dept._id,
+        departmentId: deptOther._id,
         employeeCode: 'EMP_AGENT_OTHER_001',
         firstName: 'AgentOther',
         lastName: 'User',
@@ -67,9 +96,10 @@ test.describe('LangGraph Agentic Decision Orchestration Integration Tests', () =
   });
 
   test.after(async () => {
-    await Employee.deleteMany({ employeeCode: 'EMP_AGENT_OTHER_001' });
-    await Organization.deleteMany({ name: 'Agent_Other_Org' });
+    await Employee.deleteMany({ employeeCode: { $in: ['EMP_AGENT_A_001', 'EMP_AGENT_OTHER_001'] } });
+    await Organization.deleteMany({ name: { $in: ['Agent_Org_A', 'Agent_Other_Org'] } });
     await mongoose.disconnect();
+    if (mongoServer) await mongoServer.stop();
   });
 
   test('1. Executes full 8-node LangGraph retention decision workflow for valid employee', async () => {

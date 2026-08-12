@@ -11,6 +11,8 @@ export const ROLE_NAMES = Object.freeze({
   HR_DIRECTOR: 'HR_DIRECTOR',
   CHRO: 'CHRO',
   CEO: 'CEO',
+  // Prompt 10 — AI Governance & Safety
+  COMPLIANCE_OFFICER: 'COMPLIANCE_OFFICER',
 });
 
 // Sprint 9 — Enterprise Workflow Automation. Workflow permissions are
@@ -53,6 +55,12 @@ export const SYSTEM_ROLES = Object.freeze([
     ],
   },
   { name: ROLE_NAMES.CEO, permissions: ['executive.read', ...WORKFLOW_BASE] },
+  {
+    name: ROLE_NAMES.COMPLIANCE_OFFICER,
+    permissions: [
+      'governance.read', 'governance.write', 'bias.read', 'bias.write', 'hitl.decide', 'audit.read', ...WORKFLOW_BASE,
+    ],
+  },
 ]);
 
 /** Roles allowed to view the Executive Workforce Intelligence Center (Sprint 8, Part 10). */
@@ -61,6 +69,16 @@ export const EXECUTIVE_ROLES = Object.freeze([
   ROLE_NAMES.HR_DIRECTOR,
   ROLE_NAMES.CHRO,
   ROLE_NAMES.CEO,
+]);
+
+/** Roles allowed to access AI Governance & Safety Hub (Prompt 10). */
+export const GOVERNANCE_ROLES = Object.freeze([
+  ROLE_NAMES.ADMIN,
+  ROLE_NAMES.EXECUTIVE,
+  ROLE_NAMES.HR_DIRECTOR,
+  ROLE_NAMES.CHRO,
+  ROLE_NAMES.CEO,
+  ROLE_NAMES.COMPLIANCE_OFFICER,
 ]);
 
 /** Roles allowed to view the HR Operations / Workflow Dashboard (Sprint 9, Part 7). */
