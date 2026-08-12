@@ -35,6 +35,7 @@ const TasksPage = lazy(() => import('./pages/TasksPage'));
 const HrOperationsDashboard = lazy(() => import('./pages/HrOperationsDashboard'));
 const AuditLogPage = lazy(() => import('./pages/AuditLogPage'));
 const KnowledgeManagement = lazy(() => import('./pages/KnowledgeManagement'));
+const AiObservabilityPage = lazy(() => import('./pages/AiObservabilityPage'));
 const ManagerDashboard = lazy(() => import('./pages/ManagerDashboard'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
@@ -91,9 +92,10 @@ export default function App() {
               <Route path="/manager-dashboard" element={<ManagerDashboard />} />
             </Route>
 
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'HR_DIRECTOR', 'CHRO', 'CEO']} />}>
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'HR_DIRECTOR', 'CHRO', 'CEO', 'EXECUTIVE']} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/executive" element={<ExecutiveDashboard />} />
+                <Route path="/observability" element={<AiObservabilityPage />} />
               </Route>
             </Route>
 

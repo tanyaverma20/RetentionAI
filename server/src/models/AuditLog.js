@@ -43,6 +43,10 @@ const AUDIT_ACTIONS = [
   'USER_LOGIN',
   'USER_LOGOUT',
   'RBAC_DENIED',
+  // Prompt 9 — AI Observability & Governance
+  'AI_TELEMETRY_EXPORT',
+  'DRIFT_ALERT_TRIGGERED',
+  'EVAL_RUN',
 ];
 
 const auditLogSchema = new mongoose.Schema(
