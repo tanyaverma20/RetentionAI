@@ -1,7 +1,10 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
-
-const mongoServer = await MongoMemoryServer.create();
-const MONGODB_URI = mongoServer.getUri();
+let mongoServer;
+let MONGODB_URI = process.env.AUTH_TEST_MONGODB_URI || process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  const { MongoMemoryServer } = await import('mongodb-memory-server');
+  mongoServer = await MongoMemoryServer.create();
+  MONGODB_URI = mongoServer.getUri();
+}
 
 process.env.NODE_ENV = 'test';
 process.env.MONGODB_URI = MONGODB_URI;
@@ -89,6 +92,7 @@ test.describe('Tenant-Isolated RAG Pipeline Integration & Security Tests', () =>
     await Organization.deleteMany({ name: { $in: ['RAG_Test_Org_A', 'RAG_Test_Org_B'] } });
     await User.deleteMany({ email: { $in: ['userA@orga-rag.test', 'userB@orgb-rag.test'] } });
     await mongoose.disconnect();
+    if (mongoServer) await mongoServer.stop();
   });
 
   test('1 & 2. Independent Org Document Query Isolation', async () => {

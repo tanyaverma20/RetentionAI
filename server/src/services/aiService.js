@@ -6,6 +6,7 @@ import { ModelMetadata } from '../models/ModelMetadata.js';
 import { Employee } from '../models/Employee.js';
 import { AppError } from '../errors/AppError.js';
 import { acquireAiSlot, releaseAiSlot } from '../utils/aiConcurrencyGate.js';
+import { aiServiceCircuitBreaker } from '../utils/circuitBreaker.js';
 
 const aiClient = axios.create({
   baseURL: env.aiService.url,
@@ -83,7 +84,7 @@ class AIService {
       throw new AppError(404, 'EMPLOYEE_NOT_FOUND', 'Employee not found.');
     }
     try {
-      const response = await aiClient.post('/predict', { employeeId });
+      const response = await aiServiceCircuitBreaker.execute(() => aiClient.post('/predict', { employeeId }));
       return response.data.data;
     } catch (error) {
       throw toServiceError(error, 'Failed to generate prediction from AI service');

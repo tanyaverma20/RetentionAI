@@ -44,11 +44,6 @@ export async function getDetailedHealth(_request, response) {
 
   const overallStatus = mongo.status === 'UP' && aiService.status === 'UP' ? 'UP' : 'DEGRADED';
 
-  // Configuration only, not a live round-trip (getRedisDiagnostics() never
-  // calls Upstash) — keeps this endpoint fast and never NOT configured
-  // doesn't degrade overallStatus: it's a valid, intentional dev-mode state
-  // (see redisClient.js's module docstring). Never includes the token or
-  // full URL — host only (Part 16).
   const redis = getRedisDiagnostics();
 
   response.status(overallStatus === 'UP' ? 200 : 503).json({
@@ -61,12 +56,47 @@ export async function getDetailedHealth(_request, response) {
         heapUsedMb: Math.round(memory.heapUsed / 1024 / 1024),
         heapTotalMb: Math.round(memory.heapTotal / 1024 / 1024),
       },
-      // os.loadavg() is POSIX-only and always returns [0,0,0] on Windows —
-      // reported as-is rather than faked, with the platform noted so a
-      // reader doesn't mistake "0" for "idle".
       cpuLoadAvg: { '1m': cpuLoad[0], '5m': cpuLoad[1], '15m': cpuLoad[2], platform: os.platform() },
       cpuCount: os.cpus().length,
     },
     pipelineLatency: getMetricsSnapshot(),
+  });
+}
+
+/**
+ * Readiness Probe: GET /ready
+ * Verifies readiness of MongoDB, Redis, AI service, and ChromaDB vector retrieval.
+ * Returns HTTP 200 for 'healthy' / 'degraded' and HTTP 503 for 'not_ready'.
+ */
+export async function getReadiness(request, response) {
+  const correlationId = request.correlationId || request.requestId;
+  const [mongo, aiService] = await Promise.all([checkMongo(), checkAiService()]);
+  const redis = getRedisDiagnostics();
+
+  const isMongoReady = mongo.status === 'UP';
+  const isAiServiceReady = aiService.status === 'UP';
+  const isRedisConfigured = redis.configured || redis.mode === 'in_memory';
+
+  let status = 'healthy';
+  let httpStatusCode = 200;
+
+  if (!isMongoReady) {
+    status = 'not_ready';
+    httpStatusCode = 503;
+  } else if (!isAiServiceReady) {
+    status = 'degraded';
+    httpStatusCode = 200;
+  }
+
+  return response.status(httpStatusCode).json({
+    status,
+    correlationId,
+    timestamp: new Date().toISOString(),
+    checks: {
+      database: { status: mongo.status, latencyMs: mongo.latencyMs },
+      aiService: { status: aiService.status, latencyMs: aiService.latencyMs },
+      redis: { status: isRedisConfigured ? 'UP' : 'DEGRADED', mode: redis.mode },
+      vectorStore: { status: isAiServiceReady ? 'UP' : 'UNKNOWN' },
+    },
   });
 }

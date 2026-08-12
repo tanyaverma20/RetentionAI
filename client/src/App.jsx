@@ -2,6 +2,7 @@ import React, { Suspense, lazy, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
+import ErrorBoundary from './components/ErrorBoundary';
 import BaseLayout from './layouts/BaseLayout';
 import DashboardLayout from './layouts/DashboardLayout';
 import Home from './pages/Home';
@@ -64,8 +65,9 @@ export default function App() {
   }, [dispatch, accessToken]);
 
   return (
-    <Suspense fallback={<RouteFallback />}>
-      <Routes>
+    <ErrorBoundary>
+      <Suspense fallback={<RouteFallback />}>
+        <Routes>
         <Route element={<BaseLayout />}>
           {/* Public Routes */}
           <Route index element={<Home />} />
@@ -121,5 +123,6 @@ export default function App() {
         </Route>
       </Routes>
     </Suspense>
+  </ErrorBoundary>
   );
 }

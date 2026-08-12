@@ -1,11 +1,13 @@
 let mongoServer;
 let MONGODB_URI = process.env.AUTH_TEST_MONGODB_URI || process.env.MONGODB_URI;
-try {
-  const { MongoMemoryServer } = await import('mongodb-memory-server');
-  mongoServer = await MongoMemoryServer.create({ instance: { dbName: `test_${Date.now()}` } });
-  MONGODB_URI = mongoServer.getUri();
-} catch (err) {
-  // Fall back to process.env MONGODB_URI
+if (!MONGODB_URI) {
+  try {
+    const { MongoMemoryServer } = await import('mongodb-memory-server');
+    mongoServer = await MongoMemoryServer.create({ instance: { dbName: `test_${Date.now()}` } });
+    MONGODB_URI = mongoServer.getUri();
+  } catch (err) {
+    // Fall back to process.env MONGODB_URI
+  }
 }
 
 process.env.NODE_ENV = 'test';

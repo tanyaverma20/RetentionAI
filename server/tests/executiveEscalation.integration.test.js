@@ -168,6 +168,8 @@ test.describe('Prompt 8 — Executive Escalations, Closed-Loop Outcomes & Audit 
     await Department.deleteMany({ organizationId: { $in: [orgAId, orgBId] } });
     await User.deleteMany({ organizationId: { $in: [orgAId, orgBId] } });
     await Organization.deleteMany({ _id: { $in: [orgAId, orgBId] } });
+    await mongoose.disconnect();
+    if (mongoServer) await mongoServer.stop();
   });
 
   test('1. Executive RBAC: HR_MANAGER and EMPLOYEE cannot access Executive Dashboard (403 Forbidden)', async () => {

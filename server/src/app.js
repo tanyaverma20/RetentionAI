@@ -11,6 +11,7 @@ import { createOriginMatcher } from './config/corsOrigins.js';
 import { AppError } from './errors/AppError.js';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler.js';
 import { requestId } from './middlewares/requestId.js';
+import { correlationIdMiddleware } from './middlewares/correlationId.js';
 import { metricsMiddleware } from './middlewares/metrics.js';
 import { requestLoggingMiddleware } from './middlewares/requestLogging.js';
 import { sanitizeInput } from './middlewares/sanitizeInput.js';
@@ -45,6 +46,7 @@ import governanceRouter from './routes/governanceRoutes.js';
 export const app = express();
 
 app.use(requestId);
+app.use(correlationIdMiddleware);
 app.use(metricsMiddleware);
 app.use(requestLoggingMiddleware);
 const strictHelmet = helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } });
@@ -76,7 +78,8 @@ app.use(
     // (the CORS preflight rejects PUT before the request body is even
     // sent), which is why it wasn't caught by same-origin/curl testing.
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-    allowedHeaders: ['Authorization', 'Content-Type', 'X-Request-Id'],
+    allowedHeaders: ['Authorization', 'Content-Type', 'X-Request-Id', 'X-Correlation-ID'],
+    exposedHeaders: ['X-Request-Id', 'X-Correlation-ID'],
   }),
 );
 app.use(compression());

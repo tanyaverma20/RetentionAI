@@ -1,7 +1,10 @@
-import { MongoMemoryServer } from 'mongodb-memory-server';
-
-const mongoServer = await MongoMemoryServer.create();
-const MONGODB_URI = mongoServer.getUri();
+let mongoServer;
+let MONGODB_URI = process.env.AUTH_TEST_MONGODB_URI || process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  const { MongoMemoryServer } = await import('mongodb-memory-server');
+  mongoServer = await MongoMemoryServer.create();
+  MONGODB_URI = mongoServer.getUri();
+}
 
 process.env.NODE_ENV = 'test';
 process.env.MONGODB_URI = MONGODB_URI;

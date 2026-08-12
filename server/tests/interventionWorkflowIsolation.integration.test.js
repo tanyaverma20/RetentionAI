@@ -157,6 +157,7 @@ test.describe('Prompt 7 — Actionable Interventions, Workflow Automation & Safe
     await User.deleteMany({ _id: { $in: [userCreatorId, userApproverId] } });
     await Organization.deleteMany({ _id: { $in: [orgAId, orgBId] } });
     await mongoose.disconnect();
+    if (mongoServer) await mongoServer.stop();
   });
 
   test('1. Human-in-the-Loop & Decision Conversion: Creates PROPOSED intervention with AI Evidence Snapshot', async () => {
