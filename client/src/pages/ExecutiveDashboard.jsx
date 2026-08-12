@@ -59,6 +59,7 @@ export default function ExecutiveDashboard() {
   const [roi, setRoi] = useState(null);
   const [forecast, setForecast] = useState(null);
   const [alerts, setAlerts] = useState([]);
+  const [alertStatusFilter, setAlertStatusFilter] = useState('OPEN');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [downloading, setDownloading] = useState('');
@@ -75,7 +76,7 @@ export default function ExecutiveDashboard() {
         executiveService.getInterventionAnalytics(filter),
         executiveService.getRoiAnalytics(filter),
         executiveService.getForecast(filter),
-        executiveService.listAlerts('OPEN'),
+        executiveService.listAlerts(alertStatusFilter),
       ]);
       setDashboard(d);
       setInsights(i);
@@ -107,10 +108,14 @@ export default function ExecutiveDashboard() {
     setAlerts(a);
   };
 
-  const handleAlertAction = async (id, action) => {
-    if (action === 'dismiss') await executiveService.dismissAlert(id);
-    else if (action === 'review') await executiveService.reviewAlert(id);
-    setAlerts(await executiveService.listAlerts('OPEN'));
+  const handleAlertTransition = async (id, status) => {
+    await executiveService.transitionAlert(id, status);
+    setAlerts(await executiveService.listAlerts(alertStatusFilter));
+  };
+
+  const handleAlertStatusFilterChange = async (status) => {
+    setAlertStatusFilter(status);
+    setAlerts(await executiveService.listAlerts(status));
   };
 
   const handleDownload = async (format) => {
@@ -400,22 +405,70 @@ export default function ExecutiveDashboard() {
         </div>
       </SectionCard>
 
-      {/* Alerts */}
+      {/* Executive Alerts */}
       <SectionCard title="Executive Alerts" icon="🚨">
-        <div className="flex justify-end mb-3">
-          <button onClick={handleGenerateAlerts} className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg">Scan for New Alerts</button>
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+          <div className="flex gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-100">
+            {['OPEN', 'ACKNOWLEDGED', 'IN_REVIEW', 'RESOLVED', 'DISMISSED'].map((st) => (
+              <button
+                key={st}
+                onClick={() => handleAlertStatusFilterChange(st)}
+                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-colors ${
+                  alertStatusFilter === st ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                {st.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+          <button onClick={handleGenerateAlerts} className="px-3 py-1.5 text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl shadow-sm">
+            ⚡ Scan SLA & Risk Alerts
+          </button>
         </div>
-        <div className="space-y-2">
-          {alerts.length === 0 && <p className="text-center text-xs text-slate-400 italic py-6">No open alerts.</p>}
+
+        <div className="space-y-3">
+          {alerts.length === 0 && (
+            <p className="text-center text-xs text-slate-400 italic py-8">No {alertStatusFilter.toLowerCase().replace('_', ' ')} alerts found.</p>
+          )}
           {alerts.map((alert) => (
-            <div key={alert._id} className={`flex items-center justify-between p-3 rounded-xl border ${SEVERITY_STYLES[alert.severity] || SEVERITY_STYLES.LOW}`}>
-              <div>
-                <div className="text-xs font-bold">{alert.title}</div>
-                <div className="text-[10px] opacity-80">{alert.description}</div>
+            <div key={alert._id} className={`p-4 rounded-2xl border ${SEVERITY_STYLES[alert.severity] || SEVERITY_STYLES.LOW} flex flex-col md:flex-row md:items-center justify-between gap-3`}>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-bold">{alert.title}</span>
+                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-white/60 border uppercase tracking-wider">{alert.severity}</span>
+                  <span className="px-2 py-0.5 text-[10px] font-semibold rounded-md bg-slate-100 text-slate-600 border">{alert.status}</span>
+                  {alert.alertType === 'SLA_BREACH_ESCALATION' && (
+                    <span className="px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-100 text-rose-700 border border-rose-200">SLA BREACH</span>
+                  )}
+                </div>
+                <div className="text-xs opacity-90">{alert.description}</div>
+                {alert.interventionId && (
+                  <div className="text-[10px] text-indigo-600 font-semibold mt-1">
+                    Linked Intervention: {alert.interventionId.title || alert.interventionId._id} ({alert.interventionId.status})
+                  </div>
+                )}
               </div>
-              <div className="flex gap-2">
-                <button onClick={() => handleAlertAction(alert._id, 'review')} className="px-2 py-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 rounded-lg">Mark Reviewed</button>
-                <button onClick={() => handleAlertAction(alert._id, 'dismiss')} className="px-2 py-1 text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 rounded-lg">Dismiss</button>
+
+              <div className="flex items-center gap-2 flex-wrap">
+                {alert.status === 'OPEN' && (
+                  <>
+                    <button onClick={() => handleAlertTransition(alert._id, 'ACKNOWLEDGED')} className="px-2.5 py-1 text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-slate-700">Acknowledge</button>
+                    <button onClick={() => handleAlertTransition(alert._id, 'IN_REVIEW')} className="px-2.5 py-1 text-xs font-semibold bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg text-indigo-700">Set In Review</button>
+                    <button onClick={() => handleAlertTransition(alert._id, 'DISMISSED')} className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600">Dismiss</button>
+                  </>
+                )}
+                {alert.status === 'ACKNOWLEDGED' && (
+                  <>
+                    <button onClick={() => handleAlertTransition(alert._id, 'IN_REVIEW')} className="px-2.5 py-1 text-xs font-semibold bg-indigo-50 border border-indigo-200 hover:bg-indigo-100 rounded-lg text-indigo-700">Set In Review</button>
+                    <button onClick={() => handleAlertTransition(alert._id, 'RESOLVED')} className="px-2.5 py-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white">Resolve</button>
+                  </>
+                )}
+                {alert.status === 'IN_REVIEW' && (
+                  <button onClick={() => handleAlertTransition(alert._id, 'RESOLVED')} className="px-2.5 py-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 rounded-lg text-white">Resolve</button>
+                )}
+                {(alert.status === 'RESOLVED' || alert.status === 'DISMISSED') && (
+                  <button onClick={() => handleAlertTransition(alert._id, 'OPEN')} className="px-2.5 py-1 text-xs font-semibold bg-slate-100 hover:bg-slate-200 rounded-lg text-slate-600">Reopen</button>
+                )}
               </div>
             </div>
           ))}

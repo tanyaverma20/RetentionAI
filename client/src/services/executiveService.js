@@ -62,6 +62,11 @@ export const executiveService = {
     const response = await api.patch(`/executive/alerts/${alertId}/assign`, { assignedToUserId });
     return response.data.data;
   },
+
+  async transitionAlert(alertId, status, note = '') {
+    const response = await api.patch(`/executive/alerts/${alertId}/transition`, { status, note });
+    return response.data.data;
+  },
 };
 
 export default executiveService;

@@ -21,6 +21,7 @@ executiveRouter.get('/reports/:format', executiveController.exportReport);
 
 executiveRouter.get('/alerts', executiveController.listAlerts);
 executiveRouter.post('/alerts/generate', executiveController.generateAlerts);
+executiveRouter.patch('/alerts/:id/transition', executiveController.transitionAlert);
 executiveRouter.patch('/alerts/:id/dismiss', executiveController.dismissAlert);
 executiveRouter.patch('/alerts/:id/review', executiveController.reviewAlert);
 executiveRouter.patch('/alerts/:id/assign', executiveController.assignAlert);

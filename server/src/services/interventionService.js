@@ -1,11 +1,13 @@
 import crypto from 'crypto';
 import { Intervention, INTERVENTION_STATUSES, ALLOWED_TRANSITIONS } from '../models/Intervention.js';
 import { Employee } from '../models/Employee.js';
+import { Prediction } from '../models/Prediction.js';
 import { AppError } from '../errors/AppError.js';
 import { recordAudit } from './auditService.js';
 import { logger } from '../utils/logger.js';
 import { createChain, getByEntity, resolveChainRoles } from './approvalService.js';
 import { notify } from './notificationService.js';
+import { resolveAlertsForIntervention } from './executiveService.js';
 
 function computeSlaStatus(dueDate, status) {
   if (status === 'COMPLETED') return 'COMPLETED';
@@ -209,19 +211,50 @@ async function transition(
 
   if (targetStatus === 'COMPLETED') {
     updateFields.completedAt = new Date();
-    if (typeof currentRisk === 'number') {
-      updateFields.currentRisk = currentRisk;
-      updateFields.riskDelta = (intervention.baselineRisk ?? currentRisk) - currentRisk;
+
+    // Baseline risk must NEVER be recomputed from current prediction
+    const baselineRisk = intervention.baselineRisk != null
+      ? intervention.baselineRisk
+      : (intervention.aiEvidenceSnapshot?.riskScore != null ? intervention.aiEvidenceSnapshot.riskScore : 0.50);
+
+    // Retrieve current risk: use explicit parameter if provided, otherwise fetch latest prediction
+    let evaluatedCurrentRisk = typeof currentRisk === 'number' ? currentRisk : null;
+    if (evaluatedCurrentRisk == null) {
+      const latestPred = await Prediction.findOne({ employeeId: intervention.employeeId }).sort({ predictionDate: -1 }).lean();
+      evaluatedCurrentRisk = latestPred ? (latestPred.riskScore ?? 0.50) : baselineRisk;
     }
-    if (typeof actualCost === 'number') updateFields.actualCost = actualCost;
-    if (typeof employeeRetained === 'boolean') updateFields.employeeRetained = employeeRetained;
+
+    const calculatedRiskDelta = Number((baselineRisk - evaluatedCurrentRisk).toFixed(4));
+    updateFields.baselineRisk = baselineRisk;
+    updateFields.currentRisk = evaluatedCurrentRisk;
+    updateFields.riskDelta = calculatedRiskDelta;
+
+    // Retained status & salary lookup
+    const emp = await Employee.findById(intervention.employeeId).lean();
+    let isRetained = typeof employeeRetained === 'boolean' ? employeeRetained : null;
+    if (isRetained == null) {
+      isRetained = Boolean(emp && emp.status === 'ACTIVE' && evaluatedCurrentRisk < 0.50);
+    }
+    updateFields.employeeRetained = isRetained;
+
+    const actualCostVal = typeof actualCost === 'number' ? actualCost : (intervention.actualCost || intervention.estimatedCost || 0);
+    updateFields.actualCost = actualCostVal;
     if (outcomeNotes) updateFields.outcomeNotes = outcomeNotes;
 
-    // Compute ROI if costs and risk reduction exist
-    if (updateFields.actualCost > 0 && typeof updateFields.riskDelta === 'number') {
-      const estimatedSavings = updateFields.riskDelta * 50000; // estimated replacement cost savings
-      updateFields.roiPercentage = Math.round(((estimatedSavings - updateFields.actualCost) / updateFields.actualCost) * 100);
+    // Explicit ROI Formula
+    const salary = emp?.salary || 60000;
+    const retentionBenefit = isRetained ? Math.round(salary * 0.50 + 4700) : 0;
+    const roiAmount = retentionBenefit - actualCostVal;
+
+    let roiPct = 0;
+    if (actualCostVal > 0) {
+      roiPct = Number(((roiAmount / actualCostVal) * 100).toFixed(2));
+    } else if (roiAmount > 0) {
+      roiPct = 100.00;
+    } else {
+      roiPct = 0.00;
     }
+    updateFields.roiPercentage = roiPct;
   }
 
   if (targetStatus === 'CANCELLED') {
@@ -236,7 +269,7 @@ async function transition(
     action: `TRANSITION_TO_${targetStatus}`,
   };
 
-  // Concurrency-safe atomic transition (Safeguard 4)
+  // Concurrency-safe atomic transition
   const updatedIntervention = await Intervention.findOneAndUpdate(
     { _id: interventionId, organizationId, status: intervention.status },
     {
@@ -250,11 +283,16 @@ async function transition(
     throw new AppError(409, 'CONCURRENCY_CONFLICT', 'Intervention status was modified concurrently by another request.');
   }
 
+  // Auto-resolve associated executive SLA alerts when terminal status is reached
+  if (['COMPLETED', 'CANCELLED', 'REJECTED'].includes(targetStatus)) {
+    await resolveAlertsForIntervention(organizationId, interventionId, userId, `Intervention ${targetStatus.toLowerCase()}`);
+  }
+
   await recordAudit(organizationId, 'INTERVENTION_STATUS_CHANGED', userId, {
     entityType: 'INTERVENTION',
     entityId: updatedIntervention._id,
     changes: { old: intervention.status, new: targetStatus },
-    context: { note },
+    context: { note, riskDelta: updateFields.riskDelta, roiPercentage: updateFields.roiPercentage },
   });
 
   logger.info('workflow_event', {

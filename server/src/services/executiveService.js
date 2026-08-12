@@ -26,6 +26,7 @@
  *   interval from the regression's residual error — not a new ML model.
  */
 
+import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { Employee } from '../models/Employee.js';
 import { Decision } from '../models/Decision.js';
@@ -33,7 +34,9 @@ import { Prediction } from '../models/Prediction.js';
 import { Attendance } from '../models/Attendance.js';
 import { PromotionHistory } from '../models/PromotionHistory.js';
 import { Performance } from '../models/Performance.js';
-import { ExecutiveAlert } from '../models/ExecutiveAlert.js';
+import { ExecutiveAlert, ALLOWED_ALERT_TRANSITIONS } from '../models/ExecutiveAlert.js';
+import { Intervention } from '../models/Intervention.js';
+import { recordAudit } from './auditService.js';
 import { AppError } from '../errors/AppError.js';
 import { decisionService } from './decisionService.js';
 import { employeeIntelligenceService } from './employeeIntelligenceService.js';
@@ -574,11 +577,11 @@ const ALERT_RULES = [
 ];
 
 /**
- * Scans current rollups and upserts OPEN alerts for any newly-matching
- * condition (idempotent by (type, department, OPEN status) — re-running
- * this does not create duplicate alerts for a still-ongoing issue).
+ * Scans current rollups and active interventions for SLA breaches.
+ * Uses deterministic idempotencyKey + unique index protection for concurrency safety.
  */
 export async function generateAlerts(organizationId, filter = {}) {
+  const orgOid = toOid(organizationId);
   const employeeIds = await execRepo.resolveScopedEmployeeIds(organizationId, filter);
   const departmentHealth = await execRepo.getDepartmentHealth(organizationId, employeeIds);
   const companyAvgRisk = average(departmentHealth.map((d) => d.avgRiskScore)) || 0;
@@ -589,33 +592,129 @@ export async function generateAlerts(organizationId, filter = {}) {
     for (const rule of ALERT_RULES) {
       if (!rule.check(dept, companyAvgRisk)) continue;
       const built = rule.build(dept);
-      const existing = await ExecutiveAlert.findOne({
-        organizationId: toOid(organizationId),
-        alertType: rule.type,
-        departmentId: dept.departmentId,
-        status: 'OPEN',
-      });
-      if (existing) continue; // already alerted and unresolved — don't duplicate
+      const idempotencyKey = crypto
+        .createHash('sha256')
+        .update(`${organizationId}_${rule.type}_${dept.departmentId}_v1`)
+        .digest('hex');
 
-      const alert = await ExecutiveAlert.create({
-        organizationId: toOid(organizationId),
-        alertType: rule.type,
-        severity: built.severity,
-        title: built.title,
-        description: built.description,
-        departmentId: dept.departmentId,
-        evidence: dept,
-      });
-      created.push(alert);
+      const existing = await ExecutiveAlert.findOne({ organizationId: orgOid, idempotencyKey });
+      if (existing) {
+        created.push(existing);
+        continue;
+      }
+
+      try {
+        const alert = await ExecutiveAlert.create({
+          organizationId: orgOid,
+          alertType: rule.type,
+          severity: built.severity,
+          title: built.title,
+          description: built.description,
+          departmentId: dept.departmentId,
+          idempotencyKey,
+          evidence: dept,
+          status: 'OPEN',
+          statusHistory: [{ status: 'OPEN', action: 'SYSTEM_ALERT_GENERATED', note: 'Threshold rule breached' }],
+        });
+        await recordAudit(organizationId, 'EXECUTIVE_ALERT_GENERATED', 'SYSTEM_SLA_ENGINE', {
+          entityType: 'EXECUTIVE_ALERT',
+          entityId: alert._id,
+          context: { alertType: rule.type, severity: built.severity, departmentId: dept.departmentId },
+        });
+        created.push(alert);
+      } catch (err) {
+        if (err.code === 11000) {
+          const found = await ExecutiveAlert.findOne({ organizationId: orgOid, idempotencyKey });
+          if (found) created.push(found);
+        } else {
+          throw err;
+        }
+      }
     }
   }
 
-  // Repeated Manager Complaints — flags a manager whose team has 2+ OPEN
-  // department-scoped alerts is out of scope for a single-manager signal
-  // with current data; PROMOTION_DELAY / POLICY_VIOLATION_TREND require
-  // signals (policy violation flags, complaint categorization) this schema
-  // doesn't track, so they are intentionally not fabricated here — see
-  // remaining technical debt in the final Sprint 8 report.
+  // SLA Breach Escalation Detection for Active Interventions
+  const activeInterventions = await Intervention.find({
+    organizationId: orgOid,
+    employeeId: { $in: employeeIds },
+    status: { $in: ['PROPOSED', 'DRAFT', 'PENDING_APPROVAL', 'APPROVED', 'ASSIGNED', 'IN_PROGRESS'] },
+  }).lean();
+
+  const now = Date.now();
+  for (const intervention of activeInterventions) {
+    const ageHours = (now - new Date(intervention.createdAt).getTime()) / (1000 * 60 * 60);
+    const isOverdue = intervention.dueDate ? new Date(intervention.dueDate).getTime() < now : ageHours > 48;
+    const isHighRisk = (intervention.baselineRisk != null ? intervention.baselineRisk : 0) >= 0.70;
+    const isApprovalStalled = ['PROPOSED', 'PENDING_APPROVAL'].includes(intervention.status) && ageHours > 48;
+
+    let isBreached = false;
+    let severity = 'HIGH';
+
+    if (isHighRisk && (isOverdue || isApprovalStalled)) {
+      isBreached = true;
+      severity = 'CRITICAL';
+    } else if (isApprovalStalled) {
+      isBreached = true;
+      severity = 'CRITICAL';
+    } else if (isOverdue && ageHours > 72) {
+      isBreached = true;
+      severity = 'CRITICAL';
+    } else if (isOverdue) {
+      isBreached = true;
+      severity = 'HIGH';
+    }
+
+    if (!isBreached) continue;
+
+    const idempotencyKey = crypto
+      .createHash('sha256')
+      .update(`${organizationId}_${intervention._id}_SLA_BREACH_ESCALATION_${severity}_v1`)
+      .digest('hex');
+
+    const existing = await ExecutiveAlert.findOne({ organizationId: orgOid, idempotencyKey });
+    if (existing) {
+      created.push(existing);
+      continue;
+    }
+
+    try {
+      const alert = await ExecutiveAlert.create({
+        organizationId: orgOid,
+        alertType: 'SLA_BREACH_ESCALATION',
+        severity,
+        title: `SLA Breach Escalation: ${intervention.title}`,
+        description: `Intervention "${intervention.title}" (${intervention.status}) has breached SLA targets.`,
+        departmentId: intervention.departmentId,
+        employeeId: intervention.employeeId,
+        interventionId: intervention._id,
+        idempotencyKey,
+        evidence: {
+          interventionId: intervention._id,
+          status: intervention.status,
+          priority: intervention.priority,
+          baselineRisk: intervention.baselineRisk,
+          dueDate: intervention.dueDate,
+          createdAt: intervention.createdAt,
+          ageHours: Math.round(ageHours),
+        },
+        status: 'OPEN',
+        statusHistory: [{ status: 'OPEN', action: 'SYSTEM_SLA_ESCALATED', note: `SLA breached with severity ${severity}` }],
+      });
+      await recordAudit(organizationId, 'EXECUTIVE_ALERT_GENERATED', 'SYSTEM_SLA_ENGINE', {
+        entityType: 'EXECUTIVE_ALERT',
+        entityId: alert._id,
+        context: { alertType: 'SLA_BREACH_ESCALATION', severity, interventionId: intervention._id },
+      });
+      created.push(alert);
+    } catch (err) {
+      if (err.code === 11000) {
+        const found = await ExecutiveAlert.findOne({ organizationId: orgOid, idempotencyKey });
+        if (found) created.push(found);
+      } else {
+        throw err;
+      }
+    }
+  }
 
   return created;
 }
@@ -623,37 +722,112 @@ export async function generateAlerts(organizationId, filter = {}) {
 export async function listAlerts(organizationId, { status } = {}) {
   const filter = { organizationId: toOid(organizationId) };
   if (status) filter.status = status;
-  return ExecutiveAlert.find(filter).sort({ severity: -1, generatedAt: -1 }).populate('departmentId', 'name').populate('assignedToUserId', 'name email').lean();
+  return ExecutiveAlert.find(filter)
+    .sort({ severity: -1, generatedAt: -1 })
+    .populate('departmentId', 'name')
+    .populate('assignedToUserId', 'name email')
+    .populate('interventionId', 'title status priority dueDate')
+    .lean();
 }
 
-// Prompt 1, Part 9/11 — previously unscoped: any org's authenticated user
-// could dismiss/review/reassign another org's executive alert by ID alone.
-// organizationId now required and comes from the authenticated caller
-// (Part 10); a mismatch is reported as 404 (Part 14).
-export async function dismissAlert(alertId, organizationId, userId) {
-  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId });
+export async function transitionAlertState(alertId, organizationId, targetStatus, userId, note = '') {
+  const orgOid = toOid(organizationId);
+  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId: orgOid });
   if (!alert) throw new AppError(404, 'ALERT_NOT_FOUND', 'Alert not found.');
-  alert.status = 'DISMISSED';
-  alert.dismissedByUserId = userId;
-  alert.dismissedAt = new Date();
+
+  const currentStatus = alert.status;
+  if (currentStatus === targetStatus) return alert;
+
+  const allowed = ALLOWED_ALERT_TRANSITIONS[currentStatus] || [];
+  if (!allowed.includes(targetStatus)) {
+    throw new AppError(
+      400,
+      'INVALID_STATE_TRANSITION',
+      `Cannot transition executive alert from ${currentStatus} to ${targetStatus}. Allowed target states: ${allowed.join(', ') || 'none'}.`,
+    );
+  }
+
+  alert.status = targetStatus;
+  alert.statusHistory.push({
+    status: targetStatus,
+    changedBy: userId ? toOid(userId) : null,
+    changedAt: new Date(),
+    note: note || '',
+    action: `TRANSITIONED_TO_${targetStatus}`,
+  });
+
+  const now = new Date();
+  if (targetStatus === 'ACKNOWLEDGED' || targetStatus === 'REVIEWED') {
+    alert.acknowledgedByUserId = userId ? toOid(userId) : null;
+    alert.acknowledgedAt = now;
+    alert.reviewedByUserId = userId ? toOid(userId) : null;
+    alert.reviewedAt = now;
+  } else if (targetStatus === 'RESOLVED') {
+    alert.resolvedByUserId = userId ? toOid(userId) : null;
+    alert.resolvedAt = now;
+    alert.resolutionNote = note || 'Breach resolved';
+  } else if (targetStatus === 'DISMISSED') {
+    alert.dismissedByUserId = userId ? toOid(userId) : null;
+    alert.dismissedAt = now;
+  }
+
   await alert.save();
+
+  await recordAudit(organizationId, 'EXECUTIVE_ALERT_TRANSITIONED', userId || 'SYSTEM', {
+    entityType: 'EXECUTIVE_ALERT',
+    entityId: alert._id,
+    previousStatus: currentStatus,
+    newStatus: targetStatus,
+    context: { note },
+  });
+
   return alert;
+}
+
+export async function resolveAlertsForIntervention(organizationId, interventionId, userId, note = 'Intervention breach resolved') {
+  const orgOid = toOid(organizationId);
+  const alerts = await ExecutiveAlert.find({
+    organizationId: orgOid,
+    interventionId: toOid(interventionId),
+    status: { $in: ['OPEN', 'ACKNOWLEDGED', 'IN_REVIEW', 'REVIEWED'] },
+  });
+
+  for (const alert of alerts) {
+    alert.status = 'RESOLVED';
+    alert.resolvedByUserId = userId ? toOid(userId) : null;
+    alert.resolvedAt = new Date();
+    alert.resolutionNote = note;
+    alert.statusHistory.push({
+      status: 'RESOLVED',
+      changedBy: userId ? toOid(userId) : null,
+      changedAt: new Date(),
+      note,
+      action: 'AUTO_RESOLVED_ON_INTERVENTION_COMPLETION',
+    });
+    await alert.save();
+    await recordAudit(organizationId, 'EXECUTIVE_ALERT_TRANSITIONED', userId || 'SYSTEM_SLA_ENGINE', {
+      entityType: 'EXECUTIVE_ALERT',
+      entityId: alert._id,
+      previousStatus: alert.status,
+      newStatus: 'RESOLVED',
+      context: { note, interventionId },
+    });
+  }
+  return alerts;
+}
+
+export async function dismissAlert(alertId, organizationId, userId) {
+  return transitionAlertState(alertId, organizationId, 'DISMISSED', userId, 'Dismissed by user');
 }
 
 export async function markAlertReviewed(alertId, organizationId, userId) {
-  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId });
-  if (!alert) throw new AppError(404, 'ALERT_NOT_FOUND', 'Alert not found.');
-  alert.status = 'REVIEWED';
-  alert.reviewedByUserId = userId;
-  alert.reviewedAt = new Date();
-  await alert.save();
-  return alert;
+  return transitionAlertState(alertId, organizationId, 'REVIEWED', userId, 'Reviewed by user');
 }
 
 export async function assignAlertOwner(alertId, organizationId, assignedToUserId) {
-  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId });
+  const alert = await ExecutiveAlert.findOne({ _id: alertId, organizationId: toOid(organizationId) });
   if (!alert) throw new AppError(404, 'ALERT_NOT_FOUND', 'Alert not found.');
-  alert.assignedToUserId = assignedToUserId;
+  alert.assignedToUserId = toOid(assignedToUserId);
   await alert.save();
   return alert;
 }

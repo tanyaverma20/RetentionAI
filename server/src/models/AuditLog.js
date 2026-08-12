@@ -16,6 +16,9 @@ const AUDIT_ACTIONS = [
   'EXECUTIVE_REPORT_GENERATED',
   'EXECUTIVE_FORECAST_GENERATED',
   'EXECUTIVE_ALERT_ACKNOWLEDGED',
+  'EXECUTIVE_ALERT_TRANSITIONED',
+  'EXECUTIVE_ALERT_CREATED',
+  'EXECUTIVE_ALERT_GENERATED',
   // Sprint 9 — AI pipeline events (Node-side, recorded where Node persists the result)
   'PREDICTION_GENERATED',
   'SHAP_GENERATED',
@@ -46,7 +49,7 @@ const auditLogSchema = new mongoose.Schema(
   {
     organizationId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
     action: { type: String, enum: AUDIT_ACTIONS, required: true, index: true },
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: mongoose.Schema.Types.Mixed, required: false },
     entityType: { type: String, default: null, index: true },
     entityId: { type: mongoose.Schema.Types.ObjectId, default: null, index: true },
     ip: { type: String, default: null },

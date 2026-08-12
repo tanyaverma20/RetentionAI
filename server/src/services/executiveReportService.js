@@ -239,6 +239,20 @@ export async function generateCsvReport(organizationId, filter = {}) {
     reportGeneratedAt: data.generatedAt.toISOString(),
   }));
 
-  const parser = new CsvParser();
+  const parser = new CsvParser({
+    fields: [
+      'department',
+      'location',
+      'headcount',
+      'avgRiskScorePct',
+      'highRiskCount',
+      'avgBurnoutScorePct',
+      'positiveSentimentRatePct',
+      'negativeSentimentRatePct',
+      'acceptanceRatePct',
+      'companyHealthScore',
+      'reportGeneratedAt',
+    ],
+  });
   return parser.parse(rows);
 }

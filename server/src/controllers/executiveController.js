@@ -163,3 +163,17 @@ export async function assignAlert(req, res, next) {
     return next(error);
   }
 }
+
+export async function transitionAlert(req, res, next) {
+  try {
+    const orgId = req.auth.organizationId;
+    const { status, note } = req.body || {};
+    if (!status) {
+      throw new AppError(422, 'VALIDATION_ERROR', 'status is required for alert transition.');
+    }
+    const alert = await executiveService.transitionAlertState(req.params.id, orgId, status, req.auth.userId, note);
+    return sendSuccess(res, 200, alert, req.requestId);
+  } catch (error) {
+    return next(error);
+  }
+}
