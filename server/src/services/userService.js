@@ -168,9 +168,21 @@ export async function assignUserRole(userId, newRoleId, organizationId) {
   if (!user) throw new AppError(404, 'NOT_FOUND', 'User not found.');
   if (!role) throw new AppError(422, 'INVALID_ROLE_SCOPE', 'The selected role does not exist.');
 
-  user.roleId = role.id;
-  await updateUser(user);
-  return toUserResponse(user, role);
+  const currentRoleName = user.roleId?.name;
+  const currentRoleId = user.roleId?._id || user.roleId;
+
+  // Guard: If user is currently an ADMIN and changing to a non-ADMIN role, ensure they are not the last ADMIN
+  if (currentRoleName === 'ADMIN' && role.name !== 'ADMIN') {
+    const adminCount = await countUsersWithRole(currentRoleId, organizationId);
+    if (adminCount <= 1) {
+      throw new AppError(409, 'LAST_ADMIN', 'Cannot demote the last active administrator.');
+    }
+  }
+
+  await User.updateOne({ _id: user._id, organizationId }, { roleId: role._id });
+  await revokeAllRefreshTokensForUser(user.id);
+  const updatedUser = await findUserByIdInOrg(userId, organizationId);
+  return toUserResponse(updatedUser, role);
 }
 
 /**

@@ -19,6 +19,7 @@ const { Role } = await import('../src/models/Role.js');
 const { Department } = await import('../src/models/Department.js');
 const { Employee } = await import('../src/models/Employee.js');
 const { Prediction } = await import('../src/models/Prediction.js');
+const { PredictionHistory } = await import('../src/models/PredictionHistory.js');
 const { Decision } = await import('../src/models/Decision.js');
 const { AiTelemetry } = await import('../src/models/AiTelemetry.js');
 const { ModelDriftLog } = await import('../src/models/ModelDriftLog.js');
@@ -148,16 +149,22 @@ test.describe('Prompt 9 — AI Observability, Continuous Evaluation & Model Drif
 
     const scores = [0.15, 0.22, 0.45, 0.68, 0.78, 0.85];
     for (const score of scores) {
-      await Prediction.create({
+      await PredictionHistory.create({
         organizationId: orgAId,
         employeeId: testEmployee._id,
         modelId: 'catboost-v1.0.0',
         riskScore: score,
         riskLevel: score >= 0.7 ? 'HIGH' : (score >= 0.4 ? 'MEDIUM' : 'LOW'),
-        riskCategory: score >= 0.7 ? 'HIGH' : 'LOW',
-        predictionDate: new Date(),
+        runId: `run_${Date.now()}`,
       });
     }
+    await Prediction.create({
+      organizationId: orgAId,
+      employeeId: testEmployee._id,
+      modelId: 'catboost-v1.0.0',
+      riskScore: 0.85,
+      riskLevel: 'HIGH',
+    });
 
     testDecision = await Decision.create({
       organizationId: orgAId,

@@ -36,8 +36,12 @@ const importSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PROCESSING', 'COMPLETED', 'FAILED'],
-      default: 'PROCESSING',
+      enum: ['PREVIEW', 'PROCESSING', 'COMPLETED', 'FAILED'],
+      default: 'PREVIEW',
+    },
+    stagedData: {
+      type: mongoose.Schema.Types.Mixed,
+      default: [],
     },
     filename: {
       type: String,

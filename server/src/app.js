@@ -42,6 +42,10 @@ import { attachmentRouter } from './routes/attachmentRoutes.js';
 import { automationRouter } from './routes/automationRoutes.js';
 import observabilityRouter from './routes/observabilityRoutes.js';
 import governanceRouter from './routes/governanceRoutes.js';
+import { invitationRouter } from './routes/invitationRoutes.js';
+import { importRouter } from './routes/importRoutes.js';
+import { usageRouter } from './routes/usageRoutes.js';
+import { enforceActiveOrganization } from './middlewares/enforceActiveOrganization.js';
 
 export const app = express();
 
@@ -123,5 +127,9 @@ app.use('/api/v1/attachments', attachmentRouter);
 app.use('/api/v1/automation', automationRouter);
 app.use('/api/v1/observability', observabilityRouter);
 app.use('/api/v1/governance', governanceRouter);
+app.use('/api/v1/invitations', invitationRouter);
+app.use('/api/v1/imports', importRouter);
+app.use('/api/v1/usage', usageRouter);
+app.use(enforceActiveOrganization);
 app.use(notFoundHandler);
 app.use(errorHandler);

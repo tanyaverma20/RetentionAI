@@ -80,6 +80,19 @@ export async function authenticate(request, _response, next) {
       organizationId: user.organizationId?.toString() || DEFAULT_ORGANIZATION_ID,
     };
 
+    // Check tenant active status
+    const { Organization } = await import('../models/Organization.js');
+    const org = await Organization.findById(request.auth.organizationId).lean();
+    if (org && (org.deactivatedAt || org.status === 'CANCELED' || org.status === 'SUSPENDED')) {
+      if (!request.originalUrl.includes('/reactivate') && !request.originalUrl.includes('/deactivate')) {
+        throw new AppError(
+          403,
+          'ORGANIZATION_DEACTIVATED',
+          'Organization access has been suspended or deactivated. Contact system support.',
+        );
+      }
+    }
+
     return next();
   } catch (error) {
     if (error instanceof TokenExpiredError) {

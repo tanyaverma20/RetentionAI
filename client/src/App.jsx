@@ -39,6 +39,7 @@ const KnowledgeManagement = lazy(() => import('./pages/KnowledgeManagement'));
 const AiObservabilityPage = lazy(() => import('./pages/AiObservabilityPage'));
 const AiGovernancePage = lazy(() => import('./pages/AiGovernancePage'));
 const ManagerDashboard = lazy(() => import('./pages/ManagerDashboard'));
+const CustomerOpsCenter = lazy(() => import('./pages/CustomerOpsCenter'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
@@ -114,6 +115,7 @@ export default function App() {
             <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_DIRECTOR', 'CHRO']} />}>
               <Route element={<DashboardLayout />}>
                 <Route path="/audit" element={<AuditLogPage />} />
+                <Route path="/admin/operations" element={<CustomerOpsCenter />} />
               </Route>
             </Route>
           </Route>

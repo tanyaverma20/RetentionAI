@@ -64,6 +64,32 @@ const organizationSchema = new mongoose.Schema(
     // Plan ceiling, stored but not yet enforced (Phase 2 wires this in).
     employeeLimit: { type: Number, default: 50 },
     trialEndsAt: { type: Date },
+    settings: {
+      industry: { type: String, trim: true, default: '' },
+      timezone: { type: String, trim: true, default: 'UTC' },
+      allowedEmailDomains: [{ type: String, lowercase: true, trim: true }],
+    },
+    onboardingState: {
+      type: String,
+      enum: [
+        'ORGANIZATION_CREATED',
+        'ADMIN_CREATED',
+        'COMPANY_CONFIGURED',
+        'EMPLOYEES_IMPORTED',
+        'DATA_VALIDATED',
+        'AI_READY',
+        'FIRST_RISK_ANALYSIS',
+        'ONBOARDING_COMPLETED',
+      ],
+      default: 'ADMIN_CREATED',
+    },
+    onboardingMilestones: {
+      type: Map,
+      of: Date,
+      default: () => new Map([['ADMIN_CREATED', new Date()]]),
+    },
+    deactivatedAt: { type: Date, default: null },
+    deactivationReason: { type: String, default: null },
   },
   { timestamps: true },
 );
