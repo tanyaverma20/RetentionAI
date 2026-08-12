@@ -45,6 +45,7 @@ import governanceRouter from './routes/governanceRoutes.js';
 import { invitationRouter } from './routes/invitationRoutes.js';
 import { importRouter } from './routes/importRoutes.js';
 import { usageRouter } from './routes/usageRoutes.js';
+import billingRouter from './routes/billingRoutes.js';
 import { enforceActiveOrganization } from './middlewares/enforceActiveOrganization.js';
 
 export const app = express();
@@ -130,6 +131,7 @@ app.use('/api/v1/governance', governanceRouter);
 app.use('/api/v1/invitations', invitationRouter);
 app.use('/api/v1/imports', importRouter);
 app.use('/api/v1/usage', usageRouter);
+app.use('/api/v1/billing', billingRouter);
 app.use(enforceActiveOrganization);
 app.use(notFoundHandler);
 app.use(errorHandler);
