@@ -95,3 +95,18 @@ jobs:
         run: |
           cd client
           npm run build
+
+  docker-build-validation:
+    name: Docker Container Build Verification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Build Express Server Docker Image
+        run: |
+          docker build -t retentionai-server:test -f server/Dockerfile server
+
+      - name: Build React Client Docker Image
+        run: |
+          docker build -t retentionai-client:test -f client/Dockerfile client
