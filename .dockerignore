@@ -29,6 +29,7 @@ deploy
 **/.ruff_cache
 **/catboost_info
 **/chroma_db
+!ai-service/chroma_db
 **/*.log
 
 # Secrets never belong in a build context, even transiently.

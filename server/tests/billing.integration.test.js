@@ -1,26 +1,63 @@
 /**
  * @file billing.integration.test.js
  * @description Comprehensive Prompt 13 integration test suite for Enterprise Billing, Subscription Lifecycle & Revenue Operations.
+ *
+ * Database isolation
+ * -------------------
+ * Found during a later audit (Prompt 14 Phase 0): this file previously used
+ * static top-level imports for `app.js`/`database.js`/every Mongoose model,
+ * which meant those modules — including `config/env.js`'s module-level read
+ * of `MONGODB_URI` — were already evaluated before this file's own `before()`
+ * hook could ever run, let alone override the connection target. In an
+ * environment where `MONGODB_URI` is the real production Atlas string (e.g.
+ * `server/.env`, as used by `npm test`), that meant this suite connected to
+ * and wrote real Organizations/Users/Subscriptions/Invoices/BillingEvents
+ * directly against production on every run.
+ *
+ * Fixed the same way `tests/organization.integration.test.js` and
+ * `tests/tenant-isolation-idor.integration.test.js` already do it: set safe
+ * env vars (preferring a `mongodb-memory-server` instance, or
+ * AUTH_TEST_MONGODB_URI if explicitly supplied) BEFORE dynamically
+ * importing anything that reads them. This file can no longer connect to
+ * production regardless of what `server/.env` contains.
  */
 
 import { describe, it, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import request from 'supertest';
 import crypto from 'crypto';
-import mongoose from 'mongoose';
 
-import { app } from '../src/app.js';
-import { connectDatabase, disconnectDatabase } from '../src/config/database.js';
-import { Organization } from '../src/models/Organization.js';
-import { User } from '../src/models/User.js';
-import { Role } from '../src/models/Role.js';
-import { Subscription } from '../src/models/Subscription.js';
-import { Invoice } from '../src/models/Invoice.js';
-import { BillingEvent } from '../src/models/BillingEvent.js';
-import { TenantEntitlement } from '../src/models/TenantEntitlement.js';
-import { AuditLog } from '../src/models/AuditLog.js';
-import { createAccessToken } from '../src/utils/tokens.js';
-import { hashPassword } from '../src/utils/password.js';
+let mongod;
+let databaseUri = process.env.AUTH_TEST_MONGODB_URI;
+
+if (!databaseUri) {
+  const { MongoMemoryServer } = await import('mongodb-memory-server');
+  mongod = await MongoMemoryServer.create();
+  databaseUri = mongod.getUri();
+}
+
+process.env.NODE_ENV = 'test';
+process.env.MONGODB_URI = databaseUri;
+process.env.MONGODB_DB_NAME = 'retentionai_billing_test';
+process.env.JWT_ACCESS_SECRET = 'test-access-secret-that-is-at-least-32-characters';
+process.env.JWT_REFRESH_SECRET = 'test-refresh-secret-that-is-at-least-32-characters';
+process.env.CORS_ORIGINS = 'http://localhost:5173';
+
+// Every dependency below reads env vars (directly or transitively, via
+// config/env.js) at import time — dynamically imported only after the
+// overrides above are in place, so none of it can ever see a real URI.
+const { default: request } = await import('supertest');
+const { app } = await import('../src/app.js');
+const { connectDatabase, disconnectDatabase } = await import('../src/config/database.js');
+const { Organization } = await import('../src/models/Organization.js');
+const { User } = await import('../src/models/User.js');
+const { Role } = await import('../src/models/Role.js');
+const { Subscription } = await import('../src/models/Subscription.js');
+const { Invoice } = await import('../src/models/Invoice.js');
+const { BillingEvent } = await import('../src/models/BillingEvent.js');
+const { TenantEntitlement } = await import('../src/models/TenantEntitlement.js');
+const { AuditLog } = await import('../src/models/AuditLog.js');
+const { createAccessToken } = await import('../src/utils/tokens.js');
+const { hashPassword } = await import('../src/utils/password.js');
 
 describe('Prompt 13 — Enterprise Billing, Subscription Lifecycle & Revenue Operations Integration Suite', () => {
   let orgA, orgB;
@@ -100,6 +137,7 @@ describe('Prompt 13 — Enterprise Billing, Subscription Lifecycle & Revenue Ope
       await Organization.deleteMany({ _id: { $in: [orgA._id, orgB._id] } });
     }
     await disconnectDatabase();
+    if (mongod) await mongod.stop();
   });
 
   it('1. Lazy provision FREE_TRIAL subscription for new organization', async () => {

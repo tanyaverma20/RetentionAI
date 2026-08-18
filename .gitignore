@@ -43,6 +43,7 @@ models/archive/*
 # bundle must be committed too, or the deployed service keeps serving the old
 # one. See the root Dockerfile (AI service, lite build).
 !models/active/attrition_model.joblib
+!ai-service/models/active/attrition_model.joblib
 *.log
 logs/
 chroma_data/

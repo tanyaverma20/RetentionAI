@@ -1,0 +1,16 @@
+steps:
+  # Build the container image remotely using Google Cloud Build
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'asia-south1-docker.pkg.dev/retentionai-prod-123456/retentionai-repo/retentionai-ai-service:latest'
+      - '-f'
+      - 'Dockerfile'
+      - '.'
+
+images:
+  - 'asia-south1-docker.pkg.dev/retentionai-prod-123456/retentionai-repo/retentionai-ai-service:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
