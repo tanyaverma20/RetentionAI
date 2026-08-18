@@ -69,8 +69,18 @@ export const getModelMetrics = async (req, res, next) => {
 
 export const getDashboardAnalytics = async (req, res, next) => {
   try {
-    const { counts, topHighRisk } = await aiService.getDashboardRiskCounts(req.auth.organizationId);
-    res.status(200).json({ success: true, data: { riskCounts: counts, topHighRisk } });
+    const { counts, topHighRisk, totalEmployees, predictedCount, pendingCount } =
+      await aiService.getDashboardRiskCounts(req.auth.organizationId);
+    res.status(200).json({
+      success: true,
+      data: {
+        riskCounts: counts,
+        topHighRisk,
+        totalEmployees,
+        predictedCount,
+        pendingCount,
+      },
+    });
   } catch (error) {
     next(new AppError(error.statusCode || 500, error.code || 'AI_DASHBOARD_FAILED', error.message));
   }

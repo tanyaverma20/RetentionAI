@@ -35,6 +35,7 @@ export default function Login() {
   }, [isAuthenticated, navigate, from]);
 
   const onSubmit = async (data) => {
+    if (isLoading) return;
     dispatch(clearError());
     const result = await dispatch(loginUser(data));
     if (loginUser.fulfilled.match(result)) {

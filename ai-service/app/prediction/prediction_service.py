@@ -192,7 +192,7 @@ class PredictionService:
                     "status": "SUCCESS"
                 }
                 await db["predictions"].update_one(
-                    {"employeeId": employee_oid},
+                    {"organizationId": org_oid, "employeeId": employee_oid},
                     {"$set": pred_doc},
                     upsert=True
                 )

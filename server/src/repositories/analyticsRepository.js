@@ -131,11 +131,39 @@ export async function getKpiSummary(filter = {}) {
       : Department.countDocuments({ organizationId: match.organizationId, isActive: true }),
   ]);
 
+  if (totalEmployees === 0) {
+    return {
+      totalEmployees: 0,
+      activeEmployees: 0,
+      departmentCount,
+      newHires30Days: 0,
+      attendanceToday: 0,
+      avgPerformance: 0,
+      promotionDue: 0,
+      trainingCompletion: 0,
+      employeesOnLeave: 0,
+      avgSatisfaction: 0,
+      totalFeedback: 0,
+      attritionRate: {
+        value: 0,
+        unit: '%',
+        trend: 'flat',
+        isPlaceholder: true,
+        label: 'Monthly Attrition Benchmark',
+      },
+      employeeSatisfaction: {
+        value: 0,
+        unit: '/ 10',
+        trend: 'flat',
+        isPlaceholder: true,
+        label: 'eNPS Index Score',
+      },
+    };
+  }
+
   // Calculated / placeholder ML parameters
   const terminatedCount = await Employee.countDocuments({ ...match, status: 'TERMINATED' });
-  const calculatedAttritionRate = totalEmployees > 0
-    ? Number(((terminatedCount / totalEmployees) * 100).toFixed(1))
-    : 3.5;
+  const calculatedAttritionRate = Number(((terminatedCount / totalEmployees) * 100).toFixed(1));
 
   // ── New HRMS KPIs ──
   const todayStart = new Date(now);
@@ -144,24 +172,27 @@ export async function getKpiSummary(filter = {}) {
   todayEnd.setHours(23, 59, 59, 999);
 
   const orgObjectId = match.organizationId;
+  const matchingEmployees = await Employee.find(match).select('_id').lean();
+  const employeeIds = matchingEmployees.map((e) => e._id);
 
   const [attendanceTodayCount, avgPerfResult, promotionDueCount, trainingCompletionResult, employeesOnLeave, avgSatResult, totalFeedbackCount] = await Promise.all([
     // Attendance today: count of PRESENT records for today
     Attendance.countDocuments({
       organizationId: orgObjectId,
+      employeeId: { $in: employeeIds },
       attendanceDate: { $gte: todayStart, $lte: todayEnd },
       attendanceStatus: 'PRESENT',
     }),
     // Average performance score across all reviews
     Performance.aggregate([
-      { $match: { organizationId: orgObjectId } },
+      { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
       { $group: { _id: null, avg: { $avg: '$performanceScore' } } },
     ]),
     // Promotion due: employees with promotionRecommendation = true
-    Performance.countDocuments({ organizationId: orgObjectId, promotionRecommendation: true }),
+    Performance.countDocuments({ organizationId: orgObjectId, employeeId: { $in: employeeIds }, promotionRecommendation: true }),
     // Training completion: count of distinct employees who completed at least 1 training
     TrainingHistory.aggregate([
-      { $match: { organizationId: orgObjectId } },
+      { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
       { $group: { _id: '$employeeId' } },
       { $count: 'trainedEmployees' },
     ]),
@@ -169,11 +200,11 @@ export async function getKpiSummary(filter = {}) {
     Employee.countDocuments({ ...match, status: 'ON_LEAVE' }),
     // Average satisfaction
     Survey.aggregate([
-      { $match: { organizationId: orgObjectId } },
+      { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
       { $group: { _id: null, avg: { $avg: '$jobSatisfaction' } } },
     ]),
     // Total feedback
-    EmployeeFeedback.countDocuments({ organizationId: orgObjectId }),
+    EmployeeFeedback.countDocuments({ organizationId: orgObjectId, employeeId: { $in: employeeIds } }),
   ]);
 
   const avgPerformance = avgPerfResult[0]?.avg
@@ -203,14 +234,14 @@ export async function getKpiSummary(filter = {}) {
       value: calculatedAttritionRate,
       unit: '%',
       trend: 'down',
-      isPlaceholder: true,
+      isPlaceholder: false,
       label: 'Monthly Attrition Benchmark',
     },
     employeeSatisfaction: {
-      value: 8.4,
+      value: avgSatisfactionResult,
       unit: '/ 10',
       trend: 'up',
-      isPlaceholder: true,
+      isPlaceholder: false,
       label: 'eNPS Index Score',
     },
   };
@@ -413,6 +444,7 @@ export async function getDemographicDistributions(filter = {}) {
  */
 export async function getMonthlyTrends(filter = {}) {
   const match = buildMatchFilter(filter);
+  const totalEmployees = await Employee.countDocuments(match);
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
   twelveMonthsAgo.setDate(1);
@@ -452,16 +484,16 @@ export async function getMonthlyTrends(filter = {}) {
       (r) => r._id.year === yr && r._id.month === m,
     );
 
-    // Placeholder simulated monthly attrition trend baseline
-    const simulatedAttrition = Math.max(0, Math.floor((matchHires?.hires || 2) * 0.3));
+    const hires = matchHires ? matchHires.hires : 0;
+    const simulatedAttrition = (totalEmployees > 0 && hires > 0) ? Math.max(0, Math.floor(hires * 0.3)) : 0;
 
     monthlyTrends.push({
       monthLabel: label,
       year: yr,
       month: m,
-      hires: matchHires ? matchHires.hires : 0,
+      hires,
       attrition: simulatedAttrition,
-      isPlaceholder: true,
+      isPlaceholder: totalEmployees === 0,
     });
   }
 
@@ -530,10 +562,24 @@ export async function getEmployeeInsights(filter = {}) {
  * Get HR specific metrics like Attendance Summary and Average Working Hours.
  */
 export async function getHrMetrics(filter = {}) {
+  const match = buildMatchFilter(filter);
+  const employees = await Employee.find(match).select('_id').lean();
+  const employeeIds = employees.map((e) => e._id);
+
+  if (employeeIds.length === 0) {
+    return {
+      attendance: { totalHours: 0, totalOvertime: 0, count: 0, presentCount: 0 },
+      performance: { avgScore: 0, promotionCount: 0 },
+      surveys: { avgSatisfaction: 0, avgEngagement: 0, count: 0 },
+      training: { totalHours: 0, certificationsCount: 0, count: 0 },
+      promotions: { avgSalaryIncrease: 0, count: 0 },
+    };
+  }
+
   const orgObjectId = toOrgObjectId(filter.organizationId);
 
   const attendanceAgg = await Attendance.aggregate([
-    { $match: { organizationId: orgObjectId } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
     {
       $group: {
         _id: null,
@@ -546,7 +592,7 @@ export async function getHrMetrics(filter = {}) {
   ]);
 
   const performanceAgg = await Performance.aggregate([
-    { $match: { organizationId: orgObjectId } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
     {
       $group: {
         _id: null,
@@ -557,7 +603,7 @@ export async function getHrMetrics(filter = {}) {
   ]);
 
   const surveyAgg = await Survey.aggregate([
-    { $match: { organizationId: orgObjectId } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
     {
       $group: {
         _id: null,
@@ -569,7 +615,7 @@ export async function getHrMetrics(filter = {}) {
   ]);
 
   const trainingAgg = await TrainingHistory.aggregate([
-    { $match: { organizationId: orgObjectId } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
     {
       $group: {
         _id: null,
@@ -581,7 +627,7 @@ export async function getHrMetrics(filter = {}) {
   ]);
 
   const promotionAgg = await PromotionHistory.aggregate([
-    { $match: { organizationId: orgObjectId } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
     {
       $group: {
         _id: null,
@@ -605,11 +651,34 @@ export async function getHrMetrics(filter = {}) {
  * Leave Statistics, Training Completion trend, and Promotion History.
  */
 export async function getAdvancedCharts(filter = {}) {
+  const match = buildMatchFilter(filter);
+  const employees = await Employee.find(match).select('_id').lean();
+  const employeeIds = employees.map((e) => e._id);
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const twelveMonthsAgo = new Date();
+  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+  twelveMonthsAgo.setDate(1);
+
+  if (employeeIds.length === 0) {
+    const emptyTrends = [];
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(twelveMonthsAgo.getFullYear(), twelveMonthsAgo.getMonth() + i, 1);
+      const label = `${monthNames[d.getMonth()]} ${d.getFullYear()}`;
+      emptyTrends.push({ monthLabel: label, avgAttendanceHours: 0, trainingCompletions: 0, promotions: 0 });
+    }
+    return {
+      performanceDistribution: [1, 2, 3, 4, 5].map((score) => ({ rating: `Rating ${score}`, count: 0 })),
+      leaveStatistics: [],
+      advancedTrends: emptyTrends,
+    };
+  }
+
   const orgObjectId = toOrgObjectId(filter.organizationId);
 
   // Performance Distribution (1-5 scale)
   const performanceDistribution = await Performance.aggregate([
-    { $match: { organizationId: orgObjectId } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds } } },
     {
       $group: {
         _id: '$performanceScore',
@@ -627,7 +696,7 @@ export async function getAdvancedCharts(filter = {}) {
 
   // Leave Statistics
   const leaveStatistics = await Attendance.aggregate([
-    { $match: { organizationId: orgObjectId, attendanceStatus: 'ON_LEAVE', leaveType: { $ne: 'NONE' } } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds }, attendanceStatus: 'ON_LEAVE', leaveType: { $ne: 'NONE' } } },
     { $group: { _id: '$leaveType', count: { $sum: 1 } } },
   ]);
 
@@ -636,13 +705,8 @@ export async function getAdvancedCharts(filter = {}) {
     count: l.count,
   }));
 
-  // For monthly trends (Attendance, Training, Promotions), we group by year/month
-  const twelveMonthsAgo = new Date();
-  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
-  twelveMonthsAgo.setDate(1);
-
   const attendanceAgg = await Attendance.aggregate([
-    { $match: { organizationId: orgObjectId, attendanceDate: { $gte: twelveMonthsAgo } } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds }, attendanceDate: { $gte: twelveMonthsAgo } } },
     {
       $group: {
         _id: { year: { $year: '$attendanceDate' }, month: { $month: '$attendanceDate' } },
@@ -653,7 +717,7 @@ export async function getAdvancedCharts(filter = {}) {
   ]);
 
   const trainingAgg = await TrainingHistory.aggregate([
-    { $match: { organizationId: orgObjectId, completionDate: { $gte: twelveMonthsAgo } } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds }, completionDate: { $gte: twelveMonthsAgo } } },
     {
       $group: {
         _id: { year: { $year: '$completionDate' }, month: { $month: '$completionDate' } },
@@ -663,7 +727,7 @@ export async function getAdvancedCharts(filter = {}) {
   ]);
 
   const promotionAgg = await PromotionHistory.aggregate([
-    { $match: { organizationId: orgObjectId, promotionDate: { $gte: twelveMonthsAgo } } },
+    { $match: { organizationId: orgObjectId, employeeId: { $in: employeeIds }, promotionDate: { $gte: twelveMonthsAgo } } },
     {
       $group: {
         _id: { year: { $year: '$promotionDate' }, month: { $month: '$promotionDate' } },
@@ -672,7 +736,6 @@ export async function getAdvancedCharts(filter = {}) {
     },
   ]);
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const advancedTrends = [];
 
   for (let i = 0; i < 12; i++) {

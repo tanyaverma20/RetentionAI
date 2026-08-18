@@ -368,8 +368,9 @@ export async function bulkImportEmployees(rows, organizationId, options = {}) {
   const processedCodes = new Set();
 
   const departmentsList = await departmentRepository.listDepartments({}, organizationId);
+  const deptIdMap = new Map(departmentsList.map((d) => [d._id.toString(), d._id.toString()]));
   const deptCodeMap = new Map(departmentsList.map((d) => [d.code.toUpperCase(), d._id.toString()]));
-  const deptNameMap = new Map(departmentsList.map((d) => [d.name.toLowerCase(), d._id.toString()]));
+  const deptNameMap = new Map(departmentsList.map((d) => [d.name.trim().toLowerCase(), d._id.toString()]));
 
   for (let i = 0; i < rows.length; i++) {
     const rowNum = i + 1;
@@ -380,8 +381,17 @@ export async function bulkImportEmployees(rows, organizationId, options = {}) {
       const firstName = (row.firstName || row.First_Name || row['First Name'] || '').toString().trim();
       const lastName = (row.lastName || row.Last_Name || row['Last Name'] || '').toString().trim();
       const email = (row.email || row.Email || '').toString().trim().toLowerCase();
-      const designation = (row.designation || row.Designation || '').toString().trim();
-      const deptKey = (row.departmentCode || row.department || row.Department || '').toString().trim();
+      const designation = (row.designation || row.Designation || row.JobRole || row.jobRole || row.role || row.Role || row.title || '').toString().trim();
+      const deptKey = (
+        row.departmentCode ||
+        row.department ||
+        row.Department ||
+        row.departmentName ||
+        row.DepartmentName ||
+        row.DepartmentID ||
+        row.Department_ID ||
+        ''
+      ).toString().trim();
 
       if (!employeeCode || !firstName || !lastName || !email || !designation || !deptKey) {
         errors.push({
@@ -399,16 +409,74 @@ export async function bulkImportEmployees(rows, organizationId, options = {}) {
         continue;
       }
 
-      let departmentId = deptCodeMap.get(deptKey.toUpperCase()) || deptNameMap.get(deptKey.toLowerCase());
+      const normalizedDeptName = deptKey.toLowerCase();
+      let departmentId =
+        deptIdMap.get(deptKey) ||
+        deptCodeMap.get(deptKey.toUpperCase()) ||
+        deptNameMap.get(normalizedDeptName);
+
       if (!departmentId) {
-        errors.push({
-          row: rowNum,
-          error: `Department '${deptKey}' does not exist.`,
-        });
-        continue;
+        // Auto-create department within current organization/tenant scope
+        const rawDeptName = deptKey;
+        function createCode(name) {
+          let clean = (name || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g, '');
+          if (clean.length < 2) clean = `${clean || 'DEPT'}_DEPT`;
+          if (clean.length > 20) clean = clean.slice(0, 20);
+          return clean;
+        }
+
+        const baseCode = createCode(rawDeptName);
+        let codeAttempt = baseCode;
+        let counter = 1;
+        while (deptCodeMap.has(codeAttempt)) {
+          const existingId = deptCodeMap.get(codeAttempt);
+          if (deptIdMap.has(existingId) && deptNameMap.get(normalizedDeptName) === existingId) {
+            break;
+          }
+          const suffix = `_${counter}`;
+          codeAttempt = (baseCode.slice(0, 20 - suffix.length) + suffix).toUpperCase();
+          counter++;
+        }
+
+        try {
+          const newDept = await departmentRepository.createDepartment({
+            name: rawDeptName,
+            code: codeAttempt,
+            organizationId,
+            description: 'Auto-created during employee CSV import',
+            isActive: true,
+          });
+          departmentId = newDept._id.toString();
+          deptIdMap.set(departmentId, departmentId);
+          deptNameMap.set(normalizedDeptName, departmentId);
+          deptCodeMap.set(codeAttempt.toUpperCase(), departmentId);
+        } catch (deptErr) {
+          // Race condition / unique index duplicate recovery
+          const existingByName = await departmentRepository.findDepartmentByName(rawDeptName, organizationId);
+          const existingByCode = await departmentRepository.findDepartmentByCode(codeAttempt, organizationId);
+          const fallbackDept = existingByName || existingByCode;
+          if (fallbackDept) {
+            departmentId = fallbackDept._id.toString();
+            deptIdMap.set(departmentId, departmentId);
+            deptNameMap.set(normalizedDeptName, departmentId);
+            deptCodeMap.set(fallbackDept.code.toUpperCase(), departmentId);
+          } else {
+            errors.push({
+              row: rowNum,
+              error: `Failed to auto-create department '${rawDeptName}': ${deptErr.message}`,
+            });
+            continue;
+          }
+        }
       }
 
       processedCodes.add(employeeCode);
+      const genderVal = (row.gender || row.Gender || '').toString().toUpperCase();
+      const empTypeVal = (row.employmentType || row.EmploymentType || row.Status || row.status || '').toString().toUpperCase();
+      const hireDateVal = row.joiningDate || row.Joining_Date || row.HireDate || row.hireDate;
+      const salaryVal = Number(row.salary || row.Salary || row.MonthlySalaryINR || row.monthlySalaryINR || row.MonthlySalary) || 0;
+      const locationVal = row.workLocation || row.WorkLocation || row.Location || row.location || 'Office';
+
       validRows.push({
         rowNum,
         employeeCode,
@@ -418,16 +486,16 @@ export async function bulkImportEmployees(rows, organizationId, options = {}) {
         departmentId,
         designation,
         phone: row.phone || row.Phone || '',
-        gender: ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'].includes(row.gender?.toUpperCase())
-          ? row.gender.toUpperCase()
+        gender: ['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY'].includes(genderVal)
+          ? genderVal
           : 'PREFER_NOT_TO_SAY',
         dateOfBirth: row.dateOfBirth || row.DOB ? new Date(row.dateOfBirth || row.DOB) : null,
-        joiningDate: row.joiningDate || row.Joining_Date ? new Date(row.joiningDate || row.Joining_Date) : new Date(),
-        employmentType: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN'].includes(row.employmentType?.toUpperCase())
-          ? row.employmentType.toUpperCase()
+        joiningDate: hireDateVal ? new Date(hireDateVal) : new Date(),
+        employmentType: ['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERN'].includes(empTypeVal)
+          ? empTypeVal
           : 'FULL_TIME',
-        salary: Number(row.salary || row.Salary) || 0,
-        workLocation: row.workLocation || row.Location || 'Office',
+        salary: salaryVal,
+        workLocation: locationVal,
       });
     } catch (err) {
       errors.push({ row: rowNum, error: err.message || 'Row parsing error.' });

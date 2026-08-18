@@ -219,21 +219,41 @@ export async function commitImport({ organizationId, importId, userId }) {
 
   let committedNewCount = 0;
   let committedUpdatedCount = 0;
+  const deptCache = new Map();
 
   for (const row of stagedRows) {
-    // Resolve or auto-create Department
-    let dept = await Department.findOne({
-      organizationId,
-      name: { $regex: new RegExp(`^${row.departmentName}$`, 'i') },
-    });
+    // Resolve or auto-create Department with tenant scope & in-memory caching
+    const deptKeyNorm = (row.departmentName || '').trim().toLowerCase();
+    let dept = deptCache.get(deptKeyNorm);
 
     if (!dept) {
-      const codeBase = row.departmentName.replace(/[^A-Z0-9]/gi, '').substring(0, 6).toUpperCase() || 'DEPT';
-      dept = await Department.create({
+      dept = await Department.findOne({
         organizationId,
-        name: row.departmentName,
-        code: `${codeBase}-${Date.now().toString(36).toUpperCase()}`.substring(0, 20),
+        $or: [
+          { name: { $regex: new RegExp(`^${row.departmentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } },
+          { code: row.departmentName.trim().toUpperCase() },
+        ],
       });
+
+      if (!dept) {
+        const codeBase = row.departmentName.replace(/[^A-Z0-9]/gi, '').substring(0, 6).toUpperCase() || 'DEPT';
+        try {
+          dept = await Department.create({
+            organizationId,
+            name: row.departmentName.trim(),
+            code: `${codeBase}-${Date.now().toString(36).toUpperCase()}`.substring(0, 20),
+          });
+        } catch (err) {
+          dept = await Department.findOne({
+            organizationId,
+            name: { $regex: new RegExp(`^${row.departmentName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') },
+          });
+        }
+      }
+
+      if (dept) {
+        deptCache.set(deptKeyNorm, dept);
+      }
     }
 
     // Upsert Employee bound STRICTLY to organizationId

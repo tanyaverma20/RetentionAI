@@ -173,6 +173,9 @@ export default function Dashboard() {
   // AI risk counts, top high risk, and global feature importance
   const [riskCounts, setRiskCounts] = useState(null);
   const [topHighRisk, setTopHighRisk] = useState(null);
+  const [totalEmployeesCount, setTotalEmployeesCount] = useState(null);
+  const [predictedCount, setPredictedCount] = useState(null);
+  const [pendingCount, setPendingCount] = useState(null);
   const [isTraining, setIsTraining] = useState(false);
   const [trainMessage, setTrainMessage] = useState('');
   const [globalImportance, setGlobalImportance] = useState(null);
@@ -204,6 +207,9 @@ export default function Dashboard() {
       .then(data => {
         setRiskCounts(data?.riskCounts);
         setTopHighRisk(data?.topHighRisk);
+        setTotalEmployeesCount(data?.totalEmployees ?? null);
+        setPredictedCount(data?.predictedCount ?? null);
+        setPendingCount(data?.pendingCount ?? null);
       })
       .catch((err) => setAiOverviewError(extractErrorMessage(err, 'Unable to load AI risk overview.')));
     aiService.getGlobalFeatureImportance()
@@ -536,7 +542,14 @@ export default function Dashboard() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-bold text-slate-900">🧠 AI Attrition Risk Overview</h2>
-                <p className="text-xs text-slate-500">ML-predicted risk distribution across your workforce</p>
+                <p className="text-xs text-slate-500">
+                  ML-predicted risk distribution across your workforce
+                  {predictedCount != null && pendingCount != null && (
+                    <span className="ml-2 font-semibold text-indigo-600">
+                      (Predicted: {predictedCount} | Pending: {pendingCount})
+                    </span>
+                  )}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 {trainMessage && <span className="text-xs text-indigo-600">{trainMessage}</span>}
@@ -569,9 +582,11 @@ export default function Dashboard() {
                   </thead>
                   <tbody>
                     {Object.entries(modelComparison.benchmark)
-                      .sort(([, a], [, b]) => (b.prAucCvMean ?? 0) - (a.prAucCvMean ?? 0))
+                      .sort(([, a], [, b]) => ((b.prAucCvMean ?? b.prAuc) ?? 0) - ((a.prAucCvMean ?? a.prAuc) ?? 0))
                       .map(([name, m]) => {
                         const isWinner = name === modelComparison.algorithm;
+                        const cvVal = m.prAucCvMean ?? m.prAuc;
+                        const cvStd = m.prAucCvStdErr;
                         return (
                           <tr
                             key={name}
@@ -582,7 +597,9 @@ export default function Dashboard() {
                               {name}
                             </td>
                             <td className="py-2 pr-4">
-                              {m.prAucCvMean != null ? `${m.prAucCvMean.toFixed(3)} ± ${m.prAucCvStdErr?.toFixed(3) ?? '0.000'}` : '—'}
+                              {cvVal != null
+                                ? `${cvVal.toFixed(3)}${cvStd != null ? ` ± ${cvStd.toFixed(3)}` : ''}`
+                                : '—'}
                             </td>
                             <td className="py-2 pr-4">{m.f1?.toFixed(3) ?? '—'}</td>
                             <td className="py-2 pr-4">{m.rocAuc?.toFixed(3) ?? '—'}</td>
@@ -648,28 +665,33 @@ export default function Dashboard() {
                     <tbody className="text-sm">
                       {topHighRisk.map((prediction) => {
                         const emp = prediction.employeeId;
-                        if (!emp) return null;
+                        if (!emp || !emp._id) return null;
+                        const firstName = emp.firstName || 'Employee';
+                        const lastName = emp.lastName || '';
+                        const designation = emp.designation || 'Staff';
+                        const deptName = emp.departmentId?.name || emp.departmentId?.code || 'Unassigned';
+                        const riskPercent = prediction.riskScore != null ? (prediction.riskScore * 100).toFixed(0) : '0';
                         return (
-                          <tr key={prediction._id} className="border-b border-slate-100 hover:bg-slate-100/20 transition-colors">
+                          <tr key={prediction._id || emp._id} className="border-b border-slate-100 hover:bg-slate-100/20 transition-colors">
                             <td className="py-3 px-4">
                               <Link to={`/employees/${emp._id}`} className="flex items-center gap-3 group">
                                 <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600">
-                                  {emp.firstName.charAt(0)}{emp.lastName.charAt(0)}
+                                  {firstName.charAt(0)}{lastName.charAt(0)}
                                 </div>
                                 <div>
                                   <div className="font-semibold text-slate-800 group-hover:text-indigo-600 transition-colors">
-                                    {emp.firstName} {emp.lastName}
+                                    {firstName} {lastName}
                                   </div>
-                                  <div className="text-xs text-slate-400">{emp.designation}</div>
+                                  <div className="text-xs text-slate-400">{designation}</div>
                                 </div>
                               </Link>
                             </td>
                             <td className="py-3 px-4 text-slate-500">
-                              {emp.departmentId?.name || 'Unknown'}
+                              {deptName}
                             </td>
                             <td className="py-3 px-4">
                               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-50 text-rose-600 border border-rose-100">
-                                {(prediction.riskScore * 100).toFixed(0)}%
+                                {riskPercent}%
                               </div>
                             </td>
                           </tr>

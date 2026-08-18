@@ -37,7 +37,7 @@
 
 RetentionAI is an enterprise workforce intelligence platform designed to systematically solve unexpected employee turnover. Unplanned attrition disrupts operations, delays strategic deliverables, and imposes significant re-hiring and training expenses. Traditional Human Resource Management Systems (HRMS) operate reactively, summarizing turnover data long after exit interviews take place. RetentionAI transforms workforce management by predicting individual attrition risk, delivering real-time organizational analytics, and surfacing high-risk personnel for timely manager intervention.
 
-The platform's full-stack architecture bridges a React frontend, a Node.js/Express API gateway, a MongoDB database, and a Python FastAPI machine learning service. Core operational HR modules—including employee profiles, department hierarchies, attendance logs, performance evaluations, training programs, promotion tracking, and sentiment feedback—are unified into a single data repository. Automated ML training pipelines evaluate active employee indicators across 5 distinct algorithm families, employing 5-fold cross-validation to select the optimal model based on Precision-Recall AUC (PR-AUC) benchmarking.
+The platform's full-stack architecture bridges a React frontend, a Node.js/Express API gateway, a MongoDB database, and a Python FastAPI machine learning service. Core operational HR modulesâ€”including employee profiles, department hierarchies, attendance logs, performance evaluations, training programs, promotion tracking, and sentiment feedbackâ€”are unified into a single data repository. Automated ML training pipelines evaluate active employee indicators across 5 distinct algorithm families, employing 5-fold cross-validation to select the optimal model based on Precision-Recall AUC (PR-AUC) benchmarking.
 
 Engineered with enterprise multi-tenancy at its foundation, RetentionAI enforces strict `organizationId` isolation across all database queries, background predictions, and executive dashboard visualizations. Predictive inference is updated idempotently using composite indexing, deactivated or deleted employee records are excluded from active metrics, and heavy AI training operations are protected by concurrency locks. RetentionAI delivers a secure, scalable solution that turns raw workforce data into actionable retention strategies.
 
@@ -101,21 +101,21 @@ RetentionAI implements an end-to-end machine learning pipeline tailored for tabu
 
 ```text
 Data Ingestion
-    ↓
+    â†“
 Data Validation & Preprocessing
-    ↓
+    â†“
 Feature Preparation
-    ↓
+    â†“
 5-Fold Cross Validation
-    ↓
+    â†“
 Model Benchmarking
-    ↓
+    â†“
 PR-AUC Based Model Selection
-    ↓
+    â†“
 Risk Prediction
-    ↓
+    â†“
 High / Medium / Low Risk Classification
-    ↓
+    â†“
 Dashboard Insights
 ```
 
@@ -161,7 +161,7 @@ The Attrition Risk Overview section provides a mathematical and operational snap
 The Universal Data Import system handles heterogeneous enterprise CSV formats through automatic header resolution and department provisioning:
 
 ```text
-CSV Upload → Header Normalization → Field Mapping → Department Resolution → Tenant Auto-Creation → Validation → Idempotent Upsert
+CSV Upload â†’ Header Normalization â†’ Field Mapping â†’ Department Resolution â†’ Tenant Auto-Creation â†’ Validation â†’ Idempotent Upsert
 ```
 
 ### Supported Column Aliases
@@ -186,15 +186,15 @@ CSV Upload → Header Normalization → Field Mapping → Department Resolution 
 
 ```text
 Authenticated User
-       ↓
+       â†“
 JWT Authentication
-       ↓
+       â†“
 Organization Context (organizationId)
-       ↓
+       â†“
 Express API Controllers & Services
-       ↓
+       â†“
 Active Employee Query (isDeleted: false)
-       ↓
+       â†“
 MongoDB Aggregation Pipeline
 ```
 
@@ -235,40 +235,40 @@ flowchart TD
 
 ```text
 RetentionAI/
-├── client/                     # React 18 + Vite Frontend
-│   ├── src/
-│   │   ├── components/         # Reusable UI components & charts
-│   │   ├── pages/              # Dashboard, Employees, Analytics pages
-│   │   ├── store/              # Redux Toolkit state slices
-│   │   └── services/           # Axios API services
-│   ├── package.json
-│   └── vite.config.js
-│
-├── server/                     # Node.js + Express API Backend
-│   ├── src/
-│   │   ├── controllers/        # Express route controllers
-│   │   ├── middleware/         # Auth, RBAC, rate-limiting, validation
-│   │   ├── models/             # Mongoose schemas (Employee, Department, Prediction)
-│   │   ├── routes/             # REST API endpoint definitions
-│   │   ├── services/           # Business logic & AI orchestration
-│   │   └── utils/              # AI concurrency gate & utilities
-│   ├── tests/                  # Integration & consistency test suites
-│   └── package.json
-│
-├── ai-service/                 # Python FastAPI AI/ML Service
-│   ├── app/
-│   │   ├── main.py             # FastAPI service entry point
-│   │   ├── prediction/         # Prediction engine
-│   │   └── training/           # Model trainer & benchmark engine
-│   ├── requirements.txt        # Python dependencies
-│   └── train_model.py          # Model training execution script
-│
-├── docs/                       # Architectural guides & media assets
-│   └── images/                 # Documentation screenshots
-│       └── retentionai-dashboard.png
-│
-├── docker-compose.yml          # Container stack orchestration
-└── README.md                   # Repository documentation
+â”œâ”€â”€ client/                     # React 18 + Vite Frontend
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ components/         # Reusable UI components & charts
+â”‚   â”‚   â”œâ”€â”€ pages/              # Dashboard, Employees, Analytics pages
+â”‚   â”‚   â”œâ”€â”€ store/              # Redux Toolkit state slices
+â”‚   â”‚   â””â”€â”€ services/           # Axios API services
+â”‚   â”œâ”€â”€ package.json
+â”‚   â””â”€â”€ vite.config.js
+â”‚
+â”œâ”€â”€ server/                     # Node.js + Express API Backend
+â”‚   â”œâ”€â”€ src/
+â”‚   â”‚   â”œâ”€â”€ controllers/        # Express route controllers
+â”‚   â”‚   â”œâ”€â”€ middleware/         # Auth, RBAC, rate-limiting, validation
+â”‚   â”‚   â”œâ”€â”€ models/             # Mongoose schemas (Employee, Department, Prediction)
+â”‚   â”‚   â”œâ”€â”€ routes/             # REST API endpoint definitions
+â”‚   â”‚   â”œâ”€â”€ services/           # Business logic & AI orchestration
+â”‚   â”‚   â””â”€â”€ utils/              # AI concurrency gate & utilities
+â”‚   â”œâ”€â”€ tests/                  # Integration & consistency test suites
+â”‚   â””â”€â”€ package.json
+â”‚
+â”œâ”€â”€ ai-service/                 # Python FastAPI AI/ML Service
+â”‚   â”œâ”€â”€ app/
+â”‚   â”‚   â”œâ”€â”€ main.py             # FastAPI service entry point
+â”‚   â”‚   â”œâ”€â”€ prediction/         # Prediction engine
+â”‚   â”‚   â””â”€â”€ training/           # Model trainer & benchmark engine
+â”‚   â”œâ”€â”€ requirements.txt        # Python dependencies
+â”‚   â””â”€â”€ train_model.py          # Model training execution script
+â”‚
+â”œâ”€â”€ docs/                       # Architectural guides & media assets
+â”‚   â””â”€â”€ images/                 # Documentation screenshots
+â”‚       â””â”€â”€ retentionai-dashboard.png
+â”‚
+â”œâ”€â”€ docker-compose.yml          # Container stack orchestration
+â””â”€â”€ README.md                   # Repository documentation
 ```
 
 ---
@@ -369,7 +369,7 @@ File: [`server/tests/aiInsightsConsistency.test.js`](./server/tests/aiInsightsCo
 
 ### 2. Department Import & Auto-Creation Regression
 File: [`server/tests/employeeImportDepartmentAutoCreate.test.js`](./server/tests/employeeImportDepartmentAutoCreate.test.js)
-- Scenarios A–G verifying missing department auto-creation, case-insensitive normalization, and tenant isolation during bulk CSV imports.
+- Scenarios Aâ€“G verifying missing department auto-creation, case-insensitive normalization, and tenant isolation during bulk CSV imports.
 
 ### 3. Employee Management Lifecycle & RBAC
 File: [`server/tests/employee.integration.test.js`](./server/tests/employee.integration.test.js)
@@ -406,10 +406,13 @@ cd server && node --test tests/employee.integration.test.js
 
 ## Project Status
 
-The RetentionAI platform implementation has been verified through automated integration testing. All core services—Express backend, Python FastAPI ML pipeline, React UI, CSV ingestion engine, and tenant isolation mechanisms—are fully operational and tested.
+The RetentionAI platform implementation has been verified through automated integration testing. All core services - Express backend, Python FastAPI ML pipeline, React UI, CSV ingestion engine, and tenant isolation mechanisms - are fully operational and tested.
 
 ---
 
-## License
+## Author
 
-Distributed under the MIT License. See [`LICENSE`](./LICENSE) for details.
+**Tanya Verma**  
+B.Tech Computer Science & Engineering  
+Thapar Institute of Engineering & Technology  
+[GitHub Profile](https://github.com/tanyaverma20)

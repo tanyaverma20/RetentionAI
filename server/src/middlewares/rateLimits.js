@@ -1,42 +1,77 @@
-/**
- * @file rateLimits.js
- * @description Express middleware for protecting endpoints from abuse.
- *
- * Why this file exists
- * --------------------
- * High-value endpoints like login and password reset must be defended against
- * brute-force attacks and credential stuffing. Centralising rate-limit
- * configuration ensures consistent tracking and standardized error responses.
- *
- * Security decisions
- * ------------------
- * - `loginRateLimit`: Tracks both IP and email address. This prevents distributed
- *   botnets from brute-forcing a single account, while also preventing a single
- *   IP from sweeping many accounts. Limit is strict (5 per minute).
- * - `refreshRateLimit`: Protects against token-rotation race-condition spam.
- * - `forgotPasswordRateLimit` / `resetPasswordRateLimit`: Very strict limits
- *   (3–5 per hour) to prevent email spamming and token guessing.
- * - `passwordChangeRateLimit`: Keyed by `userId` (when authenticated) to
- *   prevent an attacker with an active session from rapid-firing attempts
- *   at the current password.
- *
- * Implementation note: The default memory store is used for the MVP. In a
- * multi-instance production environment, this should be backed by Redis.
- */
-
 import { rateLimit } from 'express-rate-limit';
+import { getRedisClient, isRedisConfigured } from '../utils/redisClient.js';
+import { logger } from '../utils/logger.js';
 import { sendError } from '../utils/response.js';
 
 /**
- * Helper to build standard rate limiters with consistent headers and responses.
+ * Upstash Redis store adapter for express-rate-limit.
+ * Uses REST API stateless fetch calls via @upstash/redis.
  */
-function createRateLimit({ windowMs, limit, keyGenerator }) {
+class UpstashRedisStore {
+  constructor(prefix = 'rl:') {
+    this.prefix = prefix;
+  }
+
+  init(options) {
+    this.windowMs = options.windowMs;
+  }
+
+  async increment(key) {
+    if (!isRedisConfigured()) return undefined;
+    try {
+      const redis = getRedisClient();
+      const redisKey = `${this.prefix}${key}`;
+      const totalHits = await redis.incr(redisKey);
+      if (totalHits === 1) {
+        await redis.pexpire(redisKey, this.windowMs);
+      }
+      const pttl = await redis.pttl(redisKey);
+      const resetTime = new Date(Date.now() + (pttl > 0 ? pttl : this.windowMs));
+      return { totalHits, resetTime };
+    } catch (err) {
+      logger.warn('redis_rate_limit_error', { error: err.message });
+      return undefined;
+    }
+  }
+
+  async decrement(key) {
+    if (!isRedisConfigured()) return;
+    try {
+      const redis = getRedisClient();
+      const redisKey = `${this.prefix}${key}`;
+      const current = await redis.decr(redisKey);
+      if (current <= 0) {
+        await redis.del(redisKey);
+      }
+    } catch (err) {
+      logger.warn('redis_rate_limit_decr_error', { error: err.message });
+    }
+  }
+
+  async resetKey(key) {
+    if (!isRedisConfigured()) return;
+    try {
+      const redis = getRedisClient();
+      await redis.del(`${this.prefix}${key}`);
+    } catch (err) {
+      logger.warn('redis_rate_limit_reset_error', { error: err.message });
+    }
+  }
+}
+
+/**
+ * Helper to build standard rate limiters with consistent headers, responses, and store.
+ */
+function createRateLimit({ windowMs, limit, keyGenerator, skipSuccessfulRequests = false, prefix = 'rl:' }) {
+  const store = isRedisConfigured() ? new UpstashRedisStore(prefix) : undefined;
   return rateLimit({
     windowMs,
     limit,
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     keyGenerator,
+    skipSuccessfulRequests,
+    ...(store ? { store } : {}),
     handler: (request, response) =>
       sendError(
         response,
@@ -50,39 +85,43 @@ function createRateLimit({ windowMs, limit, keyGenerator }) {
 
 export const loginRateLimit = createRateLimit({
   windowMs: 60_000,
-  limit: 5,
-  keyGenerator: (request) => `${request.ip}:${request.body?.email ?? ''}`,
+  limit: 15,
+  skipSuccessfulRequests: true,
+  prefix: 'rl:login:',
+  keyGenerator: (request) => `${request.ip}:${(request.body?.email ?? '').trim().toLowerCase()}`,
 });
 
 export const refreshRateLimit = createRateLimit({
   windowMs: 60_000,
   limit: 20,
+  prefix: 'rl:refresh:',
   keyGenerator: (request) => request.ip,
 });
 
 export const forgotPasswordRateLimit = createRateLimit({
   windowMs: 60 * 60_000,
-  limit: 3,
-  keyGenerator: (request) => `${request.ip}:${request.body?.email ?? ''}`,
+  limit: 5,
+  prefix: 'rl:forgot:',
+  keyGenerator: (request) => `${request.ip}:${(request.body?.email ?? '').trim().toLowerCase()}`,
 });
 
 export const resetPasswordRateLimit = createRateLimit({
   windowMs: 60 * 60_000,
   limit: 5,
+  prefix: 'rl:reset:',
   keyGenerator: (request) => `${request.ip}:${request.body?.token ?? ''}`,
 });
 
 export const passwordChangeRateLimit = createRateLimit({
   windowMs: 60 * 60_000,
   limit: 5,
+  prefix: 'rl:pwdchange:',
   keyGenerator: (request) => request.auth?.userId ?? request.ip,
 });
 
-// Organization signup creates a new tenant (and its first admin account) —
-// generous enough for real use, strict enough to block scripted mass
-// account creation from a single source.
 export const signupRateLimit = createRateLimit({
   windowMs: 60 * 60_000,
-  limit: 5,
+  limit: 10,
+  prefix: 'rl:signup:',
   keyGenerator: (request) => request.ip,
 });

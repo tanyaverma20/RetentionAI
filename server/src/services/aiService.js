@@ -54,18 +54,11 @@ class AIService {
     const lockToken = await acquireAiSlot('Train Model');
     try {
       const response = await aiClient.post('/train', {}, { timeout: 30000 });
-      // Training itself continues in the ai-service background after this
-      // resolves — release on a timer, not in `finally`, so the slot stays
-      // held for the real work instead of just this quick POST.
-      setTimeout(() => {
-        releaseAiSlot(lockToken).catch((err) => console.error('Failed to release AI slot after training window:', err.message));
-      }, TRAIN_SLOT_HOLD_MS);
       return response.data;
     } catch (error) {
-      // The job never actually started — free the slot immediately rather
-      // than blocking other work for 3 minutes over a request that failed.
-      await releaseAiSlot(lockToken);
       throw toServiceError(error, 'Failed to start training model');
+    } finally {
+      await releaseAiSlot(lockToken);
     }
   }
 
@@ -140,15 +133,16 @@ class AIService {
    * { algorithm, metrics, benchmark, selectionReason }.
    */
   async getModelMetrics() {
+    let data;
     try {
       const response = await aiClient.get('/model/metrics');
-      return response.data.data;
+      data = response.data.data;
     } catch (error) {
       const fallback = await ModelMetadata.findOne({ status: 'APPROVED' }).sort({ trainedAt: -1 }).lean();
       if (!fallback) {
         throw toServiceError(error, 'Failed to fetch model metrics');
       }
-      return {
+      data = {
         algorithm: fallback.algorithm,
         metrics: fallback.metrics,
         benchmark: fallback.benchmark,
@@ -157,6 +151,18 @@ class AIService {
         source: 'durable-fallback',
       };
     }
+
+    if (data && data.benchmark) {
+      for (const key of Object.keys(data.benchmark)) {
+        const item = data.benchmark[key];
+        if (item && item.prAucCvMean === undefined && item.prAuc !== undefined) {
+          item.prAucCvMean = item.prAuc;
+          item.prAucCvStdErr = 0;
+        }
+      }
+    }
+
+    return data;
   }
 
   async getPredictionForEmployee(employeeId, organizationId) {
@@ -167,42 +173,83 @@ class AIService {
   }
 
   async getDashboardRiskCounts(organizationId) {
-    // Aggregation pipelines are NOT cast against the schema the way find()
-    // is — the raw string org id from the request header never matched the
-    // ObjectId actually stored on Prediction documents, so this silently
-    // returned zero rows (HIGH/MEDIUM/LOW all 0) despite predictions
-    // existing. Same class of bug already fixed in explainService's
-    // getDepartmentRiskDrivers and employeeIntelligenceService's
-    // getDashboardSummary.
+    const activeEmployeeIds = await Employee.find({
+      organizationId,
+      isDeleted: false,
+    }).distinct('_id');
+
+    const totalEmployees = activeEmployeeIds.length;
+
+    if (totalEmployees === 0) {
+      return {
+        counts: { HIGH: 0, MEDIUM: 0, LOW: 0 },
+        topHighRisk: [],
+        totalEmployees: 0,
+        predictedCount: 0,
+        pendingCount: 0,
+      };
+    }
+
     const orgId = mongoose.isValidObjectId(organizationId)
       ? new mongoose.Types.ObjectId(String(organizationId))
       : organizationId;
 
     const results = await Prediction.aggregate([
-      { $match: { organizationId: orgId } },
+      {
+        $match: {
+          organizationId: orgId,
+          employeeId: { $in: activeEmployeeIds },
+        },
+      },
       {
         $group: {
           _id: '$riskLevel',
           count: { $sum: 1 },
-        }
-      }
+        },
+      },
     ]);
-    
+
     const counts = { HIGH: 0, MEDIUM: 0, LOW: 0 };
-    results.forEach(r => {
-      counts[r._id] = r.count;
+    results.forEach((r) => {
+      if (r._id && counts[r._id] !== undefined) {
+        counts[r._id] = r.count;
+      }
     });
 
-    const topHighRisk = await Prediction.find({ organizationId, riskLevel: 'HIGH' })
+    const highCount = counts.HIGH || 0;
+    const mediumCount = counts.MEDIUM || 0;
+    const lowCount = counts.LOW || 0;
+    const predictedCount = highCount + mediumCount + lowCount;
+    const pendingCount = Math.max(0, totalEmployees - predictedCount);
+
+    const rawTopHighRisk = await Prediction.find({
+      organizationId: orgId,
+      employeeId: { $in: activeEmployeeIds },
+      riskLevel: 'HIGH',
+    })
       .sort({ riskScore: -1 })
       .limit(10)
       .populate({
         path: 'employeeId',
-        select: 'firstName lastName employeeCode designation departmentId profilePicture',
+        select: 'firstName lastName employeeCode designation departmentId profilePicture isDeleted status organizationId',
         populate: { path: 'departmentId', select: 'name code' },
       });
 
-    return { counts, topHighRisk };
+    const topHighRisk = rawTopHighRisk.filter((p) => {
+      const emp = p.employeeId;
+      if (!emp || emp.isDeleted || String(emp.organizationId) !== String(organizationId)) {
+        return false;
+      }
+      return true;
+    });
+
+    return {
+      counts: { HIGH: highCount, MEDIUM: mediumCount, LOW: lowCount },
+      topHighRisk,
+      totalEmployees,
+      predictedCount,
+      pendingCount,
+    };
   }
 
   async executeAgentDecision({ employeeId, question, organizationId }) {

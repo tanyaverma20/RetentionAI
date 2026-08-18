@@ -110,6 +110,8 @@ def train_model():
                 "recall": bundle["metrics"]["recall"],
                 "rocAuc": bundle["metrics"]["rocAuc"],
                 "prAuc": bundle["metrics"]["prAuc"],
+                "prAucCvMean": bundle["metrics"].get("prAucCvMean", bundle["metrics"]["prAuc"]),
+                "prAucCvStdErr": bundle["metrics"].get("prAucCvStdErr", 0.0),
                 "accuracy": bundle["metrics"]["accuracy"],
                 "precision": bundle["metrics"]["precision"]
             },
