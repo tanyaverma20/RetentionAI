@@ -125,7 +125,11 @@ def generate_force_plot(shap_vals_1d: np.ndarray, employee_id: str) -> str:
     """
     out_path = os.path.join(_local_dir(employee_id), "force.png")
 
-    shap.initjs()
+    try:
+        shap.initjs()
+    except Exception:
+        pass
+
     shap.force_plot(
         shap_cache.get_expected_value(),
         shap_vals_1d,

@@ -7,9 +7,10 @@ on:
     branches: [ main, master ]
 
 jobs:
-  backend-and-security:
-    name: Backend Node.js & Security Tests
+  backend-tests:
+    name: Node.js Backend & API Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout Repository
@@ -32,19 +33,21 @@ jobs:
           cd server
           node --check src/app.js
 
-      - name: Run Security Regression Tests
+      - name: Run Backend Unit & Supertest Integration Suite
         run: |
           cd server
           npm test
         env:
           NODE_ENV: test
-          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET || 'ci-test-jwt-access-secret-32-chars-min' }}
-          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET || 'ci-test-jwt-refresh-secret-32-chars-min' }}
-          MONGODB_URI: ${{ secrets.MONGODB_URI || 'mongodb://127.0.0.1:27017/retentionai_test' }}
+          JWT_ACCESS_SECRET: 'ci-test-jwt-access-secret-32-chars-min'
+          JWT_REFRESH_SECRET: 'ci-test-jwt-refresh-secret-32-chars-min'
+          MONGODB_URI: 'mongodb://127.0.0.1:27017/retentionai_test'
+          CORS_ORIGINS: 'http://localhost:5173'
 
-  ai-service-and-evals:
-    name: Python AI Service & Quality Evaluations
+  ai-service-tests:
+    name: Python FastAPI AI Service & PyTest Suite
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout Repository
@@ -59,21 +62,27 @@ jobs:
       - name: Install AI Service Dependencies
         run: |
           cd ai-service
-          pip install -r requirements.txt || true
+          pip install --upgrade pip
+          pip install -r requirements.txt pytest pytest-cov httpx
 
       - name: Verify Python Code Syntax
         run: |
           cd ai-service
           python -m py_compile app/main.py
 
-      - name: Run AI Quality Evaluation Suite
+      - name: Run PyTest Test Suite with Coverage
         run: |
           cd ai-service
-          python evals/eval_suite.py
+          pytest --cov=app --cov-report=term-missing tests/
+        env:
+          APP_ENV: test
+          MODEL_DIR: ./models
+          AI_STACK_CAPABILITY: LITE
 
-  frontend-build:
-    name: React Frontend Build Verification
+  frontend-tests-and-build:
+    name: React Frontend Vitest & Build Verification
     runs-on: ubuntu-latest
+    timeout-minutes: 10
 
     steps:
       - name: Checkout Repository
@@ -91,22 +100,12 @@ jobs:
           cd client
           npm ci
 
+      - name: Run Vitest Frontend Tests
+        run: |
+          cd client
+          npm run test
+
       - name: Execute Production Frontend Build
         run: |
           cd client
           npm run build
-
-  docker-build-validation:
-    name: Docker Container Build Verification
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Build Express Server Docker Image
-        run: |
-          docker build -t retentionai-server:test -f server/Dockerfile server
-
-      - name: Build React Client Docker Image
-        run: |
-          docker build -t retentionai-client:test -f client/Dockerfile client

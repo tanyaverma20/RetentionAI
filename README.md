@@ -352,43 +352,22 @@ npm run dev
 
 ---
 
-## Testing
+## Testing & Quality Assurance
 
-The project includes an integration and regression test suite powered by the Node.js native test runner:
-
-### 1. AI Insights Consistency & Multi-Tenant Isolation
-File: [`server/tests/aiInsightsConsistency.test.js`](./server/tests/aiInsightsConsistency.test.js)
-- **Scenario A**: Active employee scoping (200-employee population validation).
-- **Scenario B**: Multi-tenant isolation (Org A vs. Org B prediction separation).
-- **Scenario C**: Exclusion of synthetic/orphan predictions lacking active employee records.
-- **Scenario D**: Soft-deleted/deactivated employee prediction exclusion.
-- **Scenario E**: Prediction upsert idempotency verification.
-- **Scenario F**: Employee population replacement/re-import validation.
-- **Scenario G**: Top 10 High-Risk employee populated field validity and max 10 constraints.
-- **Scenario H**: Mathematical count consistency (`high + medium + low === predictedCount`) and zero-employee edge case handling.
-
-### 2. Department Import & Auto-Creation Regression
-File: [`server/tests/employeeImportDepartmentAutoCreate.test.js`](./server/tests/employeeImportDepartmentAutoCreate.test.js)
-- Scenarios Aâ€“G verifying missing department auto-creation, case-insensitive normalization, and tenant isolation during bulk CSV imports.
-
-### 3. Employee Management Lifecycle & RBAC
-File: [`server/tests/employee.integration.test.js`](./server/tests/employee.integration.test.js)
-- Validates full employee lifecycle management, CSV bulk imports, and RBAC department scope checks.
-
-### Running Test Suites
+RetentionAI features a full-stack, enterprise-grade test automation infrastructure covering unit testing, Supertest API contracts, tenant-isolation regression, PyTest ML service evaluations, and Vitest React component testing:
 
 ```bash
-export AUTH_TEST_MONGODB_URI="mongodb://localhost:27017/retentionai_test"
+# Backend Node.js & Express Tests (Unit, Contracts, Multi-Tenant IDOR, Security)
+cd server && npm test
 
-# Run AI Insights & Multi-Tenant Consistency Test Suite
-cd server && node --test tests/aiInsightsConsistency.test.js
+# Python FastAPI AI Service (Inference, Tree SHAP, RAG Retrieval, Decision Workflows)
+cd ai-service && pytest --cov=app --cov-report=term-missing tests/
 
-# Run Department Auto-Creation Import Test Suite
-cd server && node --test tests/employeeImportDepartmentAutoCreate.test.js
-
-# Run Employee Management Lifecycle Suite
-cd server && node --test tests/employee.integration.test.js
+# React Frontend Tests (Vitest + React Testing Library + JSDOM)
+cd client && npm run test
 ```
+
+For detailed architectural diagrams, environment setup, test inventories, and security regression specifications, see the complete [Testing Guide (docs/TESTING.md)](docs/TESTING.md) and [Testing Audit (docs/TESTING_AUDIT.md)](docs/TESTING_AUDIT.md).
 
 ---
 

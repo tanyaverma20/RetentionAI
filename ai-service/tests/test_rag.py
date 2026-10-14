@@ -5,13 +5,14 @@ RAG Module Tests - covers:
  - Document loading
  - Text chunking
  - Vectorstore indexing and retrieval
- - API endpoint contracts (with mocked LLM)
+ - API endpoint contracts (supporting both LITE and FULL modes)
 """
 
 import pytest
 from unittest.mock import patch, MagicMock
 from langchain_core.documents import Document
 from fastapi.testclient import TestClient
+from app.features import RAG_AVAILABLE
 
 # ─── Unit Tests: Chunker ──────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ def test_loader_returns_empty_for_missing_dir():
 
 # ─── Unit Tests: Embeddings ───────────────────────────────────────────────────
 
+@pytest.mark.skipif(not RAG_AVAILABLE, reason="sentence-transformers required for embeddings")
 def test_embeddings_are_cached():
     from app.rag.embeddings.embedding_manager import get_embeddings
     emb1 = get_embeddings()
@@ -61,6 +63,7 @@ def test_embeddings_are_cached():
 
 # ─── Unit Tests: RAG Service ──────────────────────────────────────────────────
 
+@pytest.mark.skipif(not RAG_AVAILABLE, reason="RAG vectorstore required for indexing")
 def test_index_with_no_documents_fails_gracefully():
     from app.rag.services.rag_service import index_knowledge_base
     result = index_knowledge_base("/nonexistent/dir")
@@ -73,13 +76,21 @@ def test_index_with_no_documents_fails_gracefully():
 @pytest.fixture(scope="module")
 def client():
     from app.main import app
-    from app.api.rag_routes import verify_auth_token
-    app.dependency_overrides[verify_auth_token] = lambda: True
+    if RAG_AVAILABLE:
+        from app.api.rag_routes import verify_auth_token
+        app.dependency_overrides[verify_auth_token] = lambda: True
     yield TestClient(app)
-    app.dependency_overrides.clear()
+    if RAG_AVAILABLE:
+        app.dependency_overrides.clear()
 
 
 def test_rag_health_endpoint(client):
+    if not RAG_AVAILABLE:
+        response = client.get("/rag/health")
+        assert response.status_code == 503
+        assert response.json()["code"] == "FEATURE_NOT_AVAILABLE_IN_BUILD"
+        return
+
     with patch("app.api.rag_routes.get_vectorstore_health") as mock_health:
         mock_health.return_value = {
             "status": "healthy",
@@ -98,6 +109,16 @@ async def test_rag_query_endpoint(client):
     """
     Tests the query endpoint with a mocked RAG chain to avoid calling the real LLM.
     """
+    if not RAG_AVAILABLE:
+        response = client.post("/rag/query", json={
+            "question": "How many annual leave days do I get?",
+            "userId": "test_user",
+            "organizationId": "60d5ec388832a828f8000000"
+        })
+        assert response.status_code == 503
+        assert response.json()["code"] == "FEATURE_NOT_AVAILABLE_IN_BUILD"
+        return
+
     with patch("app.rag.services.rag_service.query_rag") as mock_query:
         mock_query.return_value = {
             "answer": "Employees are entitled to 20 days of annual leave.",
@@ -124,10 +145,19 @@ async def test_rag_query_endpoint(client):
 
 def test_rag_query_empty_question(client):
     response = client.post("/rag/query", json={"question": "", "organizationId": "60d5ec388832a828f8000000"})
+    if not RAG_AVAILABLE:
+        assert response.status_code == 503
+        return
     assert response.status_code == 422
 
 
 def test_rag_index_endpoint(client):
+    if not RAG_AVAILABLE:
+        response = client.post("/rag/index", json={"organizationId": "60d5ec388832a828f8000000"})
+        assert response.status_code == 503
+        assert response.json()["code"] == "FEATURE_NOT_AVAILABLE_IN_BUILD"
+        return
+
     with patch("app.api.rag_routes.index_knowledge_base") as mock_index:
         mock_index.return_value = {
             "success": True,

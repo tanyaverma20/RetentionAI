@@ -17,7 +17,9 @@ class UpstashRedisStore {
   }
 
   async increment(key) {
-    if (!isRedisConfigured()) return undefined;
+    if (!isRedisConfigured()) {
+      return { totalHits: 1, resetTime: new Date(Date.now() + (this.windowMs || 60_000)) };
+    }
     try {
       const redis = getRedisClient();
       const redisKey = `${this.prefix}${key}`;
@@ -30,7 +32,7 @@ class UpstashRedisStore {
       return { totalHits, resetTime };
     } catch (err) {
       logger.warn('redis_rate_limit_error', { error: err.message });
-      return undefined;
+      return { totalHits: 1, resetTime: new Date(Date.now() + (this.windowMs || 60_000)) };
     }
   }
 
@@ -63,7 +65,7 @@ class UpstashRedisStore {
  * Helper to build standard rate limiters with consistent headers, responses, and store.
  */
 function createRateLimit({ windowMs, limit, keyGenerator, skipSuccessfulRequests = false, prefix = 'rl:' }) {
-  const store = isRedisConfigured() ? new UpstashRedisStore(prefix) : undefined;
+  const store = process.env.NODE_ENV !== 'test' && isRedisConfigured() ? new UpstashRedisStore(prefix) : undefined;
   return rateLimit({
     windowMs,
     limit,

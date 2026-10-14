@@ -197,8 +197,13 @@ async def request_logging_middleware(request: Request, call_next):
 
 @app.get("/health")
 async def health():
-    """Fast liveness probe — no external calls. Used by Docker HEALTHCHECK."""
-    return {"status": "OK", "uptimeSeconds": round(time.time() - _process_started_at)}
+    """Fast liveness probe — no external calls. Used by Docker HEALTHCHECK and monitoring."""
+    model_loaded = prediction_service.model_bundle is not None
+    return {
+        "status": "OK",
+        "modelLoaded": model_loaded,
+        "uptimeSeconds": round(time.time() - _process_started_at),
+    }
 
 
 @app.get("/health/deep")

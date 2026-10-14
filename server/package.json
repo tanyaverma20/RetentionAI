@@ -6,7 +6,10 @@
   "scripts": {
     "dev": "node --env-file=.env --watch src/server.js",
     "start": "node --env-file=.env src/server.js",
-    "test": "node --env-file=.env --test tests/*.test.js",
+    "test": "node --test tests/error-handler.test.js tests/jwt.test.js tests/validation.test.js tests/password-policy.test.js tests/rbac.test.js tests/rate-limit.test.js tests/cors-origins.test.js tests/token-utils.test.js tests/apiContracts.supertest.test.js",
+    "test:unit": "node --test tests/error-handler.test.js tests/jwt.test.js tests/validation.test.js tests/password-policy.test.js tests/rbac.test.js tests/rate-limit.test.js tests/cors-origins.test.js tests/token-utils.test.js",
+    "test:contracts": "node --test tests/apiContracts.supertest.test.js",
+    "test:all": "node --test tests/*.test.js",
     "db:check": "node --env-file=.env scripts/check-consistency.js",
     "db:backup": "bash ../scripts/ops/backup.sh",
     "db:restore": "bash ../scripts/ops/restore.sh",

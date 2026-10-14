@@ -20,6 +20,7 @@ from app.rag.services.rag_service import (
     _sparse_bm25_retrieve,
     query_rag,
 )
+from app.features import RAG_AVAILABLE
 
 
 def test_evaluate_groundedness_with_citations_and_supported_claims():
@@ -133,6 +134,20 @@ def test_knowledge_query_api_contract_metrics(client):
         "cacheHit": False,
         "retrievalMode": "hybrid",
     }
+
+    if not RAG_AVAILABLE:
+        res = client.post(
+            "/knowledge/query",
+            headers=headers,
+            json={
+                "question": "How many leave days?",
+                "organizationId": "60d5ec388832a828f8000000",
+                "retrievalMode": "hybrid"
+            }
+        )
+        assert res.status_code == 503
+        assert res.json()["code"] == "FEATURE_NOT_AVAILABLE_IN_BUILD"
+        return
 
     with patch("app.api.rag_routes.query_rag", return_value=mock_result):
         res = client.post(

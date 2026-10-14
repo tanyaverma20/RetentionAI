@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { AuditLog } from '../models/AuditLog.js';
 import { parse } from 'json2csv';
 import { logger } from '../utils/logger.js';
@@ -10,6 +11,7 @@ import { logger } from '../utils/logger.js';
  * are optional so Sprint 8's simpler call sites keep working unchanged.
  */
 export async function recordAudit(organizationId, action, userId, options = {}) {
+  if (mongoose.connection.readyState !== 1) return;
   const { entityType = null, entityId = null, ip = null, changes = undefined, context = {} } = options;
   try {
     await AuditLog.create({ organizationId, action, userId, entityType, entityId, ip, changes, context });

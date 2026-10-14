@@ -24,8 +24,10 @@ const CONNECTION_OPTIONS = {
 // mongodb-memory-server is still a direct dependency and still used by the
 // test suite (tests/*.integration.test.js) and scripts/seedHrData.js, which
 // each spin up their own isolated instance — unrelated to this function.
-export async function connectDatabase() {
-  await mongoose.connect(env.mongodbUri, { dbName: env.mongodbDbName, ...CONNECTION_OPTIONS });
+export async function connectDatabase(uri) {
+  const targetUri = uri || process.env.MONGODB_URI || env.mongodbUri;
+  const dbName = process.env.MONGODB_DB_NAME || env.mongodbDbName;
+  await mongoose.connect(targetUri, { dbName, ...CONNECTION_OPTIONS });
   logger.info('mongo_connected', { mode: 'configured' });
 }
 

@@ -34,7 +34,22 @@ const PLACEHOLDER_VALUES = new Set([
   'replace-with-a-service-token',
 ]);
 
-const parsedEnv = envSchema.safeParse(process.env);
+const isRunningTests =
+  process.env.NODE_ENV === 'test' ||
+  Boolean(process.env.NODE_TEST_CONTEXT) ||
+  process.execArgv.some((arg) => arg.includes('test')) ||
+  process.argv.some((arg) => arg.includes('test'));
+
+const rawEnv = { ...process.env };
+if (isRunningTests) {
+  rawEnv.NODE_ENV = 'test';
+  rawEnv.MONGODB_URI = rawEnv.MONGODB_URI || 'mongodb://127.0.0.1:27017/retentionai_test';
+  rawEnv.JWT_ACCESS_SECRET = rawEnv.JWT_ACCESS_SECRET || 'test-access-secret-that-is-at-least-32-characters';
+  rawEnv.JWT_REFRESH_SECRET = rawEnv.JWT_REFRESH_SECRET || 'test-refresh-secret-that-is-at-least-32-characters';
+  rawEnv.CORS_ORIGINS = rawEnv.CORS_ORIGINS || 'http://localhost:5173';
+}
+
+const parsedEnv = envSchema.safeParse(rawEnv);
 
 if (!parsedEnv.success) {
   throw new Error(
