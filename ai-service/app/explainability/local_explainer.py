@@ -220,19 +220,39 @@ def _build_explanation(
     # 6. Build narrative
     narrative = build_narrative(top_positive, top_negative, risk_level, risk_score)
 
+    waterfall = {
+        "baseValue": round(base_value, 4),
+        "finalPrediction": round(risk_score, 4),
+        "features": [
+            {
+                "featureKey": f["featureKey"],
+                "displayName": f["displayName"],
+                "contribution": f["shapValue"],
+                "formattedValue": f["formattedValue"],
+                "direction": f["direction"],
+            }
+            for f in sorted_feats[:10]
+        ],
+    }
+
     return {
-        "employeeId":              str(employee_doc.get("_id", "")),
-        "riskScore":               round(risk_score, 4),
-        "riskLevel":               risk_level,
-        "confidence":              round(confidence, 4),
-        "baseValue":               round(base_value, 4),
-        "shapValues":              [round(float(v), 6) for v in shap_vals],
+        "employeeId": str(employee_doc.get("_id", "")),
+        "riskScore": round(risk_score, 4),
+        "riskLevel": risk_level,
+        "confidence": round(confidence, 4),
+        "baseValue": round(base_value, 4),
+        "shapValues": [round(float(v), 6) for v in shap_vals],
         "topPositiveContributors": top_positive,
         "topNegativeContributors": top_negative,
-        "top10Features":           top_10,
-        "allFeatures":             all_features,
-        "narrative":               narrative,
-        "generatedAt":             datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "top10Features": top_10,
+        "allFeatures": all_features,
+        "waterfall": waterfall,
+        "narrative": narrative,
+        "causalDisclaimer": (
+            "Model explanations reflect statistical associations in historical data and do not establish causal relationships. "
+            "A high risk contribution indicates statistical correlation with turnover risk, not an empirical proof of cause."
+        ),
+        "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
 
 

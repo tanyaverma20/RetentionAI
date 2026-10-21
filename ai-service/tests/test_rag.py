@@ -9,7 +9,7 @@ RAG Module Tests - covers:
 """
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 from langchain_core.documents import Document
 from fastapi.testclient import TestClient
 from app.features import RAG_AVAILABLE
@@ -119,7 +119,7 @@ async def test_rag_query_endpoint(client):
         assert response.json()["code"] == "FEATURE_NOT_AVAILABLE_IN_BUILD"
         return
 
-    with patch("app.rag.services.rag_service.query_rag") as mock_query:
+    with patch("app.api.rag_routes.query_rag", new_callable=AsyncMock) as mock_query:
         mock_query.return_value = {
             "answer": "Employees are entitled to 20 days of annual leave.",
             "sourceDocuments": [

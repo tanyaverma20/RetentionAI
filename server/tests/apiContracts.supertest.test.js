@@ -15,8 +15,23 @@ describe('Supertest REST API Contracts, Tenant Isolation, Error Handling, and He
   let issuedRefreshToken;
 
   before(async () => {
-    mongod = await MongoMemoryServer.create();
-    const databaseUri = mongod.getUri();
+    let databaseUri;
+    try {
+      mongod = await MongoMemoryServer.create();
+      databaseUri = mongod.getUri();
+    } catch (err) {
+      const fs = await import('node:fs');
+      const path = await import('node:path');
+      const envPath = path.resolve(process.cwd(), '.env');
+      if (fs.existsSync(envPath)) {
+        const envContent = fs.readFileSync(envPath, 'utf8');
+        const match = envContent.match(/MONGODB_URI=(.+)/);
+        if (match) {
+          databaseUri = match[1].trim();
+        }
+      }
+      if (!databaseUri) throw err;
+    }
 
     process.env.NODE_ENV = 'test';
     process.env.MONGODB_URI = databaseUri;

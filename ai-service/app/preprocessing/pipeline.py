@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import datetime
+import hashlib
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.model_selection import train_test_split
 from pymongo import MongoClient
@@ -528,11 +529,79 @@ def generate_synthetic_data(num_records: int = 5000) -> pd.DataFrame:
     return df
 
 
-def _engineer_and_impute(df: pd.DataFrame) -> pd.DataFrame:
+def validate_dataset_schema(df: pd.DataFrame, is_training: bool = True) -> tuple[bool, list[str]]:
     """
-    Shared feature engineering + missing-value imputation used by both the
-    training split (fit_transform_pipeline) and inference (transform_inference)
-    — a single source of truth so train/serve skew can't creep in between them.
+    Validates dataset structural integrity, column presence, missingness bounds,
+    and value ranges prior to pipeline execution. Returns (is_valid, list_of_issues).
+    """
+    issues = []
+    if df is None or len(df) == 0:
+        return False, ["Dataset is empty or None."]
+
+    if is_training and len(df) < 20:
+        issues.append(f"Insufficient training records: {len(df)} rows provided (minimum 20 required).")
+
+    # Target class check for training
+    if is_training:
+        if "status" not in df.columns:
+            issues.append("Required target column 'status' is missing from training dataset.")
+        else:
+            y = df["status"].apply(lambda x: 1 if str(x).upper() in ["TERMINATED", "INACTIVE"] else 0).values
+            unique_classes = np.unique(y)
+            if len(unique_classes) < 2:
+                issues.append("Training dataset contains only one target class; both active and terminated samples are required.")
+            else:
+                minority_count = min(np.sum(y == 0), np.sum(y == 1))
+                if minority_count < 2:
+                    issues.append(f"Minority class has only {minority_count} sample(s); at least 2 required for stratified evaluation.")
+
+    # Range checks on available numerical features
+    if "age" in df.columns:
+        ages = pd.to_numeric(df["age"], errors="coerce").dropna()
+        if len(ages) > 0 and ((ages < 16) | (ages > 100)).any():
+            issues.append("Detected out-of-range employee age values (<16 or >100 years).")
+
+    if "salary" in df.columns:
+        salaries = pd.to_numeric(df["salary"], errors="coerce").dropna()
+        if len(salaries) > 0 and (salaries < 0).any():
+            issues.append("Detected negative salary values.")
+
+    if "attendance_percentage" in df.columns:
+        att = pd.to_numeric(df["attendance_percentage"], errors="coerce").dropna()
+        if len(att) > 0 and ((att < 0) | (att > 100)).any():
+            issues.append("Detected attendance percentages outside the [0, 100]% bounds.")
+
+    # Missingness check
+    missing_pct = df.isnull().mean()
+    high_missing_cols = missing_pct[missing_pct > 0.6].index.tolist()
+    if high_missing_cols:
+        issues.append(f"High missingness (>60%) detected in columns: {', '.join(high_missing_cols)}")
+
+    is_valid = len(issues) == 0
+    return is_valid, issues
+
+
+def compute_dataset_fingerprint(df: pd.DataFrame) -> str:
+    """
+    Computes a deterministic SHA-256 fingerprint for a dataset based on
+    sorted columns, shape, and content summary hash.
+    """
+    hasher = hashlib.sha256()
+    col_str = ",".join(sorted(df.columns.astype(str)))
+    hasher.update(col_str.encode("utf-8"))
+    hasher.update(f"{df.shape[0]}x{df.shape[1]}".encode("utf-8"))
+    # Hash deterministic sample subset
+    sample_df = pd.concat([df.head(5), df.tail(5)]) if len(df) > 10 else df
+    content_str = sample_df.to_csv(index=False)
+    hasher.update(content_str.encode("utf-8"))
+    return hasher.hexdigest()
+
+
+def _engineer_features(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Vectorized feature engineering WITHOUT imputation. Derives age from dateOfBirth,
+    tenure from joiningDate, and ensures expected columns exist with correct types.
+    Median imputation is deliberately omitted here to prevent test-to-train leakage.
     """
     df = df.copy()
     current_date = pd.Timestamp.now()
@@ -543,6 +612,8 @@ def _engineer_and_impute(df: pd.DataFrame) -> pd.DataFrame:
             df['age'] = ((current_date - df['dateOfBirth']).dt.days / 365.25).astype(float)
         else:
             df['age'] = 30.0
+    else:
+        df['age'] = pd.to_numeric(df['age'], errors='coerce')
 
     if 'tenure_months' not in df.columns:
         if 'joiningDate' in df.columns:
@@ -550,45 +621,167 @@ def _engineer_and_impute(df: pd.DataFrame) -> pd.DataFrame:
             df['tenure_months'] = ((current_date - df['joiningDate']).dt.days / 30.43).astype(float)
         else:
             df['tenure_months'] = 24.0
+    else:
+        df['tenure_months'] = pd.to_numeric(df['tenure_months'], errors='coerce')
 
     for col in NUMERICAL_COLS:
         if col not in df.columns:
             df[col] = _NEUTRAL_DEFAULTS.get(col, 0.0)
-        df[col] = pd.to_numeric(df[col], errors='coerce')
-        df[col] = df[col].fillna(_NEUTRAL_DEFAULTS.get(col, df[col].median() if not pd.isna(df[col].median()) else 0.0))
+        else:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
 
     for col in CATEGORICAL_COLS:
         if col not in df.columns:
             df[col] = 'UNKNOWN'
-        df[col] = df[col].astype(str).fillna('UNKNOWN')
+        else:
+            df[col] = df[col].astype(str)
 
     return df
 
 
-def fit_transform_pipeline(df: pd.DataFrame):
+def _apply_imputation(df: pd.DataFrame, imputer_values: dict = None) -> pd.DataFrame:
     """
-    Engineers features, splits into train/test BEFORE fitting any
-    scaler/encoder (Sprint 8 audit finding: the previous pipeline fit the
-    StandardScaler/LabelEncoders on the full dataset prior to splitting,
-    letting test-set statistics leak into training), then fits scaler/
-    encoders on the training partition only and transforms both splits.
+    Imputes numerical missing values using strictly supplied imputer_values
+    (computed on training split), falling back to documented neutral defaults.
+    """
+    df = df.copy()
+    imputer = imputer_values or {}
+
+    for col in NUMERICAL_COLS:
+        fallback = imputer.get(col, _NEUTRAL_DEFAULTS.get(col, 0.0))
+        df[col] = df[col].fillna(fallback)
+
+    for col in CATEGORICAL_COLS:
+        df[col] = df[col].fillna('UNKNOWN').replace({'nan': 'UNKNOWN', 'None': 'UNKNOWN', '': 'UNKNOWN'})
+
+    return df
+
+
+def _engineer_and_impute(df: pd.DataFrame, imputer_values: dict = None) -> pd.DataFrame:
+    """
+    Backward-compatible helper: engineers features and applies imputation.
+    When imputer_values is None, uses neutral defaults/per-column defaults.
+    """
+    df = _engineer_features(df)
+    return _apply_imputation(df, imputer_values)
+
+
+def fit_transform_pipeline(df: pd.DataFrame, test_size: float = 0.2, random_state: int = 42):
+    """
+    Leakage-Safe Preprocessing Pipeline:
+    1. Derives features without imputation.
+    2. Splits into train and test sets BEFORE computing any statistics.
+    3. Fits median imputers, StandardScaler, and LabelEncoders strictly on df_train.
+    4. Transforms both partitions using the training-derived statistics.
 
     Returns:
         X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata
     """
-    df = _engineer_and_impute(df)
+    # 1. Feature Engineering (without imputation)
+    df_engineered = _engineer_features(df)
 
-    y = np.zeros(len(df))
-    if 'status' in df.columns:
-        y = df['status'].apply(lambda x: 1 if str(x).upper() in ['TERMINATED', 'INACTIVE'] else 0).values
+    y = np.zeros(len(df_engineered))
+    if 'status' in df_engineered.columns:
+        y = df_engineered['status'].apply(lambda x: 1 if str(x).upper() in ['TERMINATED', 'INACTIVE'] else 0).values
 
+    # 2. Stratified Train / Test Split
     if len(set(y)) < 2:
-        train_idx, test_idx = train_test_split(np.arange(len(df)), test_size=0.2, random_state=42)
+        train_idx, test_idx = train_test_split(np.arange(len(df_engineered)), test_size=test_size, random_state=random_state)
     else:
-        train_idx, test_idx = train_test_split(np.arange(len(df)), test_size=0.2, stratify=y, random_state=42)
+        train_idx, test_idx = train_test_split(np.arange(len(df_engineered)), test_size=test_size, stratify=y, random_state=random_state)
 
-    df_train, df_test = df.iloc[train_idx], df.iloc[test_idx]
-    y_train, y_test = y[train_idx], y[test_idx]
+    df_train_raw = df_engineered.iloc[train_idx].copy()
+    df_test_raw = df_engineered.iloc[test_idx].copy()
+    y_train = y[train_idx]
+    y_test = y[test_idx]
+
+    # 3. Compute Training Imputation Medians Strictly on Train Split (No Leakage)
+    train_imputer_values = {}
+    for col in NUMERICAL_COLS:
+        med = df_train_raw[col].median()
+        train_imputer_values[col] = float(med) if not pd.isna(med) else _NEUTRAL_DEFAULTS.get(col, 0.0)
+
+    # 4. Apply Training Imputer to both Train and Test
+    df_train = _apply_imputation(df_train_raw, train_imputer_values)
+    df_test = _apply_imputation(df_test_raw, train_imputer_values)
+
+    # 5. Fit Scaler strictly on df_train
+    scaler = StandardScaler()
+    scaler.fit(df_train[NUMERICAL_COLS])
+
+    # 6. Fit Encoders strictly on df_train (ensuring UNKNOWN is supported)
+    encoders = {}
+    for col in CATEGORICAL_COLS:
+        le = LabelEncoder()
+        unique_vals = list(df_train[col].unique())
+        if 'UNKNOWN' not in unique_vals:
+            unique_vals.append('UNKNOWN')
+        le.fit(unique_vals)
+        encoders[col] = le
+
+    # 7. Apply Transformation
+    X_train = _apply_transform(df_train, scaler, encoders)
+    X_test = _apply_transform(df_test, scaler, encoders)
+
+    feature_metadata = {
+        'feature_cols': FEATURE_COLS,
+        'numerical_cols': NUMERICAL_COLS,
+        'categorical_cols': CATEGORICAL_COLS,
+        'imputer_values': train_imputer_values,
+        'dataset_fingerprint': compute_dataset_fingerprint(df),
+        'train_samples': len(df_train),
+        'test_samples': len(df_test),
+        'positive_class_ratio': float(np.mean(y_train)),
+    }
+
+    return X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata
+
+
+def fit_transform_split(df: pd.DataFrame, test_size: float = 0.15, val_size: float = 0.15, random_state: int = 42):
+    """
+    3-Way Stratified Split Pipeline:
+    Splits dataset into Train (e.g. 70%), Validation (15%), and Test (15%) partitions.
+    All preprocessing parameters (medians, scaling, encoding) are fit STRICTLY on Train.
+    Validation and Test are transformed with zero leakage.
+
+    Returns:
+        X_train, X_val, X_test, y_train, y_val, y_test, scaler, encoders, feature_metadata
+    """
+    df_engineered = _engineer_features(df)
+
+    y = np.zeros(len(df_engineered))
+    if 'status' in df_engineered.columns:
+        y = df_engineered['status'].apply(lambda x: 1 if str(x).upper() in ['TERMINATED', 'INACTIVE'] else 0).values
+
+    # First split off untouched test set
+    strat = y if len(set(y)) >= 2 else None
+    train_val_idx, test_idx = train_test_split(np.arange(len(df_engineered)), test_size=test_size, stratify=strat, random_state=random_state)
+
+    df_train_val = df_engineered.iloc[train_val_idx]
+    y_train_val = y[train_val_idx]
+
+    # Second split: separate validation from train
+    rel_val_size = val_size / (1.0 - test_size)
+    strat_tv = y_train_val if len(set(y_train_val)) >= 2 else None
+    train_idx, val_idx = train_test_split(np.arange(len(df_train_val)), test_size=rel_val_size, stratify=strat_tv, random_state=random_state)
+
+    df_train_raw = df_train_val.iloc[train_idx].copy()
+    df_val_raw = df_train_val.iloc[val_idx].copy()
+    df_test_raw = df_engineered.iloc[test_idx].copy()
+
+    y_train = y_train_val[train_idx]
+    y_val = y_train_val[val_idx]
+    y_test = y[test_idx]
+
+    # Compute medians strictly on Train
+    train_imputer_values = {
+        col: float(df_train_raw[col].median()) if not pd.isna(df_train_raw[col].median()) else _NEUTRAL_DEFAULTS.get(col, 0.0)
+        for col in NUMERICAL_COLS
+    }
+
+    df_train = _apply_imputation(df_train_raw, train_imputer_values)
+    df_val = _apply_imputation(df_val_raw, train_imputer_values)
+    df_test = _apply_imputation(df_test_raw, train_imputer_values)
 
     scaler = StandardScaler()
     scaler.fit(df_train[NUMERICAL_COLS])
@@ -603,21 +796,28 @@ def fit_transform_pipeline(df: pd.DataFrame):
         encoders[col] = le
 
     X_train = _apply_transform(df_train, scaler, encoders)
+    X_val = _apply_transform(df_val, scaler, encoders)
     X_test = _apply_transform(df_test, scaler, encoders)
 
     feature_metadata = {
         'feature_cols': FEATURE_COLS,
         'numerical_cols': NUMERICAL_COLS,
         'categorical_cols': CATEGORICAL_COLS,
+        'imputer_values': train_imputer_values,
+        'dataset_fingerprint': compute_dataset_fingerprint(df),
+        'train_samples': len(df_train),
+        'val_samples': len(df_val),
+        'test_samples': len(df_test),
+        'positive_class_ratio': float(np.mean(y_train)),
     }
 
-    return X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata
+    return X_train, X_val, X_test, y_train, y_val, y_test, scaler, encoders, feature_metadata
 
 
 def _apply_transform(df: pd.DataFrame, scaler, encoders) -> np.ndarray:
-    """Scales/encodes an already-engineered+imputed dataframe. Shared by both
-    the training split and transform_inference — the single source of truth
-    for turning a feature dataframe into the model's input matrix."""
+    """Scales/encodes an already-engineered+imputed dataframe. Shared by training,
+    validation, and inference — the single source of truth for turning a feature
+    dataframe into the model's input matrix."""
     X_num = scaler.transform(df[NUMERICAL_COLS])
 
     X_cat_list = []
@@ -632,9 +832,10 @@ def _apply_transform(df: pd.DataFrame, scaler, encoders) -> np.ndarray:
     return np.hstack([X_num, X_cat])
 
 
-def transform_inference(df: pd.DataFrame, scaler, encoders) -> np.ndarray:
+def transform_inference(df: pd.DataFrame, scaler, encoders, imputer_values: dict = None) -> np.ndarray:
     """Transforms employee records for inference — reuses the exact same
-    engineering/imputation/scaling/encoding path as training (no duplicated
-    logic that could drift into train/serve skew)."""
-    df = _engineer_and_impute(df)
-    return _apply_transform(df, scaler, encoders)
+    engineering/imputation/scaling/encoding path as training with zero train/serve skew."""
+    df_engineered = _engineer_features(df)
+    df_imputed = _apply_imputation(df_engineered, imputer_values)
+    return _apply_transform(df_imputed, scaler, encoders)
+

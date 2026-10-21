@@ -63,7 +63,14 @@ def test_app_imports_without_heavy_libraries(lite_env):
 
 def test_prediction_and_decision_routes_are_registered(lite_env):
     main = importlib.import_module("app.main")
-    paths = {route.path for route in main.app.routes}
+    paths = set()
+    for route in main.app.routes:
+        if hasattr(route, "path"):
+            paths.add(route.path)
+        if hasattr(route, "original_router") and hasattr(route.original_router, "routes"):
+            for sub_route in route.original_router.routes:
+                if hasattr(sub_route, "path"):
+                    paths.add(sub_route.path)
     # These do not need torch and must survive in the lite build.
     assert "/health" in paths
     assert any(p.startswith("/predict") for p in paths), paths

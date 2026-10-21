@@ -19,10 +19,11 @@ from sklearn.base import clone
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, cross_val_predict
 from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score, roc_auc_score,
-    average_precision_score, fbeta_score,
+    average_precision_score, fbeta_score, confusion_matrix, brier_score_loss,
 )
 import xgboost as xgb
 import lightgbm as lgb
@@ -140,20 +141,32 @@ def _model_size_bytes(model) -> int:
 
 
 def evaluate_model(model, X_test, y_test, threshold: float = 0.5) -> dict:
-    """Computes performance metrics for a fitted model at a given decision threshold."""
+    """Computes comprehensive performance metrics for a fitted model at a given decision threshold."""
     if hasattr(model, "predict_proba"):
         probs = model.predict_proba(X_test)[:, 1]
     else:
         probs = model.predict(X_test)
     preds = (probs >= threshold).astype(int)
 
+    cm = confusion_matrix(y_test, preds, labels=[0, 1])
+    tn, fp, fn, tp = int(cm[0, 0]), int(cm[0, 1]), int(cm[1, 0]), int(cm[1, 1])
+    brier = float(brier_score_loss(y_test, probs)) if len(y_test) > 0 else 0.0
+    f2 = float(fbeta_score(y_test, preds, beta=2.0, zero_division=0))
+
     return {
         "accuracy": float(accuracy_score(y_test, preds)),
         "precision": float(precision_score(y_test, preds, zero_division=0)),
         "recall": float(recall_score(y_test, preds, zero_division=0)),
         "f1": float(f1_score(y_test, preds, zero_division=0)),
+        "f2": f2,
         "rocAuc": float(roc_auc_score(y_test, probs)) if len(set(y_test)) > 1 else 0.5,
         "prAuc": float(average_precision_score(y_test, probs)) if len(set(y_test)) > 1 else 0.0,
+        "brierScore": brier,
+        "confusionMatrix": {"tn": tn, "fp": fp, "fn": fn, "tp": tp, "matrix": [[tn, fp], [fn, tp]]},
+        "truePositives": tp,
+        "falsePositives": fp,
+        "trueNegatives": tn,
+        "falseNegatives": fn,
         "threshold": float(threshold),
     }
 
@@ -361,11 +374,13 @@ def tune_hyperparameters(model_name: str, X_train, y_train, n_iter: int = 25):
     pos_weight = (y_train == 0).sum() / max((y_train == 1).sum(), 1)
     base_estimator = _candidate_models(pos_weight)[model_name]
     param_grid = _PARAM_GRIDS[model_name]
+    total_combinations = int(np.prod([len(v) for v in param_grid.values()]))
+    effective_n_iter = min(n_iter, total_combinations)
 
     search = RandomizedSearchCV(
         base_estimator,
         param_distributions=param_grid,
-        n_iter=n_iter,
+        n_iter=effective_n_iter,
         scoring="f1",
         cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
         random_state=42,
@@ -400,31 +415,38 @@ def calibrate_model(tuned_estimator, X_train, y_train):
 # Phase 7 — Threshold Optimization
 # ---------------------------------------------------------------------------
 
-def optimize_threshold(tuned_estimator, X_train, y_train, beta: float = 2.0, min_precision: float = 0.3):
+def optimize_threshold(tuned_estimator, X_train, y_train, beta: float = 2.0, min_precision: float = 0.3, val_data=None):
     """
-    Sweeps candidate thresholds using out-of-fold cross-validated
-    predictions on the training set only (X_test is never touched here,
-    keeping it a clean final hold-out) and selects the one maximizing
-    F-beta (beta=2 weights recall twice as heavily as precision, matching
-    "prioritize identifying employees likely to leave while maintaining
-    reasonable precision"), subject to a minimum precision floor so the
-    HR Action Queue doesn't drown in false positives. 0.5 is never assumed.
+    Sweeps candidate thresholds using validation data (if provided) or
+    out-of-fold cross-validated predictions on the training set (X_test is
+    never touched here, keeping it a clean final hold-out) and selects the
+    one maximizing F-beta (beta=2 weights recall twice as heavily as precision),
+    subject to a minimum precision floor so the HR Action Queue doesn't drown
+    in false positives. 0.5 is never assumed.
 
     Returns (best_threshold, sweep_records).
     """
-    calibrated_for_oof = CalibratedClassifierCV(clone(tuned_estimator), method="isotonic", cv=5)
-    oof_probs = cross_val_predict(
-        calibrated_for_oof, X_train, y_train, cv=5, method="predict_proba", n_jobs=_TRAIN_CV_JOBS,
-    )[:, 1]
+    if val_data is not None and len(val_data) == 2 and val_data[0] is not None:
+        X_eval, y_eval = val_data
+        calibrated_for_eval = CalibratedClassifierCV(clone(tuned_estimator), method="isotonic", cv=5)
+        calibrated_for_eval.fit(X_train, y_train)
+        oof_probs = calibrated_for_eval.predict_proba(X_eval)[:, 1]
+        eval_targets = y_eval
+    else:
+        calibrated_for_oof = CalibratedClassifierCV(clone(tuned_estimator), method="isotonic", cv=5)
+        oof_probs = cross_val_predict(
+            calibrated_for_oof, X_train, y_train, cv=5, method="predict_proba", n_jobs=_TRAIN_CV_JOBS,
+        )[:, 1]
+        eval_targets = y_train
 
     thresholds = np.linspace(0.05, 0.95, 91)
     best_threshold, best_score = 0.5, -1.0
     sweep = []
     for t in thresholds:
         preds = (oof_probs >= t).astype(int)
-        prec = precision_score(y_train, preds, zero_division=0)
-        rec = recall_score(y_train, preds, zero_division=0)
-        f2 = fbeta_score(y_train, preds, beta=beta, zero_division=0)
+        prec = precision_score(eval_targets, preds, zero_division=0)
+        rec = recall_score(eval_targets, preds, zero_division=0)
+        f2 = fbeta_score(eval_targets, preds, beta=beta, zero_division=0)
         sweep.append({"threshold": float(t), "precision": float(prec), "recall": float(rec), "f2": float(f2)})
         if prec >= min_precision and f2 > best_score:
             best_score = f2
@@ -438,15 +460,25 @@ def optimize_threshold(tuned_estimator, X_train, y_train, beta: float = 2.0, min
 # Orchestration
 # ---------------------------------------------------------------------------
 
-def train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata) -> dict:
+def train_and_select_best_model(
+    X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata,
+    X_val=None, y_val=None, evaluation_config: dict = None,
+) -> dict:
     """
-    Runs Phases 4-7 end to end: benchmark 5 models -> tune the winner's
-    hyperparameters -> calibrate its probabilities -> optimize the decision
-    threshold -> package everything (plus the full benchmark comparison,
-    for the benchmark report) into a model bundle.
+    Runs Phases 4-7 end to end:
+    - Benchmarks 5 models on development data (X_val if provided, else X_test for backward compatibility).
+    - Tunes the winner's hyperparameters on X_train with CV.
+    - Calibrates its probabilities on X_train with CV.
+    - Optimizes decision threshold on development data (X_val or X_train out-of-fold).
+    - Evaluates once on untouched final test set X_test, y_test.
+    - Packages everything into a model bundle.
     """
-    print("=" * 30, "Phase 4: Model Benchmarking", "=" * 30)
-    benchmark_results = benchmark_models(X_train, y_train, X_test, y_test)
+    has_val = X_val is not None and y_val is not None
+    dev_X = X_val if has_val else X_test
+    dev_y = y_val if has_val else y_test
+
+    print("=" * 30, f"Phase 4: Model Benchmarking ({'Val-Partition' if has_val else 'Dev-Split'})", "=" * 30)
+    benchmark_results = benchmark_models(X_train, y_train, dev_X, dev_y)
     best_name, selection_reason = select_best_model(benchmark_results)
     print(f"Selected best-performing family: {best_name}")
     print(f"Selection reason: {selection_reason}")
@@ -458,28 +490,40 @@ def train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encode
     calibrated_model = calibrate_model(tuned_estimator, X_train, y_train)
 
     print("=" * 30, "Phase 7: Threshold Optimization", "=" * 30)
-    threshold, threshold_sweep = optimize_threshold(tuned_estimator, X_train, y_train)
+    val_data_tuple = (X_val, y_val) if has_val else None
+    threshold, threshold_sweep = optimize_threshold(tuned_estimator, X_train, y_train, val_data=val_data_tuple)
 
+    # Compute validation metrics if validation partition was provided
+    val_metrics = evaluate_model(calibrated_model, dev_X, dev_y, threshold=threshold) if has_val else None
+
+    # Final holdout test evaluation (evaluated ONCE on untouched test set)
     final_metrics = evaluate_model(calibrated_model, X_test, y_test, threshold=threshold)
     final_metrics_default_threshold = evaluate_model(calibrated_model, X_test, y_test, threshold=0.5)
-    print(f"[Final] {best_name} (tuned+calibrated) @ threshold={threshold:.2f}: {final_metrics}")
+    print(f"[Final Holdout Test] {best_name} (tuned+calibrated) @ threshold={threshold:.2f}: {final_metrics}")
+    if val_metrics:
+        print(f"[Validation Partition] {best_name} @ threshold={threshold:.2f}: {val_metrics}")
 
-    # Feature importance is read from the tuned (uncalibrated) estimator —
-    # CalibratedClassifierCV's internal clones don't expose a single
-    # unified .feature_importances_/.coef_, so we fit the tuned estimator
-    # once more on the full training set purely for importance reporting
-    # (does not affect the calibrated model actually shipped in the bundle).
+    # Feature importance is read from the tuned (uncalibrated) estimator
     importance_estimator = clone(tuned_estimator)
     importance_estimator.fit(X_train, y_train)
+
+    # Baseline model comparison: DummyClassifier (most frequent class) on untouched test set
+    dummy_baseline = DummyClassifier(strategy="most_frequent")
+    dummy_baseline.fit(X_train, y_train)
+    baseline_metrics = evaluate_model(dummy_baseline, X_test, y_test, threshold=0.5)
 
     bundle = {
         "model_name": best_name,
         "model": calibrated_model,
         "importance_estimator": importance_estimator,
+        "dummy_baseline": dummy_baseline,
+        "baseline_metrics": baseline_metrics,
         "scaler": scaler,
         "encoders": encoders,
         "feature_metadata": feature_metadata,
         "metrics": final_metrics,
+        "test_metrics": final_metrics,
+        "validation_metrics": val_metrics or final_metrics,
         "metrics_at_default_threshold": final_metrics_default_threshold,
         "threshold": threshold,
         "threshold_sweep": threshold_sweep,
@@ -487,6 +531,22 @@ def train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encode
         "calibration_method": "isotonic",
         "all_model_metrics": {name: res["metrics"] for name, res in benchmark_results.items()},
         "selection_reason": selection_reason,
+        "dataset_fingerprint": feature_metadata.get("dataset_fingerprint", "untracked"),
+        "random_seed": 42,
+        "data_splits": {
+            "train_samples": len(X_train),
+            "val_samples": len(X_val) if has_val else 0,
+            "test_samples": len(X_test),
+            "split_strategy": "3-way stratified split (Train/Val/Test)" if has_val else "2-way stratified split (Train/Test)",
+        },
+        "experiment_config": {
+            "cv_folds": 5,
+            "metric_optimized": "pr_auc",
+            "threshold_beta": 2.0,
+            "calibration_method": "isotonic",
+            "benchmark_candidates": list(benchmark_results.keys()),
+            **(evaluation_config or {}),
+        },
         "trained_at": datetime.datetime.now().isoformat(),
         "version": "v2.0",
     }

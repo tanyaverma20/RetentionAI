@@ -36,6 +36,16 @@ export const exportTelemetryCsv = async () => {
   link.remove();
 };
 
+export const getModelRegistry = async () => {
+  const response = await api.get('/api/v1/observability/model-registry');
+  return response.data;
+};
+
+export const getExperimentationSummary = async () => {
+  const response = await api.get('/api/v1/observability/experiments');
+  return response.data;
+};
+
 export default {
   getTelemetryStats,
   getDriftMetrics,
@@ -43,4 +53,6 @@ export default {
   getAgentTrace,
   runEvalBench,
   exportTelemetryCsv,
+  getModelRegistry,
+  getExperimentationSummary,
 };

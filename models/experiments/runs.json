@@ -1,0 +1,302 @@
+{
+  "runs": [
+    {
+      "run_id": "run_20261019_214223_d2cb52",
+      "experiment_name": "attrition_prediction_prod",
+      "model_name": "LogisticRegression",
+      "timestamp": "2026-10-19T21:42:23.442409",
+      "status": "COMPLETED",
+      "dataset_fingerprint": "707fd76712a7e476c7f7f792c9a77e81247bea9ae95b0a50763acbf4e42c8abe",
+      "parameters": {
+        "seed": 42,
+        "threshold": 0.14999999999999997,
+        "best_params": {
+          "solver": "lbfgs",
+          "penalty": "l2",
+          "C": 3
+        },
+        "calibration_method": "isotonic",
+        "split_strategy": "3-way stratified split (Train/Val/Test)"
+      },
+      "metrics": {
+        "accuracy": 0.7546666666666667,
+        "precision": 0.43812709030100333,
+        "recall": 0.891156462585034,
+        "f1": 0.5874439461883408,
+        "f2": 0.7384441939120632,
+        "rocAuc": 0.8894698841393937,
+        "prAuc": 0.684685532423916,
+        "brierScore": 0.09797101911700383,
+        "confusionMatrix": {
+          "tn": 435,
+          "fp": 168,
+          "fn": 16,
+          "tp": 131,
+          "matrix": [
+            [
+              435,
+              168
+            ],
+            [
+              16,
+              131
+            ]
+          ]
+        },
+        "truePositives": 131,
+        "falsePositives": 168,
+        "trueNegatives": 435,
+        "falseNegatives": 16,
+        "threshold": 0.14999999999999997
+      },
+      "validation_metrics": {
+        "accuracy": 0.7746666666666666,
+        "precision": 0.46099290780141844,
+        "recall": 0.8843537414965986,
+        "f1": 0.6060606060606061,
+        "f2": 0.7471264367816092,
+        "rocAuc": 0.8912805586579572,
+        "prAuc": 0.7045166765101618,
+        "brierScore": 0.09635637024064503,
+        "confusionMatrix": {
+          "tn": 451,
+          "fp": 152,
+          "fn": 17,
+          "tp": 130,
+          "matrix": [
+            [
+              451,
+              152
+            ],
+            [
+              17,
+              130
+            ]
+          ]
+        },
+        "truePositives": 130,
+        "falsePositives": 152,
+        "trueNegatives": 451,
+        "falseNegatives": 17,
+        "threshold": 0.14999999999999997
+      },
+      "baseline_metrics": {
+        "accuracy": 0.804,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "f2": 0.0,
+        "rocAuc": 0.5,
+        "prAuc": 0.196,
+        "brierScore": 0.196,
+        "confusionMatrix": {
+          "tn": 603,
+          "fp": 0,
+          "fn": 147,
+          "tp": 0,
+          "matrix": [
+            [
+              603,
+              0
+            ],
+            [
+              147,
+              0
+            ]
+          ]
+        },
+        "truePositives": 0,
+        "falsePositives": 0,
+        "trueNegatives": 603,
+        "falseNegatives": 147,
+        "threshold": 0.5
+      },
+      "candidate_benchmarks": {
+        "LogisticRegression": {
+          "accuracy": 0.8026666666666666,
+          "precision": 0.49794238683127573,
+          "recall": 0.8231292517006803,
+          "f1": 0.6205128205128205,
+          "f2": 0.7280385078219013,
+          "rocAuc": 0.8932435329023815,
+          "prAuc": 0.7119256549549836,
+          "brierScore": 0.1335238419844894,
+          "confusionMatrix": {
+            "tn": 481,
+            "fp": 122,
+            "fn": 26,
+            "tp": 121,
+            "matrix": [
+              [
+                481,
+                122
+              ],
+              [
+                26,
+                121
+              ]
+            ]
+          },
+          "truePositives": 121,
+          "falsePositives": 122,
+          "trueNegatives": 481,
+          "falseNegatives": 26,
+          "threshold": 0.5,
+          "trainingTimeSec": 0.022891998291015625,
+          "inferenceTimeMsPerRecord": 0.022641817728678387,
+          "modelSizeBytes": 1103,
+          "prAucCvMean": 0.6794996487105003,
+          "prAucCvStdErr": 0.023641444436972924
+        },
+        "RandomForest": {
+          "accuracy": 0.848,
+          "precision": 0.7619047619047619,
+          "recall": 0.32653061224489793,
+          "f1": 0.45714285714285713,
+          "f2": 0.3686635944700461,
+          "rocAuc": 0.8680351079071762,
+          "prAuc": 0.6366295462297414,
+          "brierScore": 0.10800386666666666,
+          "confusionMatrix": {
+            "tn": 588,
+            "fp": 15,
+            "fn": 99,
+            "tp": 48,
+            "matrix": [
+              [
+                588,
+                15
+              ],
+              [
+                99,
+                48
+              ]
+            ]
+          },
+          "truePositives": 48,
+          "falsePositives": 15,
+          "trueNegatives": 588,
+          "falseNegatives": 99,
+          "threshold": 0.5,
+          "trainingTimeSec": 2.9686264991760254,
+          "inferenceTimeMsPerRecord": 0.09259382883707683,
+          "modelSizeBytes": 12153593,
+          "prAucCvMean": 0.6383811987517317,
+          "prAucCvStdErr": 0.021324117093429164
+        },
+        "XGBoost": {
+          "accuracy": 0.8346666666666667,
+          "precision": 0.5827338129496403,
+          "recall": 0.5510204081632653,
+          "f1": 0.5664335664335665,
+          "f2": 0.5570839064649243,
+          "rocAuc": 0.8544465879220677,
+          "prAuc": 0.6336437638196369,
+          "brierScore": 0.1223186874565293,
+          "confusionMatrix": {
+            "tn": 545,
+            "fp": 58,
+            "fn": 66,
+            "tp": 81,
+            "matrix": [
+              [
+                545,
+                58
+              ],
+              [
+                66,
+                81
+              ]
+            ]
+          },
+          "truePositives": 81,
+          "falsePositives": 58,
+          "trueNegatives": 545,
+          "falseNegatives": 66,
+          "threshold": 0.5,
+          "trainingTimeSec": 0.4951205253601074,
+          "inferenceTimeMsPerRecord": 0.034401893615722656,
+          "modelSizeBytes": 300887,
+          "prAucCvMean": 0.62387882784805,
+          "prAucCvStdErr": 0.013486564143446029
+        },
+        "LightGBM": {
+          "accuracy": 0.8266666666666667,
+          "precision": 0.5515151515151515,
+          "recall": 0.6190476190476191,
+          "f1": 0.5833333333333334,
+          "f2": 0.6042496679946879,
+          "rocAuc": 0.8691688947552487,
+          "prAuc": 0.6550406376642438,
+          "brierScore": 0.11385419065255067,
+          "confusionMatrix": {
+            "tn": 529,
+            "fp": 74,
+            "fn": 56,
+            "tp": 91,
+            "matrix": [
+              [
+                529,
+                74
+              ],
+              [
+                56,
+                91
+              ]
+            ]
+          },
+          "truePositives": 91,
+          "falsePositives": 74,
+          "trueNegatives": 529,
+          "falseNegatives": 56,
+          "threshold": 0.5,
+          "trainingTimeSec": 0.33150815963745117,
+          "inferenceTimeMsPerRecord": 0.03809674580891927,
+          "modelSizeBytes": 346260,
+          "prAucCvMean": 0.6393116990567529,
+          "prAucCvStdErr": 0.015228115420575113
+        },
+        "CatBoost": {
+          "accuracy": 0.8293333333333334,
+          "precision": 0.553072625698324,
+          "recall": 0.673469387755102,
+          "f1": 0.6073619631901841,
+          "f2": 0.6453715775749674,
+          "rocAuc": 0.87400864159926,
+          "prAuc": 0.6690755135182044,
+          "brierScore": 0.11423064732301368,
+          "confusionMatrix": {
+            "tn": 523,
+            "fp": 80,
+            "fn": 48,
+            "tp": 99,
+            "matrix": [
+              [
+                523,
+                80
+              ],
+              [
+                48,
+                99
+              ]
+            ]
+          },
+          "truePositives": 99,
+          "falsePositives": 80,
+          "trueNegatives": 523,
+          "falseNegatives": 48,
+          "threshold": 0.5,
+          "trainingTimeSec": 5.440889358520508,
+          "inferenceTimeMsPerRecord": 0.029145558675130207,
+          "modelSizeBytes": 1126346,
+          "prAucCvMean": 0.6582613006283445,
+          "prAucCvStdErr": 0.018636861687054005
+        }
+      },
+      "artifact_path": "../models/active\\attrition_model.joblib",
+      "artifact_sha256": "6ceb5ae48314019b662ad7cd7a3393dc0b80ec7b008d7d848904085e34bd6b95",
+      "is_champion": true,
+      "tags": {}
+    }
+  ]
+}

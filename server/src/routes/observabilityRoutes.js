@@ -8,6 +8,8 @@ import {
   getAgentTrace,
   runEvalBench,
   exportTelemetryCsv,
+  getModelRegistry,
+  getExperimentationSummary,
 } from '../controllers/observabilityController.js';
 
 const router = express.Router();
@@ -32,5 +34,11 @@ router.post('/eval/run', authorize('ADMIN'), runEvalBench);
 
 // Export telemetry dataset CSV (ADMIN, EXECUTIVE, HR_DIRECTOR, CHRO, CEO)
 router.get('/export/csv', authorize('ADMIN', 'EXECUTIVE', 'HR_DIRECTOR', 'CHRO', 'CEO'), exportTelemetryCsv);
+
+// Model Registry metadata and verification status
+router.get('/model-registry', authorize('ADMIN', 'EXECUTIVE', 'HR_DIRECTOR', 'CHRO', 'CEO', 'HR_MANAGER'), getModelRegistry);
+
+// A/B testing and intervention experimentation summary
+router.get('/experiments', authorize('ADMIN', 'EXECUTIVE', 'HR_DIRECTOR', 'CHRO', 'CEO', 'HR_MANAGER'), getExperimentationSummary);
 
 export default router;

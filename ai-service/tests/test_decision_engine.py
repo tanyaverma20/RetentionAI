@@ -62,7 +62,7 @@ def _fake_orchestrator_result(employee_id: str) -> dict:
             "dataCompleteness": 1.0,
         },
         "nextReviewDate": "2026-09-01",
-        "generatedAt": datetime.datetime.utcnow().isoformat(),
+        "generatedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
 
 

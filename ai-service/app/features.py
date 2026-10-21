@@ -44,8 +44,15 @@ def _installed(module_name: str) -> bool:
         return False
 
 
-NLP_AVAILABLE = _installed("torch") and _installed("transformers")
-RAG_AVAILABLE = _installed("sentence_transformers") and _installed("chromadb")
+import os
+
+_capability_env = os.getenv("AI_STACK_CAPABILITY", "").strip().upper()
+if _capability_env == "LITE":
+    NLP_AVAILABLE = False
+    RAG_AVAILABLE = False
+else:
+    NLP_AVAILABLE = _installed("torch") and _installed("transformers")
+    RAG_AVAILABLE = _installed("sentence_transformers") and _installed("chromadb")
 
 #: True only in the full image, where every feature group is present.
 FULL_ML_STACK = NLP_AVAILABLE and RAG_AVAILABLE

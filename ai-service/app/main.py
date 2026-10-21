@@ -69,6 +69,9 @@ from app.api.routes import router as prediction_router
 from app.api.explain_routes import router as explain_router
 from app.api.agent_routes import router as agent_router
 from app.api.decision_routes import router as decision_router
+from app.api.experiment_routes import router as experiment_router
+from app.api.monitoring_routes import router as monitoring_router
+from app.api.registry_routes import router as registry_router
 from app.config import validate_startup_config
 from app.features import NLP_AVAILABLE, RAG_AVAILABLE, log_enabled_features
 from app.utils.database import connect_db, disconnect_db, get_db, db_instance
@@ -83,12 +86,21 @@ from app.explainability.shap_explainer import shap_cache
 # is what lets one codebase produce both images — see app/features.py for why
 # capability is probed rather than configured.
 if NLP_AVAILABLE:
-    from app.api.nlp_routes import router as nlp_router
-    from app.api.employee_intelligence_routes import router as employee_intelligence_router
-    from app.nlp.analyzer import get_emotion_classifier, get_zeroshot_classifier
+    try:
+        from app.api.nlp_routes import router as nlp_router
+        from app.api.employee_intelligence_routes import router as employee_intelligence_router
+        from app.nlp.analyzer import get_emotion_classifier, get_zeroshot_classifier
+    except (ImportError, Exception, BaseException) as exc:
+        logger.warning(f"Failed to load NLP dependencies ({exc}); falling back to LITE mode.")
+        NLP_AVAILABLE = False
+
 if RAG_AVAILABLE:
-    from app.api.rag_routes import router as rag_router
-    from app.rag.vectorstore.chroma_store import get_vectorstore
+    try:
+        from app.api.rag_routes import router as rag_router
+        from app.rag.vectorstore.chroma_store import get_vectorstore
+    except (ImportError, Exception, BaseException) as exc:
+        logger.warning(f"Failed to load RAG dependencies ({exc}); falling back to non-RAG mode.")
+        RAG_AVAILABLE = False
 
 STARTUP_STEP_TIMEOUT_SECONDS = 60
 
@@ -242,13 +254,28 @@ async def health_deep():
     }
 
 
-# Register routers. Prediction, explainability, agent and decision routes are
-# present in every build; NLP and RAG are swapped for a 503 stub when this
-# image lacks their dependencies (see app/api/unavailable_routes.py).
+@app.get("/ready")
+async def ready():
+    """Readiness probe checking that model bundle is loaded and ready to serve inference."""
+    is_ready = prediction_service.model_bundle is not None
+    return {
+        "status": "READY" if is_ready else "NOT_READY",
+        "modelLoaded": is_ready,
+        "algorithm": prediction_service.model_bundle.get("model_name") if is_ready else None,
+        "version": prediction_service.model_bundle.get("version") if is_ready else None,
+    }
+
+
+# Register routers. Prediction, explainability, agent, decision, experiment,
+# monitoring, and registry routes are present in every build; NLP and RAG are
+# swapped for a 503 stub when this image lacks their dependencies (see app/api/unavailable_routes.py).
 app.include_router(prediction_router)
 app.include_router(explain_router)
 app.include_router(agent_router)
 app.include_router(decision_router)
+app.include_router(experiment_router)
+app.include_router(monitoring_router)
+app.include_router(registry_router)
 
 if NLP_AVAILABLE:
     app.include_router(nlp_router)

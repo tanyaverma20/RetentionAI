@@ -126,7 +126,8 @@ async def test_recommend_batch(async_client: AsyncClient):
         ]
     }
     with patch("app.api.decision_routes.create_job", new_callable=AsyncMock) as mock_create_job, \
-         patch("app.api.decision_routes.generate_batch_decisions", new_callable=AsyncMock):
+         patch("app.api.decision_routes.generate_batch_decisions", new_callable=AsyncMock), \
+         patch("app.api.decision_routes.update_job", new_callable=AsyncMock):
         mock_create_job.return_value = "job_test_123"
         response = await async_client.post("/decision/batch", json=payload, headers=AUTH_HEADERS)
         assert response.status_code == 200, response.text

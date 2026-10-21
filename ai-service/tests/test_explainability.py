@@ -407,20 +407,18 @@ class TestPlotGenerator:
 # TestExplainAPIRoutes
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(scope="module")
+def api_client(ready_shap_cache):
+    from fastapi.testclient import TestClient
+    from app.main import app
+
+    token = os.getenv("AI_SERVICE_TOKEN", "replace-with-a-service-token")
+    with TestClient(app, raise_server_exceptions=True, headers={"Authorization": f"Bearer {token}"}) as c:
+        yield c
+
+
 class TestExplainAPIRoutes:
     """API endpoint integration tests using FastAPI TestClient."""
-
-    @pytest.fixture(scope="class")
-    def api_client(self, ready_shap_cache):
-        from fastapi.testclient import TestClient
-        from app.main import app
-        # Send whatever AI_SERVICE_TOKEN is actually configured (main.py's
-        # load_dotenv() picks up ai-service/.env when the app module is
-        # imported) — verify_auth_token only bypasses auth when the token is
-        # unset/the placeholder, so a real configured token must be sent.
-        token = os.getenv("AI_SERVICE_TOKEN", "replace-with-a-service-token")
-        with TestClient(app, raise_server_exceptions=True, headers={"Authorization": f"Bearer {token}"}) as c:
-            yield c
 
     def test_feature_importance_returns_200(self, api_client):
         response = api_client.get("/feature-importance")

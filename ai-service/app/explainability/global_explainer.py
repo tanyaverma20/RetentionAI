@@ -112,10 +112,14 @@ def compute_global_importance(n_samples: int = 100) -> dict:
         })
 
     return {
-        "features":    features,
-        "narrative":   build_global_narrative(features, n),
-        "shapMatrix":  shap_matrix.tolist(),
-        "baseValue":   round(shap_cache.get_expected_value(), 6),
-        "computedAt":  datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "modelName":   shap_cache.model_name or "Unknown",
+        "features": features,
+        "narrative": build_global_narrative(features, n),
+        "shapMatrix": shap_matrix.tolist(),
+        "baseValue": round(shap_cache.get_expected_value(), 6),
+        "causalDisclaimer": (
+            "Global feature rankings measure statistical predictive importance in the model, not direct causal levers. "
+            "Targeting these features for organizational intervention requires experimental validation (e.g. A/B testing)."
+        ),
+        "computedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "modelName": shap_cache.model_name or "Unknown",
     }

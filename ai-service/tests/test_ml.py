@@ -133,16 +133,20 @@ class TestPipeline:
 
 
 # ---------------------------------------------------------------------------
+# Module Fixture: Single shared trained model bundle for test suite
+# ---------------------------------------------------------------------------
+@pytest.fixture(scope="module")
+def trained_bundle():
+    df = generate_synthetic_data(400)
+    X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
+    return train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
+
+
+# ---------------------------------------------------------------------------
 # Unit tests: Model Training
 # ---------------------------------------------------------------------------
 class TestTrainer:
     """Tests for the 5-model benchmark, hyperparameter tuning, calibration, and threshold optimization."""
-
-    @pytest.fixture(scope="class")
-    def trained_bundle(self):
-        df = generate_synthetic_data(400)
-        X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
-        return train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
 
     def test_bundle_has_required_keys(self, trained_bundle):
         required = {
@@ -196,16 +200,10 @@ class TestTrainer:
 class TestPredictionService:
     """Tests for the prediction service with mocked MongoDB."""
 
-    @pytest.fixture(scope="class")
-    def shared_bundle(self):
-        df = generate_synthetic_data(400)
-        X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
-        return train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
-
     @pytest.fixture(autouse=True)
-    def load_model(self, shared_bundle):
+    def load_model(self, trained_bundle):
         from app.prediction.prediction_service import prediction_service
-        prediction_service.model_bundle = shared_bundle
+        prediction_service.model_bundle = trained_bundle
         self.svc = prediction_service
 
     def test_model_info_returns_correct_keys(self):
@@ -259,19 +257,15 @@ class TestAPIRoutes:
     """Integration-style tests against the FastAPI routes using TestClient."""
 
     @pytest.fixture(scope="class")
-    def api_client(self):
+    def api_client(self, trained_bundle):
         """
-        Creates a TestClient that skips lifespan events (no real DB needed),
-        and injects a pre-trained model into the prediction_service singleton.
+        Creates a TestClient and injects the shared pre-trained model into the prediction_service singleton.
         """
         from fastapi.testclient import TestClient
         from app.prediction.prediction_service import prediction_service
         from app.main import app
 
-        df = generate_synthetic_data(400)
-        X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata = fit_transform_pipeline(df)
-        bundle = train_and_select_best_model(X_train, X_test, y_train, y_test, scaler, encoders, feature_metadata)
-        prediction_service.model_bundle = bundle
+        prediction_service.model_bundle = trained_bundle
 
         # A real AI_SERVICE_TOKEN is configured in ai-service/.env, so every
         # route's verify_auth_token dependency requires this Bearer header —
